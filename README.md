@@ -46,11 +46,11 @@ This plugin turns Claude into your personal job search assistant on LinkedIn. It
 Clone this repo and install the plugin from the resulting folder. You have two options:
 
 **Option A — Install the .plugin file directly:**
-Download the `linkedin-job-hunter.plugin` file from the [Releases](https://github.com/your-username/claude-job-scout/releases) page (or from the repo root if provided). In Claude Desktop, go to Settings → Plugins and drag the `.plugin` file into the window, or click "Install plugin" and select the file. Claude will show you a preview of the plugin contents — click Accept to install.
+Download the `linkedin-job-hunter.plugin` file from the [Releases](https://github.com/turagit/claude-job-scout/releases) page (or from the repo root if provided). In Claude Desktop, go to Settings → Plugins and drag the `.plugin` file into the window, or click "Install plugin" and select the file. Claude will show you a preview of the plugin contents — click Accept to install.
 
 **Option B — Install from a cloned repo:**
 ```bash
-git clone https://github.com/your-username/claude-job-scout.git
+git clone https://github.com/turagit/claude-job-scout.git
 ```
 Then open Claude Desktop, go to Settings → Plugins → "Install from folder", and select the cloned `claude-job-scout` directory. Claude will detect the `.claude-plugin/plugin.json` manifest and install everything automatically. You can also simply drag the folder into the Claude Desktop Plugins settings panel.
 
