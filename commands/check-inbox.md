@@ -14,12 +14,14 @@ Scan the LinkedIn inbox for recruiter messages, qualify leads, and draft profess
 ## Step 1: Navigate to Inbox
 
 Using the browser:
+
 1. Navigate to `https://www.linkedin.com/messaging/`
 2. Scan the most recent messages (focus on unread first, then recent)
 
 ## Step 2: Identify Recruiter Messages
 
 Look for messages that indicate recruitment outreach:
+
 - Keywords: opportunity, role, position, hiring, team, interested, candidate, recruiting, talent
 - Messages from people with "Recruiter", "Talent Acquisition", "Sourcer", "HR", or "Headhunter" in their title
 - Messages that mention specific companies or job openings
@@ -77,6 +79,7 @@ For each lead the user wants to respond to:
 ## Step 6: Send (With Approval Only)
 
 Only after the user explicitly approves each message:
+
 1. Navigate to the conversation in LinkedIn messaging
 2. Type the approved message
 3. Confirm with the user one final time before hitting Send
@@ -85,6 +88,8 @@ Only after the user explicitly approves each message:
 ## Step 7: Follow-Up Tracking
 
 After processing the inbox, suggest:
+
+- Running /check-new-jobs to scan latest job alerts and score new opportunities
 - Setting a reminder to check inbox again in 2-3 days
 - Following up on unanswered messages after 5-7 days
 - Running /match-jobs if any roles mentioned look promising

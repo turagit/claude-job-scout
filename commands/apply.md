@@ -14,6 +14,7 @@ Apply to user-approved jobs on LinkedIn using Easy Apply. Only proceed with expl
 ## Step 1: Confirm Applications
 
 Present the list of jobs the user has approved for application. For each job, confirm:
+
 - Job title and company
 - Match score and tier
 - Whether Easy Apply is available
@@ -23,6 +24,7 @@ Ask: "Shall I proceed with applying to these [N] jobs via Easy Apply?"
 ## Step 2: Prepare Application Materials
 
 Check that the user has:
+
 1. **An up-to-date CV** ready to upload (preferably the optimized version from /analyze-cv)
 2. **Contact information** filled in on their LinkedIn profile
 3. **Any standard answers** for common Easy Apply questions (e.g., years of experience, visa status, salary expectations)
@@ -47,6 +49,7 @@ For each approved job:
 ## Step 4: Handle Non-Easy-Apply Jobs
 
 If a job does not have Easy Apply:
+
 1. Inform the user: "This job requires an external application on [company website]. I can open the page for you, or try to assist while you navigate — but external forms vary and may require your direct input."
 2. If the user wants assistance, open the external page and guide them through it, but let the user handle sensitive fields and final submission.
 
@@ -62,6 +65,20 @@ After completing all applications, present a summary:
 ```
 
 Suggest the user:
+
 - Check application status in a few days
 - Run /check-inbox to watch for recruiter responses
 - Continue searching with /job-search for more opportunities
+
+## Job Tracker Integration
+
+After each successful application:
+
+1. Load `job-reports/tracker.json` (create if missing)
+2. Update the job entry's status to `"applied"` and set `applied_date` to today
+3. Save the tracker
+
+Before starting applications:
+
+- Check the tracker for any jobs the user has already applied to — warn them and skip duplicates
+- If a job's status is `"rejected"`, skip it and inform the user

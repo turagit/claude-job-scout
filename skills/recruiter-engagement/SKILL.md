@@ -29,6 +29,7 @@ Monitor, qualify, and draft professional responses to recruiter messages on Link
 For each potential lead, extract and evaluate:
 
 ### Information to Gather
+
 - **Role details:** Title, team, responsibilities
 - **Company:** Name, size, industry, stage (startup/scale-up/enterprise)
 - **Compensation:** Salary range, equity, benefits (ask if not disclosed)
@@ -37,7 +38,9 @@ For each potential lead, extract and evaluate:
 - **Why this role:** Why they reached out to this specific person
 
 ### Qualification Questions to Ask (via drafted reply)
+
 Prioritize questions that reveal deal-breakers early:
+
 1. What is the compensation range for this role?
 2. What is the work arrangement (remote/hybrid/on-site)?
 3. Can you share more about the team and reporting structure?
@@ -47,6 +50,7 @@ Prioritize questions that reveal deal-breakers early:
 ## Response Drafting
 
 ### Tone Guidelines
+
 - Professional yet warm and approachable
 - Positive and enthusiastic without being desperate
 - Concise — recruiters are busy, respect their time
@@ -88,6 +92,7 @@ Prioritize questions that reveal deal-breakers early:
 ## Red Flags in Recruiter Messages
 
 Alert the user if you detect:
+
 - No company name or role title disclosed
 - Requests for personal information (SSN, bank details, ID)
 - "Pay to apply" or upfront fee requirements
@@ -96,6 +101,29 @@ Alert the user if you detect:
 - Links to non-LinkedIn external sites for "application"
 - Generic copy-paste messages with wrong name or details
 
+## Freelance / Contract Specific
+
+When the user's profile indicates freelance or contract work (check `user-profile.json`), adjust the qualification process:
+
+### Freelance Qualifying Questions (Priority Order)
+
+Replace the standard qualifying questions with these for freelance opportunities:
+
+1. What is the **day rate or rate range** for this contract?
+2. What is the **contract duration** (initial term + extension potential)?
+3. Is this **fully remote**, hybrid, or on-site?
+4. Is the role **inside or outside IR35**? (UK roles only)
+5. What is the **start date** — is it immediate or planned?
+6. Is this a **direct client engagement** or via an intermediary/agency?
+7. Who is the **end client**? (if via agency)
+
+### Freelance Response Tone Adjustments
+
+- Be direct about rate expectations — freelancers negotiate openly
+- Ask about IR35 early (UK) — it's a deal-breaker for many
+- Mention availability window: "I'm available from [date]"
+- Keep responses professional but efficient — freelance hiring moves fast
+
 ## Reference Materials
 
-- **`references/response-templates.md`** — Extended response templates for various scenarios
+- **`references/response-templates.md`** — Extended response templates for various scenarios (includes freelance-specific templates)

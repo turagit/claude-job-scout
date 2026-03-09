@@ -34,14 +34,17 @@ Supported formats: .pdf, .docx, .txt, .md
 Once added, run /check-new-jobs again.
 ```
 
-Once the CV is loaded:
+Before reading the CV, check for `user-profile.json` in the workspace root. If it exists and has a recent `cv_summary` (less than 30 days old), use the saved profile instead of re-analyzing the CV from scratch. Briefly confirm: "Using your saved profile. Want me to re-analyze your CV instead?"
+
+If no saved profile exists, or if it's stale, analyze the CV:
 
 - Extract all key information: skills, technologies, tools, frameworks, methodologies
 - Identify the user's seniority level from experience history
 - Determine target role titles and industry from career trajectory
 - Note domain expertise and specializations
 - Build a **dynamic profile** from the CV content — do NOT rely on hardcoded role titles; let the CV speak for itself
-- Store this profile mentally for use throughout the matching process
+
+After building the profile, **save it to `user-profile.json`** (create if missing, merge if exists) — including `cv_path`, `cv_summary`, and `requirements` (with defaults: `work_arrangement: "remote"`, `contract_type: "freelance"`). See the user-profile-schema reference in the job-matcher skill for the full schema.
 
 ## Step 2: Navigate to LinkedIn Notifications
 
@@ -212,3 +215,55 @@ After presenting the report, ask the user:
 - If no job alert notifications are found, inform the user and proceed directly to Step 4 (recommended jobs)
 - If no jobs at all match the filters, tell the user and suggest broadening search criteria
 - If browser automation encounters issues on a specific listing, skip it and note in the report
+
+## Job Tracking
+
+Throughout this command, maintain a `job-reports/tracker.json` file:
+
+### On startup
+
+- Load `job-reports/tracker.json` if it exists. This contains previously seen, applied, and rejected jobs keyed by LinkedIn job URL or ID.
+
+### During analysis (Steps 3-4)
+
+- For each job listing found, check if its URL/ID already exists in the tracker:
+  - If **already applied** → skip entirely, do not re-score
+  - If **previously seen** → still include in results but note "Previously seen on [date]" and show whether the score changed
+  - If **rejected by user** → skip entirely
+  - If **new** → process normally
+
+### After presenting results (Step 7)
+
+- Write all newly discovered jobs to the tracker with status `"seen"`, their score, tier, and today's date
+- Update any existing entries if scores changed
+
+### Tracker schema
+
+```json
+{
+  "jobs": {
+    "https://linkedin.com/jobs/view/123456": {
+      "title": "Senior DevOps Engineer",
+      "company": "Acme Corp",
+      "score": 88,
+      "tier": "A",
+      "first_seen": "2026-03-09",
+      "last_seen": "2026-03-09",
+      "status": "seen",
+      "applied_date": null,
+      "rejected_reason": null
+    }
+  },
+  "stats": {
+    "total_scanned": 145,
+    "total_applied": 12,
+    "total_rejected": 8,
+    "last_run": "2026-03-09T15:00:00Z"
+  }
+}
+```
+
+### When user approves applications
+
+- After the user says which jobs to apply to, update those entries to `"status": "approved"`
+- After `/apply` completes, the apply command will update status to `"applied"` with the date

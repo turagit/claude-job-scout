@@ -6,9 +6,12 @@ argument-hint: [optional: job-title]
 
 Run an interactive LinkedIn job search using the user's CV and requirements.
 
-## Step 1: Gather Requirements
+## Step 1: Load Profile & Gather Requirements
 
-If no previous requirements are stored, ask the user about:
+First, check for `user-profile.json` in the workspace root. If it exists, read the user's saved requirements and CV summary. Briefly confirm: "Using your saved preferences (e.g. remote, freelance). Want to change anything?"
+
+If any of the following fields are missing or `null` in the profile (or if no profile exists), ask the user:
+
 1. **Target roles** — Job titles and variations (e.g., "Software Engineer", "Backend Developer")
 2. **Location** — Cities, countries, or "Remote"
 3. **Salary range** — Minimum and ideal, currency
@@ -18,6 +21,8 @@ If no previous requirements are stored, ask the user about:
 7. **Nice-to-haves** — Preferences that aren't deal-breakers
 
 If an argument is provided ($1), use it as the primary job title to search for.
+
+After gathering any new information, **save it back** to `user-profile.json` (merge with existing data, don't overwrite). See the user-profile-schema reference in the job-matcher skill.
 
 ## Step 2: Load the CV
 
@@ -36,6 +41,7 @@ Using the browser tools, navigate to LinkedIn Jobs and perform targeted searches
 ## Step 4: Analyze Results
 
 Load the job-matcher skill. For each job listing found:
+
 - Extract: title, company, location, salary (if shown), requirements, description
 - Score against the CV and user requirements
 - Assign a match tier (A/B/C/D)
@@ -49,6 +55,7 @@ Present a ranked table of all jobs found:
 ```
 
 For A-Tier and top B-Tier matches, provide detailed analysis cards with:
+
 - Full match breakdown by dimension
 - Specific skills that match and gaps
 - Recommendation (Apply / Consider / Skip)
@@ -56,8 +63,12 @@ For A-Tier and top B-Tier matches, provide detailed analysis cards with:
 ## Step 6: Next Steps
 
 Ask the user:
+
 - Want to create alerts for these searches? (→ suggest /create-alerts)
 - Ready to apply to any of these? (→ suggest /apply)
 - Want to search for different terms?
+- Set up daily monitoring? (→ suggest /check-new-jobs after creating alerts)
+
+If `user-profile.json` exists and `last_updated` is older than 30 days, suggest running /analyze-cv to refresh the profile.
 
 Perform multiple searches if the user has several target roles.
