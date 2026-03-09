@@ -1,0 +1,9 @@
+{
+  "name": "linkedin-job-hunter",
+  "version": "0.1.0",
+  "description": "All-in-one LinkedIn job search automation: CV optimization, job matching, profile enhancement, recruiter engagement, and Easy Apply — powered by browser automation",
+  "author": {
+    "name": "BSF"
+  },
+  "keywords": ["linkedin", "job-search", "cv", "resume", "career", "recruiter", "profile-optimization", "easy-apply"]
+}
