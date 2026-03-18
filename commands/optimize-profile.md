@@ -3,79 +3,24 @@ description: Analyze and improve your LinkedIn profile for recruiters and ATS
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
-Analyze the user's LinkedIn profile and optimize it for maximum recruiter visibility and ATS compatibility, aligned with their CV and career goals.
+Optimize the user's LinkedIn profile for recruiter visibility and ATS, aligned with their CV.
 
-## Step 1: Read the Profile
+## Step 1: Read Profile
 
-Using the browser:
-1. Navigate to the user's LinkedIn profile (ask for their profile URL, or find it via the LinkedIn navigation menu → "View Profile")
-2. Read all profile sections systematically:
-   - Headline
-   - About/Summary
-   - Experience (all roles)
-   - Education
-   - Skills & Endorsements
-   - Featured section
-   - Certifications
-   - Recommendations
-3. Take note of the overall profile completeness and visual presentation
+Navigate to user's LinkedIn profile (ask for URL or find via LinkedIn menu). Read all sections: headline, about, experience, education, skills, featured, certifications, recommendations. Note completeness.
 
-## Step 2: Load the CV
+## Step 2: Load CV
 
-Read the user's CV from the workspace. This will be used for:
-- Ensuring consistency between CV and profile
-- Identifying achievements from the CV missing on LinkedIn
-- Keyword alignment
+Read CV from workspace for consistency checking, missing achievements, and keyword alignment.
 
 ## Step 3: Analyze
 
-Load the profile-optimizer skill. Score each profile section (1-10):
+Load the **profile-optimizer** skill. Score each section (1-10): headline (keyword-rich, specific?), about (story, keywords, hook?), experience (PAR method, quantified?), skills (30+ relevant, top 3 pinned?), completeness (All-Star status?), CV alignment (dates, titles match?). Calculate overall score.
 
-1. **Headline** — Is it keyword-rich, specific, and compelling?
-2. **About Section** — Does it tell a story, include keywords, and have a strong hook?
-3. **Experience** — PAR method used? Achievements quantified? Keywords present?
-4. **Skills** — Are there 30+ relevant skills? Top 3 pinned correctly?
-5. **Completeness** — All-Star profile status? All sections filled?
-6. **CV Alignment** — Do dates, titles, and content match the CV?
+## Step 4: Present and Improve
 
-Calculate an overall profile score.
+Show: overall score with section breakdown, strengths, top 5 improvements by impact, CV alignment issues. For each weak section, write optimized content: 2-3 headline options using headline formulas, about section rewrite, experience bullets with PAR method, skills additions.
 
-## Step 4: Present Analysis
+## Step 5: Apply Changes
 
-Show the user:
-1. **Overall Profile Score: X/10** with section breakdown
-2. **Strengths** — What's already working well
-3. **Top 5 Improvements** — Ranked by impact on recruiter visibility
-4. **CV Alignment Issues** — Any inconsistencies found
-
-## Step 5: Generate Optimized Content
-
-For each section that needs improvement, write optimized content:
-
-- **Headline:** 2-3 options following headline formulas from the profile-optimizer references
-- **About Section:** Full rewrite with keyword-rich narrative
-- **Experience bullets:** Rewritten using PAR method, aligned with CV achievements
-- **Skills list:** Recommended additions and top 3 to pin
-
-Present before/after comparisons for each section.
-
-## Step 6: Apply Changes (With Approval)
-
-Ask the user which changes they want to apply. For each approved change:
-
-1. Navigate to the relevant section on LinkedIn using the browser
-2. Click Edit
-3. Update the content with the approved text
-4. Save
-5. Confirm the change was applied
-
-**Always show the exact content before making any change and get explicit approval.**
-
-## Step 7: Final Verification
-
-After all changes are applied:
-1. Navigate back to the full profile view
-2. Review the updated profile end-to-end
-3. Confirm all changes look correct
-4. Check that the profile is approaching or at All-Star level
-5. Suggest any remaining improvements for the user to handle (e.g., getting recommendations, adding a better profile photo)
+For each change user approves: navigate to section on LinkedIn, edit, update with approved text, save, confirm. **Always show exact content and get approval before editing.** After all changes, review full profile end-to-end and suggest remaining improvements (recommendations, photo, etc.).

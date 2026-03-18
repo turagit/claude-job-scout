@@ -3,81 +3,28 @@ description: Score and rank job listings against your CV and requirements
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
-Analyze LinkedIn job listings (from alerts, search results, or saved jobs) and rank them against the user's CV and requirements.
+Analyze LinkedIn job listings and rank them against the user's CV and requirements.
 
 ## Step 1: Identify Source
 
-Ask the user where to find jobs to analyze:
+Ask the user where to find jobs: job alerts (LinkedIn notifications), saved jobs, specific URL, or current search results.
 
-1. **Job Alerts** — Check LinkedIn notifications for new alert results
-2. **Saved Jobs** — Review their saved/bookmarked jobs on LinkedIn
-3. **Specific URL** — User provides a direct link to a job listing
-4. **Current Search Results** — Analyze what's currently on screen
+## Step 2: Load Profile
 
-## Step 2: Load CV and Requirements
+Check `user-profile.json` — load CV summary and requirements if exists, confirm with user. If no profile, read CV from workspace and ask for requirements. Load the **job-matcher** skill.
 
-- Check for `user-profile.json` in the workspace root. If it exists, load the CV path, CV summary, and saved requirements from it. Briefly confirm: "Using your saved preferences. Want to change anything?"
-- If no profile exists, read the user's CV from the workspace and ask for their requirements (target roles, location, salary, deal-breakers)
-- Load the job-matcher skill for the scoring framework
+## Step 3: Gather and Score
 
-## Step 3: Gather Job Listings
+Navigate to appropriate LinkedIn page. For each listing, extract: title, company, location, salary, experience level, required/preferred skills, description, Easy Apply status, posting date, applicant count. Apply job-matcher scoring framework, filter out D-Tier.
 
-Using the browser, navigate to the appropriate LinkedIn page:
+Check `job-reports/tracker.json` first — skip applied/rejected jobs, note previously seen ones with old score.
 
-- **Alerts:** Go to LinkedIn notifications or job alert emails and open each listing
-- **Saved Jobs:** Navigate to `https://www.linkedin.com/my-items/saved-jobs/`
-- **Search Results:** Use current search results page
+## Step 4: Present Results
 
-For each job listing:
+Show ranked markdown table (title, company, score, tier, Easy Apply, posted, applicants). For A-Tier and top B-Tier, provide detailed match cards with score breakdown, matched skills, gaps, and red flags.
 
-1. Open the full job description
-2. Extract: title, company, location, salary range (if shown), experience level, required skills, preferred skills, job description, Easy Apply availability, posting date, number of applicants
-3. Move to next listing
+Write newly scored jobs to tracker with status "seen".
 
-## Step 4: Score and Rank
+## Next Steps
 
-Apply the job-matcher skill scoring framework:
-
-- Skills Match (30%)
-- Experience Alignment (25%)
-- Requirements Fit (25%)
-- Growth & Culture (10%)
-- Practical Factors (10%)
-
-Filter out D-Tier matches immediately.
-
-## Step 5: Present Results
-
-Show a ranked summary table:
-
-```
-| Rank | Title | Company | Score | Tier | Easy Apply | Posted | Applicants |
-```
-
-For each A-Tier and top B-Tier job, provide a detailed match card:
-
-- Score breakdown by dimension
-- Matched skills vs. gaps
-- Red flags (if any)
-- Specific reasons this is a good/poor match
-
-## Step 6: Recommend Next Steps
-
-Ask the user to review the matches and decide:
-
-- Which jobs to apply to → suggest /apply
-- Which to save for later
-- Which to discard
-- Whether to refine search criteria based on what was found
-
-## Job Tracker Integration
-
-Before scoring:
-
-1. Load `job-reports/tracker.json` if it exists
-2. Skip any jobs with status `"applied"` or `"rejected"`
-3. For jobs with status `"seen"`, include them but note "Previously scored on [date] — Score: [old score]"
-
-After presenting results:
-
-- Write all newly scored jobs to the tracker with status `"seen"`
+Ask which jobs to apply to (`/apply`), save, or discard. Suggest refining search if results are poor.

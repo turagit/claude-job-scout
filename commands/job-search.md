@@ -6,69 +6,24 @@ argument-hint: [optional: job-title]
 
 Run an interactive LinkedIn job search using the user's CV and requirements.
 
-## Step 1: Load Profile & Gather Requirements
+## Step 1: Load Profile & Requirements
 
-First, check for `user-profile.json` in the workspace root. If it exists, read the user's saved requirements and CV summary. Briefly confirm: "Using your saved preferences (e.g. remote, freelance). Want to change anything?"
+Check `user-profile.json` — if exists, load and confirm with user. For any missing fields, ask: target roles, location, salary range, seniority, company preferences, deal-breakers, nice-to-haves. If argument provided ($1), use as primary search title. Save new info back to `user-profile.json` (merge, don't overwrite).
 
-If any of the following fields are missing or `null` in the profile (or if no profile exists), ask the user:
+## Step 2: Load CV
 
-1. **Target roles** — Job titles and variations (e.g., "Software Engineer", "Backend Developer")
-2. **Location** — Cities, countries, or "Remote"
-3. **Salary range** — Minimum and ideal, currency
-4. **Seniority level** — Junior, Mid, Senior, Lead, etc.
-5. **Company preferences** — Size, industry, specific companies to target or avoid
-6. **Deal-breakers** — Absolute non-negotiables
-7. **Nice-to-haves** — Preferences that aren't deal-breakers
-
-If an argument is provided ($1), use it as the primary job title to search for.
-
-After gathering any new information, **save it back** to `user-profile.json` (merge with existing data, don't overwrite). See the user-profile-schema reference in the job-matcher skill.
-
-## Step 2: Load the CV
-
-Check if the user has a CV available in the workspace. If not, ask them to provide one — the CV is essential for matching.
+Locate CV in workspace. If none found, ask user to provide one.
 
 ## Step 3: Search LinkedIn
 
-Using the browser tools, navigate to LinkedIn Jobs and perform targeted searches:
+Navigate to `https://www.linkedin.com/jobs/`. Enter target title, set location and filters (Experience Level, Remote, Date Posted — prioritize "Past Week"). Open each promising listing and extract: title, company, location, salary, requirements, description, Easy Apply status.
 
-1. Go to `https://www.linkedin.com/jobs/`
-2. Enter the target job title in the search bar
-3. Set location filters
-4. Apply relevant filters (Experience Level, Remote, Date Posted — prioritize "Past Week")
-5. For each promising result, open the job listing and read the full description
+## Step 4: Score and Present
 
-## Step 4: Analyze Results
+Load the **job-matcher** skill. Score each listing, assign tiers. Present ranked markdown table (title, company, score, tier, Easy Apply, key match, key gap). For A-Tier and top B-Tier, provide detailed analysis with score breakdown and matched skills vs gaps.
 
-Load the job-matcher skill. For each job listing found:
+Perform multiple searches if user has several target roles. If profile is >30 days old, suggest `/analyze-cv`.
 
-- Extract: title, company, location, salary (if shown), requirements, description
-- Score against the CV and user requirements
-- Assign a match tier (A/B/C/D)
+## Next Steps
 
-## Step 5: Present Results
-
-Present a ranked table of all jobs found:
-
-```
-| Rank | Title | Company | Score | Tier | Easy Apply | Key Match | Key Gap |
-```
-
-For A-Tier and top B-Tier matches, provide detailed analysis cards with:
-
-- Full match breakdown by dimension
-- Specific skills that match and gaps
-- Recommendation (Apply / Consider / Skip)
-
-## Step 6: Next Steps
-
-Ask the user:
-
-- Want to create alerts for these searches? (→ suggest /create-alerts)
-- Ready to apply to any of these? (→ suggest /apply)
-- Want to search for different terms?
-- Set up daily monitoring? (→ suggest /check-new-jobs after creating alerts)
-
-If `user-profile.json` exists and `last_updated` is older than 30 days, suggest running /analyze-cv to refresh the profile.
-
-Perform multiple searches if the user has several target roles.
+Suggest `/create-alerts` for monitoring, `/apply` for approved jobs, or refining search terms.
