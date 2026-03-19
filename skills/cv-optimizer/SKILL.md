@@ -58,6 +58,10 @@ Evaluate across five dimensions (score 1-10 each):
 
 When user provides a target job description: extract hard skills/tools/certifications, compare against CV, identify missing keywords the user genuinely has, suggest natural placements (never keyword-stuff), calculate match percentage.
 
+## Keyword Handoff to Profile Optimizer
+
+After analysing a CV, produce a **master keyword list** containing every hard skill, tool, framework, methodology, certification, and industry term extracted from the CV and any target job descriptions. This list should be saved so that `profile-optimizer` can reuse it directly rather than re-extracting. Both the CV and LinkedIn profile must target the same keywords — if a keyword is on the CV, it must appear on LinkedIn, and vice versa.
+
 ## Freelance / Contractor CV Mode
 
 When user is a freelancer/contractor, apply adjustments from `../shared-references/freelance-context.md`.

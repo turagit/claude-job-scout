@@ -7,32 +7,52 @@ Optimize the user's LinkedIn profile for recruiter visibility and ATS, using the
 
 ## Step 1: Load CV (Required)
 
-Search the workspace for CV files (pdf, docx, md, txt). If multiple found, ask which to use. If none found, ask the user to provide their CV — **do not proceed without it**. Parse the CV and extract: role titles, skills, quantified achievements, career narrative, industry context, certifications, education.
+Search the workspace for CV files (pdf, docx, md, txt). If multiple found, ask which to use. If none found, ask the user to provide their CV — **do not proceed without it**. Parse the CV and extract: role titles, skills, quantified achievements, career narrative, industry context, certifications, education. Build a **master keyword list** of every hard skill, tool, framework, methodology, certification, and industry term. If `cv-optimizer` has already been run in this session, reuse its keyword list.
 
 ## Step 2: Read LinkedIn Profile
 
-Navigate to user's LinkedIn profile (ask for URL or find via LinkedIn menu). Read all sections: headline, about, experience, education, skills, featured, certifications, recommendations. Note completeness and All-Star status requirements.
+Navigate to user's LinkedIn profile (ask for URL or find via LinkedIn menu). Read all sections: headline, about, experience, education, skills, featured, certifications, recommendations. Also check: custom URL, location field, industry field, profile photo, banner image, Open to Work status, creator mode status.
 
-## Step 3: Analyze and Score
+## Step 3: Check Activity & Engagement
 
-Load the **profile-optimizer** skill. Score each section (1-10): headline (keyword-rich, uses CV strengths?), about (hooks with CV achievements, keywords woven in?), experience (PAR method, matches CV, quantified?), skills (30+ from CV, top 3 pinned?), completeness (All-Star status?), CV alignment (dates, titles, keywords all present?). Calculate overall score.
+Check SSI score at `linkedin.com/sales/ssi`. Note recent posting activity and engagement level. Flag if SSI < 70 or no activity in 30+ days.
 
-## Step 4: Generate CV-Driven Proposals
+## Step 4: Analyze and Score
+
+Load the **profile-optimizer** skill.
+
+**Section scores (1-10 each):** headline (keyword-rich, uses CV strengths?), about (hooks with CV achievements, keywords woven in?), experience (PAR method, matches CV, quantified?), skills (30+ from CV, top 3 pinned?), featured (CV projects showcased?), additional sections (certifications, education complete?), Open to Work (enabled with correct titles?), structured fields (location, industry, URL, photo correct?).
+
+**Cross-cutting scores:**
+- Keyword coverage: % of master keyword list found on profile (target 90%+)
+- Search appearance estimate: headline keywords + skills ≥30 + All-Star + Open to Work + SSI ≥70
+- Recruiter 10-second test: current role clear, years evident, key skills visible, location stated, availability signalled
+- CV alignment: dates, titles, companies, keywords all consistent
+
+Calculate overall score: section scores (60%) + cross-cutting scores (40%) → X/100 with tier (A/B/C/D).
+
+## Step 5: Boolean Search Simulation
+
+Using `references/recruiter-search-patterns.md`, construct 2-3 Boolean queries a recruiter would likely use for the user's target role. Check whether all required keywords exist in searchable profile fields. Flag any missing terms.
+
+## Step 6: Generate CV-Driven Proposals
 
 For every section scoring below 8, generate ready-to-paste content derived from the CV:
-- **Headline:** 2-3 options using CV role title + top skills + strongest achievement. Apply headline formulas.
-- **About:** Full 200-400 word rewrite built from CV summary, achievements, and keywords. First-person conversational tone. Hook in first 3 lines.
-- **Experience:** For each CV role, rewrite bullets in PAR method with richer context than CV. Expand current role most. Propose standard job titles if CV titles aren't searchable.
-- **Skills:** Full list extracted from CV with synonyms and ATS-friendly phrasing. Propose top 3 to pin.
+- **Headline:** 2-3 options using CV role title + top skills + strongest achievement. Use searchable titles from `references/recruiter-search-patterns.md`. Apply headline formulas.
+- **About:** Full 200-400 word rewrite built from CV summary, achievements, and keywords. First-person conversational tone. Hook in first 3 lines (also works as Google snippet).
+- **Experience:** For each CV role, rewrite bullets in PAR method with richer context. Expand current role most. Propose standard job titles if CV titles aren't searchable (include mapping rationale).
+- **Skills:** Full list extracted from master keyword list with synonyms and ATS-exact phrasing. Both acronym and spelled-out forms. Propose top 3 to pin.
 - **Featured:** Propose items from CV projects, publications, portfolio links.
-- **Additional:** Certifications from CV, recommendation requests based on CV roles.
+- **Open to Work:** Propose configuration — 3-5 job titles (standard searchable terms from CV), location, work types, start date. See `references/open-to-work-config.md`.
+- **Structured fields:** Propose location (broadest correct value), industry (matching target role), custom URL, banner image concept.
+- **Activity:** Suggest 2-3 post topics per week based on CV expertise areas. Suggest creator mode if appropriate.
 
 Present as a table per section: Current Content | Proposed Content | CV Source (which CV entry it's derived from).
 
-## Step 5: Alignment Report
+## Step 7: Alignment Report
 
-Show: keyword coverage (% of CV keywords found on LinkedIn), CV achievements missing from LinkedIn, any date/title/company mismatches. List each gap with a fix.
+Show: keyword coverage (% of master keyword list found on LinkedIn), CV achievements missing from LinkedIn, any date/title/company mismatches, Boolean simulation results. List each gap with a specific fix.
 
-## Step 6: Apply Changes
+## Step 8: Apply Changes
 
-For each change user approves: navigate to section on LinkedIn, edit, update with approved text, save, confirm. **Always show exact content and get approval before editing.** After all changes, review full profile end-to-end and show updated scores.
+For each change user approves: navigate to section on LinkedIn, edit, update with approved text, save, confirm. **Always show exact content and get approval before editing.** After all changes, review full profile end-to-end, re-run scoring, and show updated scores vs original.
