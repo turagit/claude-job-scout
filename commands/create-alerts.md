@@ -17,4 +17,4 @@ For each alert: navigate to `https://www.linkedin.com/jobs/`, enter keywords, se
 
 Navigate to alerts management page and verify all new alerts appear. Present summary: alert title, location, frequency.
 
-Suggest creating 3-5 alerts covering title variations (broad + specific), setting highest-priority to Daily, and using `/check-new-jobs` regularly to score new listings.
+Suggest creating 3-5 alerts covering title variations (broad + specific), setting highest-priority to Daily, and using `/check-job-notifications` regularly to score new listings.

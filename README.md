@@ -24,7 +24,7 @@ This plugin turns Claude into your personal job search assistant on LinkedIn. It
 
 | Command | Description |
 |---------|-------------|
-| `/check-new-jobs` | **Daily driver** — Check notifications for job alerts, analyze matches against CV, report best remote freelance opportunities |
+| `/check-job-notifications` | **Daily driver** — Check notifications for job alerts, analyze matches against CV, report best remote freelance opportunities |
 | `/analyze-cv` | Analyze and optimize your CV for ATS and recruiters |
 | `/job-search` | Search LinkedIn for jobs matching your CV and requirements |
 | `/create-alerts` | Create LinkedIn job alerts matching your search criteria |
@@ -57,7 +57,7 @@ git clone https://github.com/turagit/claude-job-scout.git
 
 Then open Claude Desktop, go to Settings → Plugins → "Install from folder", and select the cloned `claude-job-scout` directory. Claude will detect the `.claude-plugin/plugin.json` manifest and install everything automatically. You can also simply drag the folder into the Claude Desktop Plugins settings panel.
 
-After installation, the 8 slash commands (`/check-new-jobs`, `/analyze-cv`, `/job-search`, `/create-alerts`, `/match-jobs`, `/apply`, `/check-inbox`, `/optimize-profile`) and all 4 skills will be available in every Cowork session.
+After installation, the 8 slash commands (`/check-job-notifications`, `/analyze-cv`, `/job-search`, `/create-alerts`, `/match-jobs`, `/apply`, `/check-inbox`, `/optimize-profile`) and all 4 skills will be available in every Cowork session.
 
 ## Requirements
 
@@ -81,7 +81,7 @@ After installation, the 8 slash commands (`/check-new-jobs`, `/analyze-cv`, `/jo
 
 Once set up, your daily routine is simple:
 
-1. Run `/check-new-jobs` — scans notifications for job alerts, scores everything against your CV, filters for remote freelance roles, and saves a ranked report
+1. Run `/check-job-notifications` — scans notifications for job alerts, scores everything against your CV, filters for remote freelance roles, and saves a ranked report
 2. Review the matches and tell Claude which ones to apply to
 3. Optionally run `/check-inbox` for recruiter messages
 

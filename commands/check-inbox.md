@@ -28,4 +28,4 @@ For each lead the user wants to respond to: read full conversation thread, cross
 
 ## Next Steps
 
-Suggest `/check-new-jobs` for latest alerts, following up on unanswered messages after 5-7 days.
+Suggest `/check-job-notifications` for latest alerts, following up on unanswered messages after 5-7 days.

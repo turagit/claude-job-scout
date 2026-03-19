@@ -35,7 +35,7 @@ All commands share `./user-profile.json` in workspace root to avoid re-asking fo
 | Command | Reads | Writes |
 |---------|-------|--------|
 | `/analyze-cv` | — | cv_path, cv_summary |
-| `/check-new-jobs` | All | cv_path, cv_summary (if missing) |
+| `/check-job-notifications` | All | cv_path, cv_summary (if missing) |
 | `/job-search` | requirements, cv_summary | requirements (fills gaps) |
 | `/match-jobs` | requirements, cv_summary | — |
 | `/apply` | cv_path, requirements | — |
