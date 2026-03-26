@@ -8,22 +8,43 @@ Analyze and improve the user's CV using the **cv-optimizer** skill.
 
 ## Step 1: Load CV
 
-If argument provided, read file at @$1. Otherwise, locate CV in workspace or ask user. Support .pdf, .docx, .txt, .md.
+If argument provided, read file at @$1. Otherwise, locate CV in workspace (search for *.pdf, *.docx, *.txt, *.md files that look like CVs) or ask user for the path. Support .pdf, .docx, .txt, .md.
 
-## Step 2: Target Role (Optional)
+## Step 2: Discovery Interview (MANDATORY — DO NOT SKIP)
 
-Ask what role(s) they're targeting and whether they have a specific job description to optimize against. Proceed with general analysis if skipped.
+Run the **Phase 0 Discovery Interview** from the cv-optimizer skill. Ask all questions in a single structured message grouped by category (Identity & Career Context, Strengths & Differentiators, Target & Constraints). This is critical — the quality of the optimization depends entirely on having this context upfront.
+
+If the user has an existing `user-profile.json`, pre-fill what you can and confirm: "I have these details saved — are they still accurate?" Only ask for missing or potentially stale information.
+
+If the user provides a target job description, extract it and use it for keyword gap analysis.
+
+**Do NOT proceed to analysis until the user has responded to the discovery questions.** A generic analysis without context produces generic results.
 
 ## Step 3: Analyze
 
-Load the **cv-optimizer** skill. Score all five dimensions (1-10 each, weighted). Present: overall score with breakdown, top 3 strengths, top 5 improvements ranked by impact, before/after rewrites using PAR method, keyword gap report (if JD provided).
+Load the **cv-optimizer** skill. Score all seven dimensions (1–10 each, weighted). Present:
 
-Be encouraging — highlight strengths before improvements.
+1. **Overall score** with letter grade (A/B/C/D) and per-dimension breakdown with evidence
+2. **Strength spotlight** — top 3 things the CV already does well (lead with positives)
+3. **Top 5 improvements** ranked by weighted point impact, with before/after previews
+4. **Keyword gap report** (if JD provided): match percentage, must-add keywords, suggested placements
+5. **7-second scan test result** — can a recruiter extract role, seniority, top skills, and one number in 7 seconds?
+6. **Psychology audit** — which persuasion techniques are already working, which are missing
+
+Be encouraging — highlight strengths before improvements. Frame improvements as opportunities, not failures.
 
 ## Step 4: Generate Improved CV
 
-If user wants a rewrite: create improved version preserving voice and facts, save with "-optimized" suffix, summarize all changes.
+If user wants a rewrite:
+- Create optimized version applying all SPAR rewrites, keyword placements, psychological persuasion techniques, and structural improvements
+- Preserve the user's voice, facts, and tone preference (from discovery interview)
+- Save with "-optimized" suffix
+- Provide a **change summary** listing every modification made and why
+- Show **before/after comparison** for the 3 most impactful changes
+- Provide **interview ammunition** — full SPAR narratives for top achievements the user can use in interviews
 
 ## Step 5: Update Profile
 
-Save to `user-profile.json` (create/merge): cv_path, cv_summary (key_skills, technologies, seniority, years_experience, target_roles, domain_expertise), last_updated. See user-profile-schema reference for full schema.
+Save to `user-profile.json` (create/merge): cv_path, cv_summary (key_skills, technologies, seniority, years_experience, target_roles, domain_expertise, industries, top_achievements), last_updated, master_keyword_list. See user-profile-schema reference for full schema.
+
+Save the master keyword list so that `/optimize-profile` can reuse it for LinkedIn alignment.
