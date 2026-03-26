@@ -8,7 +8,7 @@ Analyze and improve the user's CV using the **cv-optimizer** skill.
 
 ## Step 1: Load CV
 
-If argument provided, read file at @$1. Otherwise, locate CV in workspace (search for *.pdf, *.docx, *.txt, *.md files that look like CVs) or ask user for the path. Support .pdf, .docx, .txt, .md.
+If argument provided, read file at @$1. Otherwise, follow the shared CV-loading procedure in `shared-references/cv-loading.md` to locate the CV and load any existing profile.
 
 ## Step 2: Discovery Interview (MANDATORY — DO NOT SKIP)
 

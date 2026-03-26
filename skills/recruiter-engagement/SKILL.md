@@ -26,11 +26,14 @@ For each lead, extract: role details, company (name, size, industry, stage), com
 
 ### Qualifying Questions (ask via drafted reply)
 
+**Permanent roles:**
 1. Compensation range?
 2. Work arrangement (remote/hybrid/on-site)?
 3. Team and reporting structure?
 4. Interview process and timeline?
 5. Visa sponsorship? (if relevant)
+
+**Freelance/contract roles:** Use the qualifying questions from `../shared-references/freelance-context.md` (day rate, duration, remote, IR35, start date, client vs agency, end client).
 
 ## Response Drafting
 

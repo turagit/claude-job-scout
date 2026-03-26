@@ -7,7 +7,7 @@ Optimize the user's LinkedIn profile for recruiter visibility and ATS, using the
 
 ## Step 1: Load CV (Required)
 
-Search the workspace for CV files (pdf, docx, md, txt). If multiple found, ask which to use. If none found, ask the user to provide their CV — **do not proceed without it**. Parse the CV and extract: role titles, skills, quantified achievements, career narrative, industry context, certifications, education. Build a **master keyword list** of every hard skill, tool, framework, methodology, certification, and industry term. If `cv-optimizer` has already been run in this session, reuse its keyword list.
+Follow the shared CV-loading procedure in `shared-references/cv-loading.md` — **do not proceed without a CV**. Parse the CV and extract: role titles, skills, quantified achievements, career narrative, industry context, certifications, education. Reuse the master keyword list from `user-profile.json` if `cv-optimizer` has already run; otherwise build it from the CV.
 
 ## Step 2: Read LinkedIn Profile
 

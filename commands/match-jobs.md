@@ -11,7 +11,7 @@ Ask the user where to find jobs: job alerts (LinkedIn notifications), saved jobs
 
 ## Step 2: Load Profile
 
-Check `user-profile.json` — load CV summary and requirements if exists, confirm with user. If no profile, read CV from workspace and ask for requirements. Load the **job-matcher** skill.
+Follow the shared CV-loading procedure in `shared-references/cv-loading.md`. Load the **job-matcher** skill.
 
 ## Step 3: Gather and Score
 

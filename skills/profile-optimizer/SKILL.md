@@ -19,14 +19,9 @@ The CV is mandatory. If no CV is found in the workspace:
 1. Ask the user to provide their CV (upload, paste, or point to a file path)
 2. Do not proceed until the CV is loaded — it drives all content proposals
 
-Once loaded, extract:
-- **Role titles** and seniority level
-- **Key skills** (technical and domain)
-- **Quantified achievements** (metrics, percentages, revenue, scale)
-- **Industry and domain** context
-- **Career narrative** (progression, specialisation, transitions)
+Once loaded, extract: role titles, seniority level, key skills (technical and domain), quantified achievements, industry/domain context, and career narrative.
 
-Build a **master keyword list** from the CV: every hard skill, tool, framework, methodology, certification, and industry term. This list is the single source of truth for all keyword placement across the profile. If `cv-optimizer` has already been run, reuse its extracted keyword list rather than re-extracting.
+**Master keyword list:** Reuse the list from `user-profile.json` → `master_keyword_list` (produced by `cv-optimizer`). If it doesn't exist, build it from the CV: every hard skill, tool, framework, methodology, certification, and industry term. This list is the single source of truth for all keyword placement across the profile.
 
 ## CV-Driven Section Proposals
 
@@ -179,7 +174,7 @@ After proposing all content, generate an alignment report:
 
 ## Optimization Process
 
-1. **Load CV** — read and extract all structured data (roles, skills, achievements, keywords). Build master keyword list. Reuse `cv-optimizer` keyword list if available.
+1. **Load CV** — follow `shared-references/cv-loading.md`. Extract structured data (roles, skills, achievements, keywords). Reuse master keyword list from `user-profile.json` if available.
 2. **Read current LinkedIn profile** via browser, score each section (1-10)
 3. **Check structured fields** — location, industry, custom URL, photo, banner, Open to Work status
 4. **Check activity & engagement** — SSI score, recent posting activity, creator mode status

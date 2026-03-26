@@ -6,13 +6,9 @@ argument-hint: [optional: job-title]
 
 Run an interactive LinkedIn job search using the user's CV and requirements.
 
-## Step 1: Load Profile & Requirements
+## Step 1: Load Profile, CV & Requirements
 
-Check `user-profile.json` — if exists, load and confirm with user. For any missing fields, ask: target roles, location, salary range, seniority, company preferences, deal-breakers, nice-to-haves. If argument provided ($1), use as primary search title. Save new info back to `user-profile.json` (merge, don't overwrite).
-
-## Step 2: Load CV
-
-Locate CV in workspace. If none found, ask user to provide one.
+Follow the shared CV-loading procedure in `shared-references/cv-loading.md`. If argument provided ($1), use as primary search title. For any missing requirement fields, ask: target roles, location, salary range, seniority, company preferences, deal-breakers, nice-to-haves. Save new info back to `user-profile.json` (merge, don't overwrite).
 
 ## Step 3: Search LinkedIn
 

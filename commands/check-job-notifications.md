@@ -11,11 +11,9 @@ Check LinkedIn job alert notifications, analyze each opportunity against the use
 - **Contract type:** Freelance / Contract
 - **Salary transparency:** Prioritize listings that disclose salary or day rate; flag others with "Does not mention rate"
 
-## Step 1: Locate and Analyze the CV
+## Step 1: Load CV & Profile
 
-Search workspace for CV files (`cv.*`, `resume.*`, `curriculum.*` with `.pdf`, `.docx`, `.doc`, `.txt`, `.md`). If multiple found, ask user. If none found, tell user to add their CV to the workspace and stop.
-
-Check for `user-profile.json` in workspace root. If it exists with a `cv_summary` less than 30 days old, use the saved profile — confirm briefly with user. Otherwise analyze the CV: extract skills, technologies, seniority, target roles, domain expertise. Build a dynamic profile from CV content. Save to `user-profile.json` (create or merge) including `cv_path`, `cv_summary`, and `requirements` with defaults (`work_arrangement: "remote"`, `contract_type: "freelance"`). See user-profile-schema reference for schema.
+Follow the shared CV-loading procedure in `shared-references/cv-loading.md`. If no profile exists yet, analyze the CV to extract skills, technologies, seniority, target roles, and domain expertise. Save to `user-profile.json` (create or merge) including `cv_path`, `cv_summary`, and `requirements` with defaults (`work_arrangement: "remote"`, `contract_type: "freelance"`). See user-profile-schema reference for schema.
 
 ## Step 2: Collect Jobs from LinkedIn
 
