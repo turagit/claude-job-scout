@@ -17,9 +17,13 @@ Follow the shared CV-loading procedure in `shared-references/cv-loading.md`. If 
 
 ## Step 2: Collect Jobs from LinkedIn
 
-Navigate to `https://www.linkedin.com/notifications/`. Scan for job alert notifications (phrases like "new opportunities in", "new job alert", "jobs that match your"). Scroll 2-3 times to catch recent alerts.
+Navigate to `https://www.linkedin.com/notifications/?filter=jobs_all` (the jobs-only notifications view). Scroll 2-3 times to load recent alerts.
 
-For each alert, open every job listing and extract: job title, company, location (remote/hybrid/on-site + city), salary/rate (note presence or absence), contract type, experience level, required skills, preferred skills, full description, Easy Apply status, posting date, applicant count, job URL. Tag source as "Job Alert".
+Identify **every unread job alert notification** (unread items are highlighted in blue). Do NOT stop after the first one — you must process **all** unread job alerts in this view.
+
+For each unread job alert: open the alert, then open **every individual job listing** inside it (not just the first/featured one). For each job extract: job title, company, location (remote/hybrid/on-site + city), salary/rate (note presence or absence), contract type, experience level, required skills, preferred skills, full description, Easy Apply status, posting date, applicant count, job URL. Tag source as "Job Alert".
+
+Track which alerts you have processed so none are skipped before moving to Step 3.
 
 Then navigate to `https://www.linkedin.com/jobs/` and scan top 10-15 recommended jobs. Extract same fields for relevant ones. Tag source as "Recommendation".
 
