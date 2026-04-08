@@ -11,9 +11,13 @@ Apply to user-approved jobs on LinkedIn using Easy Apply.
 - **NEVER submit without explicit user confirmation.**
 - **NEVER enter sensitive data** (SSN, bank details).
 
+## Step 0: Bootstrap workspace
+
+Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists.
+
 ## Step 1: Confirm Applications
 
-Present approved jobs list (title, company, score, tier, Easy Apply status). Ask user to confirm proceeding. Check `job-reports/tracker.json` — warn about and skip already-applied or rejected jobs.
+Present approved jobs list (title, company, score, tier, Easy Apply status). Ask user to confirm proceeding. Check `.job-scout/tracker.json` — warn about and skip already-applied or rejected jobs.
 
 ## Step 2: Prepare
 
@@ -27,6 +31,6 @@ For non-Easy-Apply jobs: inform user, open external page, guide them if requeste
 
 ## Step 4: Track and Report
 
-Present summary table (title, company, status, notes). Update `job-reports/tracker.json` — set status to "applied" with today's date for each successful application.
+Present summary table (title, company, status, notes). Update `.job-scout/tracker.json` — set status to "applied" with today's date for each successful application.
 
 Suggest checking application status in a few days, running `/check-inbox` for responses.

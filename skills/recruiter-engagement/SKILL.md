@@ -47,7 +47,27 @@ For each lead, extract: role details, company (name, size, industry, stage), com
 
 When user is a freelancer/contractor, apply adjustments from `../shared-references/freelance-context.md` — use freelance qualifying questions and response tone.
 
+## Thread State
+
+Per-thread state lives in `.job-scout/recruiters/threads.json`:
+
+```json
+{
+  "<thread_id>": {
+    "recruiter_name": "...",
+    "company": "...",
+    "lead_tier": "hot | warm | cold",
+    "last_seen_msg_id": "...",
+    "last_drafted_reply": "...",
+    "last_updated": "2026-04-08"
+  }
+}
+```
+
+Before reading any thread's full history, check `last_seen_msg_id`. If the latest visible message id matches, skip the thread — there's nothing new. Only deep-read threads with new activity. This avoids re-reading unchanged conversations on every `/check-inbox` run.
+
 ## Reference Materials
 
 - **`references/response-templates.md`** — Response templates for various scenarios
 - **`../shared-references/freelance-context.md`** — Freelance qualifying questions, rate negotiation, IR35
+- **`../shared-references/workspace-layout.md`** — `.job-scout/` folder layout and bootstrap

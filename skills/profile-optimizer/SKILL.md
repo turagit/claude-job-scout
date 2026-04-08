@@ -185,9 +185,16 @@ After proposing all content, generate an alignment report:
 9. **Show alignment report** — keyword coverage, missing achievements, discrepancies
 10. **Apply changes** via browser with user permission — one section at a time
 
+## State & Caching
+
+- **`.job-scout/user-profile.json`** — source of `master_keyword_list` (built by `cv-optimizer`). Reuse it; rebuild only if `cv_hash` changed.
+- **`.job-scout/cache/linkedin-profile.json`** — last-seen LinkedIn profile snapshot. If < 7 days old and the user hasn't reported edits, reuse it instead of re-reading every section via the browser. Re-evaluate only sections that changed.
+
 ## Reference Materials
 
 - **`references/linkedin-seo.md`** — Algorithm factors, keyword strategy, and recruiter search behaviour
 - **`references/headline-formulas.md`** — Headline templates by role
 - **`references/recruiter-search-patterns.md`** — How recruiters search, Boolean queries, title mappings
 - **`references/open-to-work-config.md`** — Open to Work setup guide
+- **`../shared-references/workspace-layout.md`** — `.job-scout/` folder layout and bootstrap
+- **`../shared-references/cv-loading.md`** — CV loading + caching procedure

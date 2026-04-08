@@ -6,9 +6,15 @@ argument-hint: [cv-file-path]
 
 Analyze and improve the user's CV using the **cv-optimizer** skill.
 
+## Step 0: Bootstrap workspace
+
+Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists in the current workspace. All state below lives inside it.
+
 ## Step 1: Load CV
 
-If argument provided, read file at @$1. Otherwise, follow the shared CV-loading procedure in `shared-references/cv-loading.md` to locate the CV and load any existing profile.
+If argument provided, read file at @$1. Otherwise, follow `shared-references/cv-loading.md` to locate the CV, hash it, and load any existing profile.
+
+**Cache check:** if `.job-scout/cache/cv-analysis-<hash>.json` exists for the current CV's hash AND the user is not requesting a fresh run, return the cached analysis directly. Re-analyzing an unchanged CV against an unchanged profile burns tokens for no new information.
 
 ## Step 2: Discovery Interview (MANDATORY — DO NOT SKIP)
 
@@ -43,8 +49,10 @@ If user wants a rewrite:
 - Show **before/after comparison** for the 3 most impactful changes
 - Provide **interview ammunition** — full SPAR narratives for top achievements the user can use in interviews
 
-## Step 5: Update Profile
+## Step 5: Update Profile & Cache
 
-Save to `user-profile.json` (create/merge): cv_path, cv_summary (key_skills, technologies, seniority, years_experience, target_roles, domain_expertise, industries, top_achievements), last_updated, master_keyword_list. See user-profile-schema reference for full schema.
+Save to `.job-scout/user-profile.json` (create/merge): cv_path, cv_hash, cv_summary (key_skills, technologies, seniority, years_experience, target_roles, domain_expertise, industries, top_achievements), last_updated, master_keyword_list, discovery_complete: true. See user-profile-schema reference for full schema.
+
+Also write the full analysis output to `.job-scout/cache/cv-analysis-<hash>.json` so subsequent runs on the same CV return instantly.
 
 Save the master keyword list so that `/optimize-profile` can reuse it for LinkedIn alignment.

@@ -6,13 +6,17 @@ argument-hint: [optional: job-title]
 
 Run an interactive LinkedIn job search using the user's CV and requirements.
 
+## Step 0: Bootstrap workspace
+
+Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists.
+
 ## Step 1: Load Profile, CV & Requirements
 
-Follow the shared CV-loading procedure in `shared-references/cv-loading.md`. If argument provided ($1), use as primary search title. For any missing requirement fields, ask: target roles, location, salary range, seniority, company preferences, deal-breakers, nice-to-haves. Save new info back to `user-profile.json` (merge, don't overwrite).
+Follow `shared-references/cv-loading.md`. If argument provided ($1), use as primary search title. For any missing requirement fields, ask: target roles, location, salary range, seniority, company preferences, deal-breakers, nice-to-haves. Save new info back to `.job-scout/user-profile.json` (merge, don't overwrite).
 
 ## Step 3: Search LinkedIn
 
-Navigate to `https://www.linkedin.com/jobs/`. Enter target title, set location and filters (Experience Level, Remote, Date Posted — prioritize "Past Week"). Open each promising listing and extract: title, company, location, salary, requirements, description, Easy Apply status.
+Navigate to `https://www.linkedin.com/jobs/`. Enter target title, set location and filters (Experience Level, Remote, Date Posted — prioritize "Past Week"). Collect job IDs first and dedupe against `.job-scout/tracker.json` (see `shared-references/tracker-schema.md`) before opening any listing. Only extract details for new jobs: title, company, location, salary, requirements, description, Easy Apply status.
 
 ## Step 4: Score and Present
 

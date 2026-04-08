@@ -5,13 +5,19 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 
 Optimize the user's LinkedIn profile for recruiter visibility and ATS, using their CV as the primary content source.
 
+## Step 0: Bootstrap workspace
+
+Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists.
+
 ## Step 1: Load CV (Required)
 
-Follow the shared CV-loading procedure in `shared-references/cv-loading.md` — **do not proceed without a CV**. Parse the CV and extract: role titles, skills, quantified achievements, career narrative, industry context, certifications, education. Reuse the master keyword list from `user-profile.json` if `cv-optimizer` has already run; otherwise build it from the CV.
+Follow `shared-references/cv-loading.md` — **do not proceed without a CV**. Parse the CV and extract: role titles, skills, quantified achievements, career narrative, industry context, certifications, education. Reuse the `master_keyword_list` from `.job-scout/user-profile.json` (built by `cv-optimizer`); rebuild only if the CV's hash has changed.
 
-## Step 2: Read LinkedIn Profile
+## Step 2: Read LinkedIn Profile (with diff cache)
 
-Navigate to user's LinkedIn profile (ask for URL or find via LinkedIn menu). Read all sections: headline, about, experience, education, skills, featured, certifications, recommendations. Also check: custom URL, location field, industry field, profile photo, banner image, Open to Work status, creator mode status.
+Check `.job-scout/cache/linkedin-profile.json`. If the snapshot is < 7 days old AND the user has not indicated they edited the profile since, reuse it instead of re-reading every section via the browser.
+
+If a fresh read is needed, navigate to the user's LinkedIn profile and read all sections: headline, about, experience, education, skills, featured, certifications, recommendations. Also check: custom URL, location field, industry field, profile photo, banner image, Open to Work status, creator mode status. Write the result back to `.job-scout/cache/linkedin-profile.json` with a timestamp.
 
 ## Step 3: Check Activity & Engagement
 
