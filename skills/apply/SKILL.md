@@ -1,6 +1,8 @@
 ---
+name: apply
 description: Apply to approved jobs via LinkedIn Easy Apply
 allowed-tools: Read, Bash, Glob
+disable-model-invocation: true
 ---
 
 Apply to user-approved jobs on LinkedIn using Easy Apply.

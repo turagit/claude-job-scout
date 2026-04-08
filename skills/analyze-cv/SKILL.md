@@ -1,7 +1,9 @@
 ---
+name: analyze-cv
 description: Analyze and optimize your CV for ATS and recruiters
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 argument-hint: [cv-file-path]
+disable-model-invocation: true
 ---
 
 Analyze and improve the user's CV using the **cv-optimizer** skill.

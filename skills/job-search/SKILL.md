@@ -1,7 +1,9 @@
 ---
+name: job-search
 description: Search LinkedIn for jobs matching your CV and requirements
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 argument-hint: [optional: job-title]
+disable-model-invocation: true
 ---
 
 Run an interactive LinkedIn job search using the user's CV and requirements.

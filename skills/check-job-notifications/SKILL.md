@@ -1,6 +1,8 @@
 ---
+name: check-job-notifications
 description: Check LinkedIn notifications for new job alerts, analyze matches against CV and requirements, and report best opportunities
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+disable-model-invocation: true
 ---
 
 Check LinkedIn job alert notifications, analyze each opportunity against the user's CV and requirements, and produce a prioritized report of best matches — saved for future `/apply` use.

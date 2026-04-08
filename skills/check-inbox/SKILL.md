@@ -1,6 +1,8 @@
 ---
+name: check-inbox
 description: Monitor LinkedIn inbox for recruiter messages and leads
 allowed-tools: Read, Write, Bash, Glob
+disable-model-invocation: true
 ---
 
 Scan LinkedIn inbox for recruiter messages, qualify leads, and draft responses for user approval.

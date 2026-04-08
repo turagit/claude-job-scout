@@ -1,6 +1,8 @@
 ---
+name: match-jobs
 description: Score and rank job listings against your CV and requirements
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+disable-model-invocation: true
 ---
 
 Analyze LinkedIn job listings and rank them against the user's CV and requirements.

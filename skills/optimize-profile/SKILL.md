@@ -1,6 +1,8 @@
 ---
+name: optimize-profile
 description: Analyze and improve your LinkedIn profile for recruiters and ATS
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+disable-model-invocation: true
 ---
 
 Optimize the user's LinkedIn profile for recruiter visibility and ATS, using their CV as the primary content source.
