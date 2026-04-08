@@ -7,6 +7,10 @@ disable-model-invocation: true
 
 Create job alerts on LinkedIn for matching positions.
 
+## Browser policy (read first)
+
+All browser work in this command uses **the Claude Chrome extension exclusively**. Never request computer use. See `shared-references/browser-policy.md`.
+
 ## Step 1: Gather Criteria
 
 Ask what alerts to create: job title/keywords, location (city/country/Remote), frequency (Daily/Weekly), additional filters (experience level, company size, Easy Apply). If user ran `/job-search` previously, suggest alerts based on those parameters.

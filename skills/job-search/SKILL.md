@@ -8,6 +8,10 @@ disable-model-invocation: true
 
 Run an interactive LinkedIn job search using the user's CV and requirements.
 
+## Browser policy (read first)
+
+All browser work in this command uses **the Claude Chrome extension exclusively**. Never request computer use. See `shared-references/browser-policy.md`.
+
 ## Step 0: Bootstrap workspace
 
 Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists.

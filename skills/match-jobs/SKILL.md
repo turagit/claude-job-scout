@@ -7,6 +7,10 @@ disable-model-invocation: true
 
 Analyze LinkedIn job listings and rank them against the user's CV and requirements.
 
+## Browser policy (read first)
+
+All browser work in this command uses **the Claude Chrome extension exclusively**. Never request computer use. See `shared-references/browser-policy.md`.
+
 ## Step 0: Bootstrap workspace
 
 Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists.
