@@ -124,7 +124,17 @@ In Claude Desktop / Claude Code, go to Settings → Plugins → "Install from fo
 
 1. Install the plugin (above).
 2. `cd` into the project folder you want to run your job search from (create a new one if you like — e.g. `~/projects/freelance-search/`).
-3. Drop your CV into that folder.
+3. **Drop your CV into that folder — and everything that tells your professional story alongside it.** The more context Claude has, the sharper every rewrite, score, and recruiter reply becomes. Consider adding:
+   - **Certifications & diplomas** — AWS, Azure, GCP, PMP, CFA, university transcripts, language certificates. Claude will surface them in the right places and match them against JD "must-have" keywords you'd otherwise miss.
+   - **Talks, presentations & decks** — conference slides, internal brown-bags, webinars. These are authority signals Claude can weave into your headline, About section, and interview ammunition.
+   - **Architectural diagrams & design docs** — system designs, RFCs, whiteboard photos, Miro exports. They're proof-of-depth that turns "Led platform migration" into a story a hiring manager can actually picture.
+   - **Case studies & write-ups** — post-mortems, project retrospectives, launch reports, anything with a measurable outcome you're proud of.
+   - **Publications, patents & open-source** — papers, blog posts, GitHub profile URL, package names you maintain. All three are rare trust-triggers most CVs leave on the table.
+   - **Testimonials, recommendations & client feedback** — screenshots of kind words from managers or clients. These become the seed for LinkedIn recommendation requests and About-section social proof.
+   - **Awards, selections & "one of N chosen" moments** — scholarships, accelerators, hackathon wins, "top 3%" rankings. Scarcity signals punch above their weight on both CV and profile.
+   - **Anything else that tells your story** — portfolio PDFs, product screenshots, media mentions, podcast appearances. If it would make you proud to show a hiring manager, put it in the folder.
+
+   File format doesn't matter much — PDF, DOCX, PNG, Markdown, plain text all work. Claude will index what it can read and ask you about the rest. Nothing leaves your machine; see the [`.job-scout/` section](#the-job-scout-workspace-important) for the full data-handling story.
 4. Log into LinkedIn in your browser.
 5. Run `/analyze-cv` — bootstraps `.job-scout/`, runs the one-time discovery interview, and saves your profile.
 6. Run `/optimize-profile` to align your LinkedIn profile with your CV.
