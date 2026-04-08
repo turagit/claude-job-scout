@@ -7,6 +7,10 @@ disable-model-invocation: true
 
 Check LinkedIn job alert notifications, analyze each opportunity against the user's CV and requirements, and produce a prioritized report of best matches — saved for future `/apply` use.
 
+## Browser policy (read first)
+
+All browser work in this command uses **the Claude Chrome extension exclusively**. Never request computer use. Never suggest Playwright, Selenium, or any other automation framework. See `shared-references/browser-policy.md` for the full policy. If the Chrome extension is not available in the current session, stop and report it — do not escalate to any other mechanism.
+
 ## Default Requirements (Always Active)
 
 - **Work arrangement:** Fully remote only

@@ -19,6 +19,7 @@ Major refactor focused on persistent per-project state, token efficiency, and mi
 - **Per-thread recruiter state** in `recruiter-engagement`: `.job-scout/recruiters/threads.json` records `last_seen_msg_id` per thread so unchanged conversations are skipped on subsequent `/check-inbox` runs.
 - **"Top job picks for you" sweep** as Step 10 of `/check-job-notifications`: after the notifications report is saved, the command now asks whether to continue analyzing LinkedIn's recommendations feed. It paginates and dedupes against the tracker, only extracting never-before-seen listings.
 - **CHANGELOG.md** (this file).
+- **`shared-references/browser-policy.md`** — explicit, hard rule that the plugin uses the Claude Chrome extension exclusively for all browser work. Computer use is forbidden. Every browser-touching command now opens with a "Browser policy" section pointing at this file, so the model never escalates a "navigate to LinkedIn" instruction into a computer-use request. README now carries a transparency callout telling users that any computer-use prompt during plugin execution is a bug, not expected behavior.
 
 ### Changed
 

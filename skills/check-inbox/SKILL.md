@@ -7,6 +7,10 @@ disable-model-invocation: true
 
 Scan LinkedIn inbox for recruiter messages, qualify leads, and draft responses for user approval.
 
+## Browser policy (read first)
+
+All browser work in this command uses **the Claude Chrome extension exclusively**. Never request computer use. Never suggest any other automation framework. See `shared-references/browser-policy.md`.
+
 ## Rules
 
 - **NEVER send any message without explicit user approval.**

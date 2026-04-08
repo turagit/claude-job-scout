@@ -7,6 +7,10 @@ disable-model-invocation: true
 
 Apply to user-approved jobs on LinkedIn using Easy Apply.
 
+## Browser policy (read first)
+
+All browser work in this command uses **the Claude Chrome extension exclusively**. Never request computer use. Never install or suggest any other automation framework. See `shared-references/browser-policy.md`. Never enter SSN, bank details, or passwords into any form — hand off to the user.
+
 ## Rules
 
 - **ONLY Easy Apply.** For external applications, inform user and open the page for them.

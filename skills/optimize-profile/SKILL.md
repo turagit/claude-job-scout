@@ -7,6 +7,10 @@ disable-model-invocation: true
 
 Optimize the user's LinkedIn profile for recruiter visibility and ATS, using their CV as the primary content source.
 
+## Browser policy (read first)
+
+All browser work in this command uses **the Claude Chrome extension exclusively**. Never request computer use. See `shared-references/browser-policy.md`.
+
 ## Step 0: Bootstrap workspace
 
 Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists.

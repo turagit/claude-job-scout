@@ -112,9 +112,13 @@ In Claude Desktop / Claude Code, go to Settings → Plugins → "Install from fo
 
 ## Requirements
 
-- **Claude Code or Claude Desktop** with Cowork / browser automation enabled
+- **Claude Code or Claude Desktop**
+- **The Claude Chrome extension** — this is the *only* browser mechanism the plugin uses. See the box below.
 - **LinkedIn account** — you must be logged in to LinkedIn in your browser
 - **Your CV** — place it anywhere in the project workspace; the plugin will find it by name (`cv.*`, `resume.*`, `curriculum.*`) or ask you to point to it
+
+> **The plugin does NOT use "computer use."**
+> Every browser interaction goes through the Claude Chrome extension running in your own logged-in browser tab. The plugin never takes control of your screen, mouse, or keyboard, and it will never ask you to enable computer use. If you ever see a prompt asking to enable computer use while running a command from this plugin, **something is wrong** — decline it and report it as a bug. The full policy lives at `skills/shared-references/browser-policy.md`.
 
 ## Getting Started
 
