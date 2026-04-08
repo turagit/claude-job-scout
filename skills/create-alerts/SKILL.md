@@ -1,6 +1,8 @@
 ---
+name: create-alerts
 description: Create LinkedIn job alerts matching your search criteria
 allowed-tools: Read, Bash
+disable-model-invocation: true
 ---
 
 Create job alerts on LinkedIn for matching positions.

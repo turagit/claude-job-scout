@@ -1,6 +1,8 @@
 ---
+name: check-inbox
 description: Monitor LinkedIn inbox for recruiter messages and leads
 allowed-tools: Read, Write, Bash, Glob
+disable-model-invocation: true
 ---
 
 Scan LinkedIn inbox for recruiter messages, qualify leads, and draft responses for user approval.
@@ -10,9 +12,15 @@ Scan LinkedIn inbox for recruiter messages, qualify leads, and draft responses f
 - **NEVER send any message without explicit user approval.**
 - Draft all replies first for user review.
 
+## Step 0: Bootstrap workspace
+
+Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists. Recruiter thread state lives in `.job-scout/recruiters/threads.json`.
+
 ## Step 1: Scan Inbox
 
 Navigate to `https://www.linkedin.com/messaging/`. Scan recent messages (unread first). Identify recruiter outreach by keywords (opportunity, role, position, hiring, candidate) and titles (Recruiter, Talent Acquisition, Sourcer, HR).
+
+**Dedupe via thread state:** load `.job-scout/recruiters/threads.json`. For each thread, check `last_seen_msg_id`. If the latest message is the same as the stored value, skip the thread — nothing new to read. Only deep-read threads with new activity. After processing, update `last_seen_msg_id` and `lead_tier` per thread.
 
 ## Step 2: Categorize
 

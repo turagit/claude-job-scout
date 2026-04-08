@@ -191,9 +191,22 @@ When user is a freelancer/contractor, apply adjustments from `../shared-referenc
 
 ---
 
+## Caching Contract
+
+Both the parsed CV and the full analysis output are cached by content hash:
+
+- **`.job-scout/cache/cv-<hash>.json`** — parsed CV text + extracted keyword list. Written on first parse.
+- **`.job-scout/cache/cv-analysis-<hash>.json`** — the full Phase 1–2 scoring output. Written on first analysis.
+
+Before re-running any phase, compute the CV's content hash and check the cache. If a hit exists and the user hasn't asked for a fresh run, return the cached result. The `master_keyword_list` and `cv_summary` are also persisted to `.job-scout/user-profile.json` for downstream skills (`profile-optimizer`, `job-matcher`) to reuse without ever re-parsing the CV.
+
+The Phase 0 discovery interview only runs when `user-profile.json.discovery_complete != true`. Once complete, subsequent runs skip straight to analysis.
+
 ## Reference Materials
 
 - **`references/ats-keywords.md`** — Common ATS keyword categories by industry
 - **`references/action-verbs.md`** — Categorized action verbs for achievement types
 - **`references/psychology-cheatsheet.md`** — Quick-reference for persuasion techniques applied to CV writing
 - **`../shared-references/freelance-context.md`** — Freelance CV structure and evaluation
+- **`../shared-references/workspace-layout.md`** — `.job-scout/` folder layout and bootstrap
+- **`../shared-references/cv-loading.md`** — CV loading + caching procedure

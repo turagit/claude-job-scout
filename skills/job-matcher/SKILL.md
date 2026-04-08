@@ -60,8 +60,26 @@ When analyzing multiple listings: quick-filter D-Tier and deal-breaker violation
 
 When user's profile indicates freelance/contract work, apply adjustments from `../shared-references/freelance-context.md`.
 
+## Score Caching Contract
+
+Job scores are cached in `.job-scout/cache/scores.json` keyed by `(job_id, cv_hash)`. Before scoring any job:
+
+1. Compute the cache key.
+2. If a cached score exists for this `(job_id, cv_hash)` pair, **reuse it** — do not re-score. The CV hasn't changed, the job hasn't changed, the score won't change.
+3. If no cached score exists, run the framework above and write the result back to `scores.json`.
+
+This is the primary token-saving mechanism for re-runs of `/match-jobs` and the daily notifications sweep. A re-score should only happen when the CV's content hash changes (i.e., the user re-ran `/analyze-cv` on a modified CV).
+
+## State files
+
+- **`.job-scout/tracker.json`** — every job ever seen (see `../shared-references/tracker-schema.md`). Always dedupe against this *before* extracting any job details.
+- **`.job-scout/cache/scores.json`** — cached scores per the contract above.
+- **`.job-scout/user-profile.json`** — supplies `cv_hash` and `master_keyword_list`.
+
 ## Reference Materials
 
 - **`references/matching-weights.md`** — Weight customization by industry and career stage
 - **`references/user-profile-schema.md`** — Shared user profile schema
 - **`../shared-references/freelance-context.md`** — Freelance scoring, rate normalization, IR35 rules
+- **`../shared-references/workspace-layout.md`** — `.job-scout/` folder layout and bootstrap
+- **`../shared-references/tracker-schema.md`** — `tracker.json` schema and read/write rules
