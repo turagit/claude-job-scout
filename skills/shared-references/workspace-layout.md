@@ -10,6 +10,7 @@ Every command in this plugin reads and writes state inside a single per-project 
   user-profile.json     # CV-derived facts, requirements, master keyword list, cv_path, cv_hash, discovery_complete
   tracker.json          # every job ever seen — see tracker-schema.md
   reports/              # YYYY-MM-DD-*.md run reports (notifications sweeps, match runs, CV analyses)
+  archive/              # tracker-YYYY.json — aged seen-status jobs rotated out of tracker.json
   cache/
     cv-<hash>.json          # parsed CV text + extracted keywords, keyed by file content hash
     cv-analysis-<hash>.json # full cv-optimizer scoring output, keyed by content hash
@@ -54,11 +55,13 @@ Earlier versions wrote `user-profile.json` and `job-reports/` directly to the wo
 
 `.job-scout/schema-version` records the current schema version of the workspace. Every command, on entry, reads this file and runs the migration runner before doing real work.
 
+On a freshly bootstrapped workspace (folder just created by step 4 above), no migration pass is needed — bootstrap writes `schema-version` directly at `version: 1`.
+
 ### Migration runner shape
 
 ```
 current = read(.job-scout/schema-version).version
-target  = SCHEMA_VERSION  # defined in code / docs, currently 1
+target  = SCHEMA_VERSION  # canonical value documented in this file; currently 1
 if current < target:
   for v in range(current, target):
     apply_migration(v -> v+1)
@@ -68,6 +71,12 @@ if current < target:
 ### First-run behaviour on an already-existing `.job-scout/`
 
 If `.job-scout/` exists but `schema-version` is missing, treat the workspace as pre-schema-versioning: write `schema-version` with `{ "version": 1, "upgraded_at": "<ISO>" }` and continue. Do not re-run any migrations.
+
+On the specific v0.3.0 → v0.4.0 upgrade, two additional one-time actions are performed alongside the `schema-version` write (mechanics live in the owning references, not here):
+- **Clear `.job-scout/cache/scores.json`** — the cache key shape expanded to include `profile_hash`, so pre-upgrade entries cannot match post-upgrade lookups. See `job-matcher/SKILL.md`.
+- **Run one tracker archive pass** — aged `status: seen` entries rotate to `.job-scout/archive/tracker-YYYY.json`. See `tracker-schema.md`.
+
+Inform the user about the upgrade actions in a single message, not interactively.
 
 ### Adding a new migration
 
