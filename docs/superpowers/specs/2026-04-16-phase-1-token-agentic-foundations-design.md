@@ -40,7 +40,7 @@ Without those three, Phase 2 and 3 would build on sand. Phase 1 is therefore the
 **Contract (to be expanded in the reference file):**
 
 - **Dispatch:** use the `Agent` tool. Every spawn names a `subagent_type` (e.g., `general-purpose`, or a repo-local named subagent when those become available) and carries a self-contained prompt — no reliance on parent conversation context.
-- **Input shape:** structured JSON string in the prompt body containing `{ task, inputs, budget_tokens, allowed_tools }`. The subagent is told to ignore anything not in `inputs`.
+- **Input shape:** structured JSON string in the prompt body containing `{ task, inputs, budget_lines, allowed_tools }`. The subagent is told to ignore anything not in `inputs`.
 - **Output shape:** strict JSON with `{ status: "ok" | "partial" | "error", deltas: [...], errors: [...] }`. No prose, no repeated input data. The main thread merges `deltas` into canonical state.
 - **Delta-return rule:** subagents return **only what changed** against the inputs they received. Re-emitting unchanged fields is forbidden. Cheap to merge, cheap to read.
 - **Budget:** every dispatch carries a line-count cap on the response (typical ≤200 lines). Subagents must respect it or return `status: "partial"` with a continuation cursor.
