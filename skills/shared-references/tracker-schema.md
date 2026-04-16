@@ -53,6 +53,8 @@ The single source of truth for "have I seen this job before?". Lives at `.job-sc
 6. Persist tracker before exiting
 ```
 
+> If the workspace has archival active, step 1 also consults the current-year archive on a tracker miss. See **Archival policy → Dedupe read pattern after archival** below.
+
 ## Write pattern
 
 Always merge — never overwrite the whole file. If two commands run concurrently, the second should re-read before writing to avoid stomping the first's updates.
@@ -64,20 +66,20 @@ Always merge — never overwrite the whole file. If two commands run concurrentl
 ### Rules
 
 - **Eligible for archive:** `status == "seen"` AND `last_seen` older than 60 days.
-- **Not archived:** `approved`, `applied`, `rejected`. These are real artefacts of the user's search and stay in hot `tracker.json`.
+- **Not archived:** `approved`, `applied`, `rejected`, `skipped`. These all represent user intent — either engagement (approve/apply) or a deliberate pass (reject/skip). They stay in hot `tracker.json` indefinitely. Only pure `seen` entries (the plugin showed it, the user never acted on it) are eligible for rotation.
 - **Archive destination:** `.job-scout/archive/tracker-YYYY.json`, keyed by the year the job was `first_seen`.
 - **Archive shape:** same as `tracker.json` — `{ "version": 1, "jobs": { ... } }`. No `stats` block; archive files are append-only.
 
 ### When to run
 
-Run the archive pass at most once per calendar day per workspace. Gate via `stats.last_archive_pass` in `tracker.json`: if today's date equals the stored date, skip. Otherwise run the pass and update the field.
+Run the archive pass at most once per calendar day per workspace. Gate via `stats.last_archive_pass` in `tracker.json` (stored as `"YYYY-MM-DD"` — date only, not a full ISO datetime): if today's date equals the stored date, skip. Otherwise run the pass and update the field to today's date.
 
 ### Dedupe read pattern after archival
 
 ```
 1. Load .job-scout/tracker.json — primary dedupe set.
 2. If an id is not in hot tracker, fall through to .job-scout/archive/tracker-<current-year>.json.
-3. Do NOT read older archive files during the hot path — they exist for /funnel-report (Phase 3) and manual inspection.
+3. Do NOT read older archive files during the hot path — they exist for `/funnel-report` (a planned Phase 3 command) and manual inspection.
 ```
 
 Fall-through reads are bounded to the current year because LinkedIn rarely re-posts a job id across a year boundary. If the id is truly re-posted, the (minor) cost is a re-extraction.
