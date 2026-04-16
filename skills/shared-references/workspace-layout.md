@@ -6,6 +6,7 @@ Every command in this plugin reads and writes state inside a single per-project 
 
 ```
 .job-scout/
+  schema-version        # JSON: { "version": 1, "upgraded_at": "<ISO>" } — bumped by migration runner
   user-profile.json     # CV-derived facts, requirements, master keyword list, cv_path, cv_hash, discovery_complete
   tracker.json          # every job ever seen — see tracker-schema.md
   reports/              # YYYY-MM-DD-*.md run reports (notifications sweeps, match runs, CV analyses)
@@ -30,7 +31,10 @@ Before doing any real work, every command must ensure `.job-scout/` exists in th
 
    > "I don't see a `.job-scout/` folder in this project yet. This is where I'll keep your CV profile, the list of jobs I've already shown you, cached scores, and run reports — all scoped to *this* project so different job searches stay separate. Want me to create it now?"
 
-4. **On approval:** create the folder and the `reports/`, `cache/`, and `recruiters/` subfolders. Write a stub `user-profile.json` with `{ "created": "<ISO date>", "discovery_complete": false }` and an empty `tracker.json` with `{ "version": 1, "jobs": {}, "stats": { "total_seen": 0, "applied": 0, "rejected": 0 } }`.
+4. **On approval:** create the folder and the `reports/`, `cache/`, `recruiters/`, and `archive/` subfolders. Write:
+   - `schema-version` with `{ "version": 1, "upgraded_at": "<ISO>" }`.
+   - A stub `user-profile.json` with `{ "created": "<ISO date>", "discovery_complete": false }`.
+   - An empty `tracker.json` with `{ "version": 1, "jobs": {}, "stats": { "total_seen": 0, "applied": 0, "rejected": 0 }, "last_archive_pass": null }`.
 5. **On decline:** tell the user the command needs a state folder to work properly and offer to fall back to the workspace root for this run only (legacy mode). Do not nag again in the same session.
 
 ## Why per-project (not per-user)
@@ -45,3 +49,30 @@ Earlier versions wrote `user-profile.json` and `job-reports/` directly to the wo
 
 1. Offer to move them into `.job-scout/` (preserving content).
 2. If the user declines, keep reading from the legacy paths but write all new state into `.job-scout/`.
+
+## Schema version and migration
+
+`.job-scout/schema-version` records the current schema version of the workspace. Every command, on entry, reads this file and runs the migration runner before doing real work.
+
+### Migration runner shape
+
+```
+current = read(.job-scout/schema-version).version
+target  = SCHEMA_VERSION  # defined in code / docs, currently 1
+if current < target:
+  for v in range(current, target):
+    apply_migration(v -> v+1)
+  write(.job-scout/schema-version, { version: target, upgraded_at: <ISO> })
+```
+
+### First-run behaviour on an already-existing `.job-scout/`
+
+If `.job-scout/` exists but `schema-version` is missing, treat the workspace as pre-schema-versioning: write `schema-version` with `{ "version": 1, "upgraded_at": "<ISO>" }` and continue. Do not re-run any migrations.
+
+### Adding a new migration
+
+1. Bump the canonical `SCHEMA_VERSION` constant (documented here, not in code — the plugin is a set of markdown skills).
+2. Add a subsection below this one describing `v<N> → v<N+1>`: what fields change, how to transform data in place, any files that are renamed or moved.
+3. Update every skill that reads the affected files to use the new shape.
+
+No migrations exist in Phase 1. The scaffolding is in place for Phase 2+.
