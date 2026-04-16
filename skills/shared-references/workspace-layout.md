@@ -39,7 +39,7 @@ Before doing any real work, every command must ensure `.job-scout/` exists in th
    - An empty `tracker.json` with `{ "version": 1, "jobs": {}, "stats": { "total_seen": 0, "applied": 0, "rejected": 0 }, "last_archive_pass": null }`.
    - An empty `cache/supporting-docs.json` with `{ "version": 1, "last_scanned": null, "docs": {} }`.
 
-   Then run the supporting-docs scan described in `supporting-docs.md` — this is a one-time prompt per workspace and does not block the command that triggered the bootstrap.
+   Then run the supporting-docs scan described in `supporting-docs.md` — the user is prompted once per workspace; the scan itself runs silently on subsequent commands. Does not block the command that triggered the bootstrap.
 5. **On decline:** tell the user the command needs a state folder to work properly and offer to fall back to the workspace root for this run only (legacy mode). Do not nag again in the same session.
 
 ## Why per-project (not per-user)

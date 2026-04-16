@@ -4,7 +4,7 @@ The user's CV is the primary input, but the README asks users to bring everythin
 
 ## Purpose
 
-`.job-scout/cache/supporting-docs.json` lets downstream skills (`profile-optimizer` in Phase 1; `cover-letter-writer`, ATS simulator, and `/index-docs` in later phases) read a small summary of each document instead of re-parsing the originals. Docs are keyed by path and validated by content hash.
+`.job-scout/cache/supporting-docs.json` lets downstream skills read a small summary of each document instead of re-parsing the originals. Planned consumers: `profile-optimizer` (Featured section and About-section claims) in Phase 2, `cover-letter-writer` in Phase 3, ATS simulator in Phase 2, `/index-docs` in Phase 3. **No Phase 1 skill reads this index** — see "Phase-1 scope" below. Docs are keyed by path and validated by content hash.
 
 ## File location
 
@@ -19,6 +19,7 @@ The user's CV is the primary input, but the README asks users to bring everythin
   "docs": {
     "<workspace-relative-path>": {
       "type": "cert | talk | deck | recommendation | case_study | publication | portfolio | other",
+      "status": "ok | missing",
       "hash": "<sha256>",
       "extracted_keywords": [],
       "summary_200w": "...",
@@ -27,6 +28,8 @@ The user's CV is the primary input, but the README asks users to bring everythin
   }
 }
 ```
+
+`status` defaults to `"ok"` for healthy entries. On a re-scan that finds a file gone, the existing entry is marked `"missing"` but not deleted (see **Re-indexing** below).
 
 ## Type taxonomy
 
@@ -45,19 +48,22 @@ On workspace bootstrap (first command invocation in a new workspace), after the 
 
 Exclude:
 - The CV file itself (identified by the `cv.*`, `resume.*`, `curriculum.*` pattern or the path stored in `user-profile.json`).
-- Anything inside `.job-scout/`, `.git/`, `node_modules/`, or any dotted directory.
+- Anything inside `.job-scout/`, `.git/`, `node_modules/`, `__pycache__/`, `dist/`, `build/`, `out/`, `target/`, or any dotted directory.
+- Image files in subdirectories — scan `.png`/`.jpg` only at the workspace root. Image-heavy code projects (React `public/`, screenshot folders) otherwise flood the scan.
 
 Ask the user **once**:
 
 > "I noticed these files in your workspace alongside the CV: [list first 10, summarise the rest]. They look like supporting materials — certificates, talks, case studies — that make every rewrite sharper. Want me to index them now? This is cached; I only re-read if a file's contents change."
 
-On approval: read each file, classify by filename heuristics (e.g., `cert*.pdf` → `cert`, `*talk*.pdf` → `talk`, `*recommendation*` → `recommendation`), fall back to content inspection for the first N files where heuristics are inconclusive, and write the index. Generate a 200-word summary per doc. Compute SHA-256 over each file's bytes.
+On approval: read each file, classify by filename heuristics (e.g., `cert*.pdf` → `cert`, `*talk*.pdf` → `talk`, `*recommendation*` → `recommendation`), fall back to content inspection for the first 5 files where heuristics are inconclusive (subsequent inconclusive files default to `other` and get a 1-line summary instead of 200-word). Write the index. Generate a 200-word summary per doc. Compute SHA-256 over each file's bytes.
 
 On decline: write an empty `docs: {}` with `last_scanned` set and do not prompt again in the same session.
 
 ## Re-indexing
 
-On every command entry, re-scan the workspace:
+If the user declined indexing at bootstrap, the workspace remains opted-out: skip adding or updating entries for new or changed files. Only run step 4 below (marking removed entries `"missing"`). The user can opt in later by invoking `/index-docs` (Phase 3 — not available in Phase 1).
+
+Otherwise, on every command entry, re-scan the workspace:
 
 1. Compare the file list against `docs` in the index.
 2. For new files: classify, summarise, add to index.
