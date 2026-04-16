@@ -189,7 +189,25 @@ After proposing all content, generate an alignment report:
 
 - **`.job-scout/user-profile.json`** — source of `master_keyword_list` (built by `cv-optimizer`) and `profile_hash` (built by this skill). Reuse `master_keyword_list` unless `cv_hash` changed; rebuild `profile_hash` on any content-changing profile edit (see bullet 2).
 - **`profile_hash`** — after any write that changes `master_keyword_list` or the LinkedIn-facing content this skill proposes (headline, about, experience bullets, skills list, Open to Work config), compute a SHA-256 over the canonical JSON of those fields and persist to `.job-scout/user-profile.json` as `profile_hash`. Downstream skills (`job-matcher`) use it as part of the score-cache key, so a profile edit invalidates stale scores.
-- **`.job-scout/cache/linkedin-profile.json`** — last-seen LinkedIn profile snapshot. If `last_full_read` < 7 days old and the user hasn't reported edits, reuse it instead of re-reading every section via the browser. When a fresh read is required, use per-section hashes to re-score only the sections that changed (see Component 4 of the Phase 1 design spec).
+- **`.job-scout/cache/linkedin-profile.json`** — last-seen LinkedIn profile snapshot with per-section content hashes. Shape:
+
+  ```json
+  {
+    "version": 1,
+    "last_full_read": "<ISO>",
+    "sections": {
+      "headline":  { "content": "...", "hash": "<sha256>", "scored_at": "<ISO>" },
+      "about":     { "content": "...", "hash": "<sha256>", "scored_at": "<ISO>" },
+      "experience_<role_id>": { "content": "...", "hash": "<sha256>", "scored_at": "<ISO>" },
+      "skills":    { "content": [...], "hash": "<sha256>", "scored_at": "<ISO>" },
+      "featured":  { "content": [...], "hash": "<sha256>", "scored_at": "<ISO>" }
+    }
+  }
+  ```
+
+  **Two-tier reuse:**
+  1. **Outer gate (cheap):** if `last_full_read < 7 days ago` and the user hasn't indicated edits, skip the browser read entirely and reuse all cached section scores.
+  2. **Inner gate:** when the outer gate fails and a browser read runs, hash each section's freshly-read content and compare against the stored hash. Matching hashes → reuse the cached score for that section. Differing hashes → re-score only that section. Update each section's `content`, `hash`, and `scored_at` plus the top-level `last_full_read` after the read completes.
 
 ## Reference Materials
 

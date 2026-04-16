@@ -19,11 +19,21 @@ Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists.
 
 Follow `shared-references/cv-loading.md` — **do not proceed without a CV**. Parse the CV and extract: role titles, skills, quantified achievements, career narrative, industry context, certifications, education. Reuse the `master_keyword_list` from `.job-scout/user-profile.json` (built by `cv-optimizer`); rebuild only if the CV's hash has changed.
 
-## Step 2: Read LinkedIn Profile (with diff cache)
+## Step 2: Read LinkedIn Profile (two-tier cache)
 
-Check `.job-scout/cache/linkedin-profile.json`. If the snapshot is < 7 days old AND the user has not indicated they edited the profile since, reuse it instead of re-reading every section via the browser.
+Check `.job-scout/cache/linkedin-profile.json`.
 
-If a fresh read is needed, navigate to the user's LinkedIn profile and read all sections: headline, about, experience, education, skills, featured, certifications, recommendations. Also check: custom URL, location field, industry field, profile photo, banner image, Open to Work status, creator mode status. Write the result back to `.job-scout/cache/linkedin-profile.json` with a timestamp.
+**Outer gate:** if `last_full_read` is < 7 days ago AND the user has not indicated edits, skip the browser read entirely and reuse all cached section scores from Step 4.
+
+**Inner gate:** otherwise, navigate to the user's LinkedIn profile and read all sections: headline, about, each experience entry, education, skills, featured, certifications, recommendations, plus custom URL, location, industry, profile photo, banner image, Open to Work status, creator mode status.
+
+For each section just read:
+1. Compute SHA-256 over a canonical serialisation of the section content.
+2. Compare to the stored hash in the cache.
+3. If the hash matches the cached hash, reuse the cached score for that section.
+4. If the hash differs, mark the section "needs re-score" for Step 4.
+
+After the read, update each section's `content`, `hash`, and `scored_at` in `.job-scout/cache/linkedin-profile.json`. Update `last_full_read` to the current ISO timestamp. See `profile-optimizer` "State & Caching" for the full cache shape.
 
 ## Step 3: Check Activity & Engagement
 
@@ -32,6 +42,8 @@ Check SSI score at `linkedin.com/sales/ssi`. Note recent posting activity and en
 ## Step 4: Analyze and Score
 
 Load the **profile-optimizer** skill.
+
+Only re-score sections marked "needs re-score" by Step 2. Sections with unchanged hashes reuse their cached score directly. Cross-cutting scores (keyword coverage, search appearance, 10-second test, CV alignment) always recompute — they're cheap and depend on the whole profile.
 
 **Section scores (1-10 each):** headline (keyword-rich, uses CV strengths?), about (hooks with CV achievements, keywords woven in?), experience (PAR method, matches CV, quantified?), skills (30+ from CV, top 3 pinned?), featured (CV projects showcased?), additional sections (certifications, education complete?), Open to Work (enabled with correct titles?), structured fields (location, industry, URL, photo correct?).
 
