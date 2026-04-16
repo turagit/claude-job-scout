@@ -27,6 +27,20 @@ The prompt body carries a single JSON envelope:
 
 The subagent must ignore anything not inside `inputs`. The main thread is responsible for passing all required data — the subagent cannot ask follow-up questions.
 
+On **continuation** dispatches, a fifth top-level key is added:
+
+```json
+{
+  "task": "...",
+  "inputs": { ... },
+  "budget_lines": 200,
+  "allowed_tools": ["..."],
+  "continuation_cursor": "<opaque string from previous response>"
+}
+```
+
+The key is absent on the initial dispatch. See the **Budget** section for when and how the cursor gets populated.
+
 ## Output shape
 
 The subagent returns a single JSON object:
