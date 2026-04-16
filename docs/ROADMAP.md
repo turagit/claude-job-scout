@@ -36,7 +36,7 @@ Prerequisite for every later phase. Nothing in Phase 2 or 3 can ship cleanly wit
 - [ ] **Progressive disclosure split of `cv-optimizer/SKILL.md`** — ~14KB → ≤3KB orchestrator + lazy-loaded phase files.
 - [ ] **Progressive disclosure split of `profile-optimizer/SKILL.md`** — ~13KB → ≤3KB orchestrator + lazy-loaded section files.
 - [ ] **Score-cache key reconciliation** — `(job_id, cv_hash, profile_hash)` everywhere. Write `profile_hash` from `profile-optimizer`.
-- [ ] **`.job-scout/schema-version`** — file + empty migration runner skeleton.
+- [x] **`.job-scout/schema-version`** — file + empty migration runner skeleton.
 - [ ] **Tracker archival** — `status:seen` + `last_seen > 60d` rotates to `.job-scout/archive/tracker-YYYY.json`.
 - [ ] **Delta-aware LinkedIn snapshot** — per-section hashes in `.job-scout/cache/linkedin-profile.json`; only changed sections re-score.
 - [ ] **Supporting-docs index** — `.job-scout/cache/supporting-docs.json` auto-built on bootstrap; `/index-docs` surface command deferred to Phase 3.
