@@ -183,12 +183,13 @@ After proposing all content, generate an alignment report:
 7. **Calculate all scores** — section scores, cross-cutting scores, overall score
 8. **Present before/after comparison** for each section with the CV source highlighted
 9. **Show alignment report** — keyword coverage, missing achievements, discrepancies
-10. **Apply changes** via browser with user permission — one section at a time
+10. **Apply changes** via browser with user permission — one section at a time. After each write, recompute `profile_hash` (SHA-256 over canonical JSON of headline, about, experience bullets, skills list, Open to Work config) and persist to `.job-scout/user-profile.json`.
 
 ## State & Caching
 
-- **`.job-scout/user-profile.json`** — source of `master_keyword_list` (built by `cv-optimizer`). Reuse it; rebuild only if `cv_hash` changed.
-- **`.job-scout/cache/linkedin-profile.json`** — last-seen LinkedIn profile snapshot. If < 7 days old and the user hasn't reported edits, reuse it instead of re-reading every section via the browser. Re-evaluate only sections that changed.
+- **`.job-scout/user-profile.json`** — source of `master_keyword_list` and `profile_hash` (built by `cv-optimizer` and this skill). Reuse it; rebuild only if `cv_hash` changed.
+- **`profile_hash`** — after any write that changes `master_keyword_list` or the LinkedIn-facing content this skill proposes (headline, about, experience bullets, skills list, Open to Work config), compute a SHA-256 over the canonical JSON of those fields and persist to `.job-scout/user-profile.json` as `profile_hash`. Downstream skills (`job-matcher`) use it as part of the score-cache key, so a profile edit invalidates stale scores.
+- **`.job-scout/cache/linkedin-profile.json`** — last-seen LinkedIn profile snapshot. If `last_full_read` < 7 days old and the user hasn't reported edits, reuse it instead of re-reading every section via the browser. When a fresh read is required, use per-section hashes to re-score only the sections that changed (see Component 4 of the Phase 1 design spec).
 
 ## Reference Materials
 

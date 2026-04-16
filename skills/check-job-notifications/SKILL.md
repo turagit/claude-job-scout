@@ -54,7 +54,7 @@ Drop jobs that violate default requirements:
 
 ## Step 6: Score and rank
 
-Load the **job-matcher** skill. Apply the scoring framework with freelance adjustments if applicable. Jobs that disclose compensation sort above same-tier jobs that don't. Cache each score in `.job-scout/cache/scores.json` keyed by `(job_id, cv_hash)`.
+Load the **job-matcher** skill. Apply the scoring framework with freelance adjustments if applicable. Jobs that disclose compensation sort above same-tier jobs that don't. Cache each score in `.job-scout/cache/scores.json` keyed by `(job_id, cv_hash, profile_hash)`.
 
 Tiers: **A (85-100)** apply immediately, **B (70-84)** worth applying, **C (55-69)** consider, **D (<55)** discard.
 

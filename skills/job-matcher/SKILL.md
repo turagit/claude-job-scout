@@ -62,19 +62,19 @@ When user's profile indicates freelance/contract work, apply adjustments from `.
 
 ## Score Caching Contract
 
-Job scores are cached in `.job-scout/cache/scores.json` keyed by `(job_id, cv_hash)`. Before scoring any job:
+Job scores are cached in `.job-scout/cache/scores.json` keyed by `(job_id, cv_hash, profile_hash)`. Before scoring any job:
 
-1. Compute the cache key.
-2. If a cached score exists for this `(job_id, cv_hash)` pair, **reuse it** — do not re-score. The CV hasn't changed, the job hasn't changed, the score won't change.
+1. Compute the cache key from the job's `id`, the current `cv_hash`, and the current `profile_hash` (both read from `.job-scout/user-profile.json`).
+2. If a cached score exists for this triple, **reuse it** — do not re-score. Neither the CV nor the LinkedIn profile has changed, so the score won't change.
 3. If no cached score exists, run the framework above and write the result back to `scores.json`.
 
-This is the primary token-saving mechanism for re-runs of `/match-jobs` and the daily notifications sweep. A re-score should only happen when the CV's content hash changes (i.e., the user re-ran `/analyze-cv` on a modified CV).
+This is the primary token-saving mechanism for re-runs of `/match-jobs` and the daily notifications sweep. A re-score happens when either `cv_hash` or `profile_hash` bumps — i.e., the user re-ran `/analyze-cv` on a modified CV, or `/optimize-profile` changed the LinkedIn profile enough to shift the master keyword list.
 
 ## State files
 
 - **`.job-scout/tracker.json`** — every job ever seen (see `../shared-references/tracker-schema.md`). Always dedupe against this *before* extracting any job details.
 - **`.job-scout/cache/scores.json`** — cached scores per the contract above.
-- **`.job-scout/user-profile.json`** — supplies `cv_hash` and `master_keyword_list`.
+- **`.job-scout/user-profile.json`** — supplies `cv_hash`, `profile_hash`, and `master_keyword_list`.
 
 ## Reference Materials
 

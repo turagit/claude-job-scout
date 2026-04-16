@@ -27,11 +27,11 @@ Follow `shared-references/cv-loading.md`. Load the **job-matcher** skill.
 
 Navigate to the source page. Collect job IDs/URLs for every visible listing. Load `.job-scout/tracker.json` (see `shared-references/tracker-schema.md`). Drop any ID already in the tracker — bump `last_seen`, do not re-extract.
 
-Also check `.job-scout/cache/scores.json` for cached `(job_id, cv_hash)` scores. Reuse cached scores; don't re-score unchanged jobs against an unchanged CV.
+Also check `.job-scout/cache/scores.json` for cached `(job_id, cv_hash, profile_hash)` scores. Reuse cached scores; don't re-score unchanged jobs against an unchanged CV and profile.
 
 ## Step 4: Extract and score new jobs
 
-For each *new* job, extract title, company, location, salary, experience level, required/preferred skills, description, Easy Apply status, posting date, applicant count. Apply the job-matcher scoring framework, filter out D-Tier, and write each new score into `.job-scout/cache/scores.json`.
+For each *new* job, extract title, company, location, salary, experience level, required/preferred skills, description, Easy Apply status, posting date, applicant count. Apply the job-matcher scoring framework, filter out D-Tier, and write each new score into `.job-scout/cache/scores.json` under the `(job_id, cv_hash, profile_hash)` key.
 
 ## Step 4: Present Results
 
