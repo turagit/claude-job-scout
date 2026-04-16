@@ -187,7 +187,7 @@ After proposing all content, generate an alignment report:
 
 ## State & Caching
 
-- **`.job-scout/user-profile.json`** — source of `master_keyword_list` and `profile_hash` (built by `cv-optimizer` and this skill). Reuse it; rebuild only if `cv_hash` changed.
+- **`.job-scout/user-profile.json`** — source of `master_keyword_list` (built by `cv-optimizer`) and `profile_hash` (built by this skill). Reuse `master_keyword_list` unless `cv_hash` changed; rebuild `profile_hash` on any content-changing profile edit (see bullet 2).
 - **`profile_hash`** — after any write that changes `master_keyword_list` or the LinkedIn-facing content this skill proposes (headline, about, experience bullets, skills list, Open to Work config), compute a SHA-256 over the canonical JSON of those fields and persist to `.job-scout/user-profile.json` as `profile_hash`. Downstream skills (`job-matcher`) use it as part of the score-cache key, so a profile edit invalidates stale scores.
 - **`.job-scout/cache/linkedin-profile.json`** — last-seen LinkedIn profile snapshot. If `last_full_read` < 7 days old and the user hasn't reported edits, reuse it instead of re-reading every section via the browser. When a fresh read is required, use per-section hashes to re-score only the sections that changed (see Component 4 of the Phase 1 design spec).
 

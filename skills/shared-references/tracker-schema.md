@@ -38,7 +38,7 @@ The single source of truth for "have I seen this job before?". Lives at `.job-sc
 - **Dedupe before extraction.** When sweeping a listing page, collect every job id first, then drop any id already in `tracker.json`. Only open and extract details for the survivors.
 - **`status` transitions** are one-way: `seen → approved → applied`, or `seen → rejected`. Never downgrade.
 - **`last_seen` updates every time** the job appears in any sweep. `first_seen` never changes.
-- **Score updates** are allowed if the user's profile or CV changed (cv_hash bumped). Otherwise, leave the score alone — re-scoring an unchanged job against an unchanged profile is wasted tokens.
+- **Score updates** are allowed if the user's CV or LinkedIn profile changed (either `cv_hash` or `profile_hash` bumped). Otherwise, leave the score alone — re-scoring an unchanged job against an unchanged CV and profile is wasted tokens.
 - **Stats** must be incremented atomically with job state changes. `last_run` updates on every command invocation that touches the tracker.
 
 ## Read pattern (every command)

@@ -33,7 +33,7 @@ Also check `.job-scout/cache/scores.json` for cached `(job_id, cv_hash, profile_
 
 For each *new* job, extract title, company, location, salary, experience level, required/preferred skills, description, Easy Apply status, posting date, applicant count. Apply the job-matcher scoring framework, filter out D-Tier, and write each new score into `.job-scout/cache/scores.json` under the `(job_id, cv_hash, profile_hash)` key.
 
-## Step 4: Present Results
+## Step 5: Present Results
 
 Show ranked markdown table (title, company, score, tier, Easy Apply, posted, applicants). For A-Tier and top B-Tier, provide detailed match cards with score breakdown, matched skills, gaps, and red flags. Keep B/C tiers as compact rows — no paragraph rationales.
 
