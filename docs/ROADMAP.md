@@ -30,7 +30,7 @@ Single source of truth for what this plugin is for, which phase we're in, and wh
 Prerequisite for every later phase. Nothing in Phase 2 or 3 can ship cleanly without the subagent protocol, the progressive-disclosure split, and the cache-key reconciliation landing first.
 
 - [ ] **`shared-references/subagent-protocol.md`** — canonical contract for every subagent-spawning skill (I/O shape, token budget, allowed tools, delta-return rule, fan-in merge).
-- [ ] **CLAUDE.md at repo root** — goal, hard rules (browser policy, dedupe-before-extract, `.job-scout/` SSOT, `disable-model-invocation`, subagent protocol).
+- [x] **CLAUDE.md at repo root** — goal, hard rules (browser policy, dedupe-before-extract, `.job-scout/` SSOT, `disable-model-invocation`, subagent protocol).
 - [x] **Repo `.gitignore`** — `.job-scout/`, `.DS_Store`, common editor dirs.
 - [ ] **`.claude/settings.local.json` trim** — remove accumulated backslash-escaped `find` permissions, keep only what's actually used.
 - [ ] **Progressive disclosure split of `cv-optimizer/SKILL.md`** — ~14KB → ≤3KB orchestrator + lazy-loaded phase files.
