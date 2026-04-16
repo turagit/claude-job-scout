@@ -35,7 +35,7 @@ The subagent returns a single JSON object:
 {
   "status": "ok | partial | error",
   "deltas": [ /* array of change records, task-specific */ ],
-  "errors": [ /* optional array of { code, message } */ ],
+  "errors": [ /* array of { code, message }; empty [] on success */ ],
   "continuation_cursor": null
 }
 ```
@@ -52,16 +52,18 @@ No prose, no commentary, no repeating input data in the response. The main threa
 - Subagents that cannot fit within budget return `status: "partial"` with a continuation cursor.
 - Budgets are set by the dispatcher. Subagents do not negotiate.
 
+**Continuing a partial result:** the dispatcher may re-dispatch with the same `task` and `inputs`, adding a top-level `continuation_cursor` field alongside `task`. Each continuation must itself respect the declared `budget_lines`. A cursor-bearing dispatch that returns `status: "ok"` indicates the work is complete; `status: "partial"` with a new cursor indicates more work remains.
+
 ## Allowed tools
 
 - The dispatcher lists exactly the tools the subagent may use.
 - Phase 1 default is read-only: `["Read", "Grep", "Glob"]`.
 - Write access (`Write`, `Edit`) is granted only when the task is explicitly a content-production task and the dispatcher knows where the output goes.
-- Browser tools are never granted to subagents in Phase 1 — all browser work stays on the main thread.
+- Browser tools are never granted to subagents in Phase 1 — all browser work stays on the main thread (see `browser-policy.md`).
 
 ## Idempotency
 
-Re-dispatching the same `(task, inputs)` must produce the same deltas. State writes happen only in the main thread after fan-in, so repeated dispatches are safe.
+Re-dispatching the same `(task, inputs)` must produce the same deltas. Re-dispatching the same `(task, inputs, continuation_cursor)` must produce the same remaining deltas. State writes happen only in the main thread after fan-in, so repeated dispatches are safe.
 
 ## Fan-in merge
 
@@ -104,3 +106,5 @@ Expected response:
 ```
 
 Main thread merges all `deltas` into `.job-scout/cache/scores.json` and `.job-scout/tracker.json`.
+
+Note: the dispatcher narrowed `allowed_tools` from the default `["Read", "Grep", "Glob"]` to just `["Read"]` — scoring needs only file reads, so the narrower grant keeps the subagent's tool surface minimal.
