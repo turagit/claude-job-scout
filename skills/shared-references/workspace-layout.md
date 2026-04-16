@@ -16,6 +16,7 @@ Every command in this plugin reads and writes state inside a single per-project 
     cv-analysis-<hash>.json # full cv-optimizer scoring output, keyed by content hash
     scores.json             # job scores keyed by (job_id, cv_hash, profile_hash)
     linkedin-profile.json   # last-seen snapshot of the user's LinkedIn profile
+    supporting-docs.json    # index of non-CV workspace docs (see supporting-docs.md)
   recruiters/
     threads.json        # per-thread state: last_seen_msg_id, lead_tier, last_drafted_reply
 ```
@@ -36,6 +37,9 @@ Before doing any real work, every command must ensure `.job-scout/` exists in th
    - `schema-version` with `{ "version": 1, "upgraded_at": "<ISO>" }`.
    - A stub `user-profile.json` with `{ "created": "<ISO date>", "discovery_complete": false }`.
    - An empty `tracker.json` with `{ "version": 1, "jobs": {}, "stats": { "total_seen": 0, "applied": 0, "rejected": 0 }, "last_archive_pass": null }`.
+   - An empty `cache/supporting-docs.json` with `{ "version": 1, "last_scanned": null, "docs": {} }`.
+
+   Then run the supporting-docs scan described in `supporting-docs.md` — this is a one-time prompt per workspace and does not block the command that triggered the bootstrap.
 5. **On decline:** tell the user the command needs a state folder to work properly and offer to fall back to the workspace root for this run only (legacy mode). Do not nag again in the same session.
 
 ## Why per-project (not per-user)
