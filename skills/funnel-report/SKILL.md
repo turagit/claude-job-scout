@@ -106,7 +106,7 @@ Suggested next action rules:
 Synthesise from the analysis:
 
 1. **Top job to apply to:** highest-scored A-tier job with `status: "approved"` not yet `"applied"`. Or, if no approved-not-applied: highest-scored A-tier with `status: "seen"` (suggest user reviews + approves).
-2. **Top recruiter to follow up:** hottest lead with stalest contact (largest `(lead_tier_score) × (days_since_last_contact)`).
+2. **Top recruiter to follow up:** hottest lead with stalest contact — ranked by `(lead_tier_score) × (days_since_last_contact)`, where `lead_tier_score` is `3` for hot, `2` for warm, `1` for cold, `0` otherwise.
 3. **Top profile improvement:** drawn from the top drop-off's recommendation. If no drop-off, suggest the top trending keyword from Step 5 ("Add `Rust` to your Skills section — it's heating up in your market").
 
 ## Step 8: Write the report

@@ -34,7 +34,9 @@ Before doing any real work, every command must ensure `.job-scout/` exists in th
 
    > "I don't see a `.job-scout/` folder in this project yet. This is where I'll keep your CV profile, the list of jobs I've already shown you, cached scores, and run reports — all scoped to *this* project so different job searches stay separate. Want me to create it now?"
 
-4. **On approval:** create the folder and the `reports/`, `cache/`, `recruiters/`, and `archive/` subfolders. Write:
+   Based on the user's answer, take exactly one of the two branches below:
+
+4. **[Branch A — user said Yes]** Create the folder and the `reports/`, `cache/`, `recruiters/`, and `archive/` subfolders. Write:
    - `schema-version` with `{ "version": 1, "upgraded_at": "<ISO>" }`.
    - A stub `user-profile.json` with `{ "created": "<ISO date>", "discovery_complete": false }`.
    - An empty `tracker.json` with `{ "version": 1, "jobs": {}, "stats": { "total_seen": 0, "applied": 0, "rejected": 0 }, "last_archive_pass": null }`.
@@ -42,13 +44,13 @@ Before doing any real work, every command must ensure `.job-scout/` exists in th
 
    Then run the supporting-docs scan described in `supporting-docs.md` — the user is prompted once per workspace; the scan itself runs silently on subsequent commands. Does not block the command that triggered the bootstrap.
 
-5. **Bootstrap nudge for supporting docs.** Immediately after the standard files are written (step 4), run a quick `Glob` for likely supporting-doc files at the workspace root: `*.pdf`, `*.docx`, `*.pptx`, `*.md`, `*.txt`. Filter out the CV (matches `cv.*`, `resume.*`, `curriculum.*`) and anything inside `.job-scout/`, `.git/`, or dotted directories. If 1+ files found, prompt the user:
+   Then run the supporting-docs nudge: quick `Glob` for likely supporting-doc files at the workspace root (`*.pdf`, `*.docx`, `*.pptx`, `*.md`, `*.txt`). Filter out the CV (matches `cv.*`, `resume.*`, `curriculum.*`) and anything inside `.job-scout/`, `.git/`, or dotted directories. If 1+ files found, prompt the user:
 
    > "📎 I noticed [N] files in your workspace that look like supporting materials (certs, talks, decks, recommendations). Indexing them now will make every future CV rewrite, profile proposal, and cover letter sharper. Run `/index-docs` now? (Y/n)"
 
    On Y: dispatch `/index-docs` immediately. On n: remember per session (the supporting-docs reference's opt-out behaviour applies). If zero files found, proceed silently — the user can run `/index-docs` later when they add docs.
 
-6. **On decline (alternative branch to Steps 4–5, reached when the user said No at Step 3):** tell the user the command needs a state folder to work properly and offer to fall back to the workspace root for this run only (legacy mode). Do not nag again in the same session.
+5. **[Branch B — user said No]** Tell the user the command needs a state folder to work properly and offer to fall back to the workspace root for this run only (legacy mode). Do not nag again in the same session.
 
 ## Why per-project (not per-user)
 
