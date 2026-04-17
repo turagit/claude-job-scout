@@ -9,7 +9,7 @@ Explicitly (re)scan the workspace for supporting documents and rebuild `.job-sco
 
 ## Step 0: Bootstrap workspace
 
-Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists in the current workspace.
+Follow `../shared-references/workspace-layout.md` to ensure `.job-scout/` exists in the current workspace.
 
 ## Step 1: Load existing index
 
@@ -17,7 +17,7 @@ Read `.job-scout/cache/supporting-docs.json`. If missing or empty, treat the cur
 
 ## Step 2: Run the workspace scan
 
-Follow the scan procedure from `shared-references/supporting-docs.md` — the "When the index is built" and "Re-indexing" sections describe the file extensions, exclusion list, classification heuristics, and hash logic. Do not duplicate that procedure here; load the reference and follow it.
+Follow the scan procedure from `../shared-references/supporting-docs.md` — the "When the index is built" and "Re-indexing" sections describe the file extensions, exclusion list, classification heuristics, and hash logic. Do not duplicate that procedure here; load the reference and follow it.
 
 ## Step 3: Compute the diff
 
@@ -75,5 +75,5 @@ If the user previously declined indexing at bootstrap (the supporting-docs refer
 
 ## Reference Materials
 
-- **`shared-references/supporting-docs.md`** — canonical scan procedure, classification heuristics, file shape
-- **`shared-references/workspace-layout.md`** — `.job-scout/` layout and bootstrap
+- **`../shared-references/supporting-docs.md`** — canonical scan procedure, classification heuristics, file shape
+- **`../shared-references/workspace-layout.md`** — `.job-scout/` layout and bootstrap

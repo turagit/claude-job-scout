@@ -30,7 +30,7 @@ If the ID exists but `tracker.jobs.<id>.description` is missing or stub-only (th
 - **Master keyword list:** `user-profile.json.master_keyword_list`.
 - **JD-specific keywords:** extract from the JD blob using `shared-references/jd-keyword-extraction.md` (extraction step only).
 - **Recruiter notes (optional):** scan `.job-scout/recruiters/threads.json` for any thread where `company` matches the job's company. If found, load that thread's `notes` array.
-- **Company-researcher digest (optional):** if the orchestrator wants company context, dispatch `company-researcher/SKILL.md` per `shared-references/subagent-protocol.md` with the JD blob and the supporting-docs paths. This is optional — skip if the JD already provides sufficient company context.
+- **Company-researcher digest (optional):** if the orchestrator wants company context, dispatch `company-researcher/SKILL.md` per `shared-references/subagent-protocol.md`. The dispatch payload must include `company_name` (from `tracker.jobs.<id>.company`), `job_id`, `source_blob` (the JD text), `cached_files` (matching supporting-docs paths — filter the index to docs whose filename or summary references this company), and `signals_requested` (default: `["size", "stage", "reputation", "red_flags"]`). This is optional — skip if the JD already provides sufficient company context.
 
 ## Step 3: Synthesise the prep packet
 

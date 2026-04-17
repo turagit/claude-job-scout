@@ -20,6 +20,7 @@ The single source of truth for "have I seen this job before?". Lives at `.job-sc
       "url": "https://www.linkedin.com/jobs/view/<id>/",
       "title": "Senior Platform Engineer",
       "company": "Acme Corp",
+      "description": "<full JD text blob, written by the ingestion skills on first extract>",
       "source": "Job Alert | Top Picks | Search | Inbox",
       "score": 87,
       "tier": "A",
@@ -41,6 +42,7 @@ The single source of truth for "have I seen this job before?". Lives at `.job-sc
 - **`last_seen` updates every time** the job appears in any sweep. `first_seen` never changes.
 - **Score updates** are allowed if the user's CV or LinkedIn profile changed (either `cv_hash` or `profile_hash` bumped). Otherwise, leave the score alone — re-scoring an unchanged job against an unchanged CV and profile is wasted tokens.
 - **Stats** must be incremented atomically with job state changes. `last_run` updates on every command invocation that touches the tracker.
+- **`description` is written once, by the first ingestion skill that fully extracts the job.** `/match-jobs` and `/check-job-notifications` populate it as part of Step 4 extraction. If an entry exists without `description` (legacy tracker entries from before this rule), consumer commands (`/cover-letter`, `/interview-prep`) fetch the JD fresh via the Chrome extension and backfill `description` on that run.
 
 ## Read pattern (every command)
 
