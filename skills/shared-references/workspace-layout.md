@@ -48,7 +48,7 @@ Before doing any real work, every command must ensure `.job-scout/` exists in th
 
    On Y: dispatch `/index-docs` immediately. On n: remember per session (the supporting-docs reference's opt-out behaviour applies). If zero files found, proceed silently — the user can run `/index-docs` later when they add docs.
 
-6. **On decline:** tell the user the command needs a state folder to work properly and offer to fall back to the workspace root for this run only (legacy mode). Do not nag again in the same session.
+6. **On decline (alternative branch to Steps 4–5, reached when the user said No at Step 3):** tell the user the command needs a state folder to work properly and offer to fall back to the workspace root for this run only (legacy mode). Do not nag again in the same session.
 
 ## Why per-project (not per-user)
 
