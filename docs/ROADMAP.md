@@ -19,7 +19,7 @@ Single source of truth for what this plugin is for, which phase we're in, and wh
 |-------|--------|--------|------|------|
 | **1. Token + Agentic foundations** | v0.4.0 | Shipped — v0.4.0 | [`specs/2026-04-16-phase-1-token-agentic-foundations-design.md`](superpowers/specs/2026-04-16-phase-1-token-agentic-foundations-design.md) | _pending_ |
 | 2. SEO / ATS depth | v0.5.0 | Shipped — v0.5.0 | [`specs/2026-04-17-phase-2-seo-ats-depth-design.md`](superpowers/specs/2026-04-17-phase-2-seo-ats-depth-design.md) | [`plans/2026-04-17-phase-2-seo-ats-depth.md`](superpowers/plans/2026-04-17-phase-2-seo-ats-depth.md) |
-| 3. New user-facing commands | v0.6.0 | In design | _pending_ | — |
+| 3. New user-facing commands | v0.6.0 | In design | [`specs/2026-04-17-phase-3-user-facing-commands-design.md`](superpowers/specs/2026-04-17-phase-3-user-facing-commands-design.md) | _pending_ |
 
 **Current focus:** Phase 3 design spec.
 
