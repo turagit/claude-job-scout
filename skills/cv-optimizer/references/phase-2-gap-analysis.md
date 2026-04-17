@@ -24,3 +24,44 @@ When user provides a target job description:
 6. Flag any JD "hidden requirements" (e.g., security clearance implied by client type, visa requirements implied by location)
 
 ---
+
+## Post-Rewrite Keyword-Density Validation
+
+Runs between Phase 3 (optimized rewrite) and Phase 4 (output deliverables). After the optimized CV is produced, measure keyword density to catch stuffing and undershoot.
+
+### Target keyword set
+
+Combine three sources:
+1. **Master keyword list** from `.job-scout/user-profile.json` (built by Phase 0 discovery + CV analysis).
+2. **JD-specific keywords** extracted during the current analysis (if a target JD was provided).
+3. **Top-20 corpus keywords** from `.job-scout/cache/jd-keyword-corpus.json` — ranked by `frequency`, filtered to the user's `seniority_tags` and `role_tags`. These represent what the user's actual market demands.
+
+### Density rules
+
+- **Target density per primary keyword:** 1-3% (occurrences / total word count × 100).
+- **Stuffing flag (>3%):** "ATS stuffing risk — `[keyword]` appears [N] times in [M] words ([X]%). Reduce to 2-3 natural placements."
+- **Undershoot flag (<0.5%) for JD-required keywords:** "Undershoot — `[keyword]` appears only [N] times. Add to at least 2 experience bullets."
+- **Total unique keywords:** target 40-60 across the CV. Flag if below 30 or above 80.
+
+### Output
+
+Present as a density table in the Phase 4 deliverables:
+
+```
+Keyword Density Report (optimized CV — [M] total words)
+┌─────────────────┬───────┬─────────┬────────┐
+│ Keyword         │ Count │ Density │ Status │
+├─────────────────┼───────┼─────────┼────────┤
+│ Kubernetes      │ 4     │ 0.47%   │ ⚠ low  │
+│ CI/CD           │ 3     │ 0.35%   │ ⚠ low  │
+│ Python          │ 8     │ 0.94%   │ ✓      │
+│ AWS             │ 12    │ 1.41%   │ ✓      │
+│ microservices   │ 28    │ 3.29%   │ ⚠ high │
+└─────────────────┴───────┴─────────┴────────┘
+
+Total unique keywords: 47 (target: 40-60) ✓
+```
+
+### Before/after
+
+If the density check flags issues AND the user approves auto-correction, re-run Phase 3 with targeted adjustments. Otherwise, surface the flags as advisory — the user edits manually. **Working assumption:** flag only, no auto-correction.
