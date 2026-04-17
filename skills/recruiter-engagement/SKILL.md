@@ -68,7 +68,7 @@ Per-thread state lives in `.job-scout/recruiters/threads.json`:
 }
 ```
 
-Before reading any thread's full history, check `last_seen_msg_id`. If the latest visible message id matches, skip the thread — there's nothing new. Only deep-read threads with new activity. After processing, update `last_seen_msg_id` and `lead_tier` per thread.
+Before reading any thread's full history, check `last_seen_msg_id`. If the latest visible message id matches, skip the thread — there's nothing new. Only deep-read threads with new activity — this avoids re-reading unchanged conversations on every run. After processing, update `last_seen_msg_id` and `lead_tier` per thread.
 
 ### Lead-memory notes
 
