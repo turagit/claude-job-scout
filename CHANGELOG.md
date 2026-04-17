@@ -4,6 +4,34 @@ All notable changes to the LinkedIn Job Hunter plugin are documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] — 2026-04-17
+
+Phase 2 of the v0.4.0–v0.6.0 roadmap: SEO / ATS depth. Builds on the Phase 1 subagent protocol and state-layout foundations.
+
+### Added
+
+- **Learned JD keyword corpus** at `.job-scout/cache/jd-keyword-corpus.json` — every ingested JD enriches a persistent, frequency-weighted, seniority-tagged keyword model. Shared extraction procedure in `shared-references/jd-keyword-extraction.md`.
+- **ATS scan simulator** (`cv-optimizer/references/ats-simulator.md`) — simulates Workday, Greenhouse, and Lever parsing. Scores each ATS 0-100 across parseability, section recognition, keyword match, contact extraction, and format compliance. Produces per-ATS score table + fix suggestions. Re-runs on optimized CV for before/after comparison.
+- **Post-rewrite keyword-density check** — validates keyword density (1-3% target) after Phase 3 rewrite. Flags >3% as stuffing risk, <0.5% as undershoot.
+- **Banner + Featured concrete templates** (`profile-optimizer/references/banner-featured-templates.md`) — 3 banner templates (keyword billboard, achievement spotlight, authority signal) + 5-slot Featured framework with supporting-docs-to-slot mapping.
+- **Reverse-Boolean discoverability check** — for A-tier job matches, constructs the recruiter-side Boolean query and verifies the user's LinkedIn profile would surface. Reports match/miss with specific missing keywords.
+- **Google snippet literal preview** — renders the actual Google search result (name + headline + first 160 chars of About) in current vs proposed form.
+- **Recruiter lead-memory** — `threads.json` per-thread `notes` array persists facts across sessions (IR35 status, rate range, availability). Skill avoids re-asking resolved questions.
+
+### Changed
+
+- **`/match-jobs`, `/check-job-notifications`, `/job-search`** now extract keywords from every ingested JD into the learned corpus. Reverse-Boolean check appended to A-tier match cards in reports.
+- **`cv-optimizer`** gains Phase 2a (ATS scan simulation) and post-rewrite density validation in the Phase 2 gap-analysis reference.
+- **`profile-optimizer`** proposals now cite supporting documents. Step 6 consults the index; Step 9a renders the Google snippet preview.
+- **`recruiter-engagement`** thread state expanded with lead-memory notes. `check-inbox` displays known facts in lead summaries.
+- **`.claude-plugin/plugin.json`** version bumped from 0.4.0 to 0.5.0.
+
+### Development process
+
+Built using the same subagent-driven development methodology as v0.4.0: fresh implementer subagent per task, two-stage review (spec compliance + code quality), review-fix-re-review loops, auto-merge on dual approval. See v0.4.0 development process notes for the full methodology description.
+
+---
+
 ## [0.4.0] — 2026-04-17
 
 Phase 1 of the v0.4.0–v0.6.0 roadmap: token and agentic foundations. Prerequisite for every later phase.
