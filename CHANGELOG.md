@@ -4,6 +4,24 @@ All notable changes to the LinkedIn Job Hunter plugin are documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] — 2026-04-17
+
+Maintenance release. No user-invokable command changes.
+
+### Changed
+
+- **Internal skills now prefixed with `_`** — the 7 skills that are not user-invokable (4 capability engines: `cv-optimizer`, `profile-optimizer`, `job-matcher`, `recruiter-engagement`; 3 internal subagents: `company-researcher`, `cv-section-rewriter`, `cover-letter-writer`) are renamed to `_cv-optimizer`, `_profile-optimizer`, etc. The underscore follows the universal programming convention for "private/internal" and visually distinguishes them from the 12 user-invokable slash commands in the skills menu. All cross-references updated. Historical records (prior CHANGELOG entries, phase specs, phase plans) preserve old names as they documented what shipped at those versions.
+- **Skill descriptions** for renamed skills gain an `[Internal — …]` or `[Internal subagent — …]` prefix naming the parent command or skill that loads/dispatches them.
+- **`CLAUDE.md`** documents the naming convention as Hard rule #6 so future contributors follow it.
+- **`.claude-plugin/plugin.json`** version bumped from 0.6.0 to 0.6.1.
+
+### Migration notes
+
+- **Non-breaking for end users.** All 12 user-invokable slash commands (`/analyze-cv`, `/cover-letter`, `/check-job-notifications`, etc.) keep their names and behaviour.
+- **Non-breaking for plugin developers** unless they imported the renamed skills by name or path in custom extensions — in which case update to the new `_`-prefixed names.
+
+---
+
 ## [0.6.0] — 2026-04-17
 
 Phase 3 of the v0.4.0–v0.6.0 roadmap: new user-facing commands. Surfaces the infrastructure built in Phases 1 and 2 as four new slash commands plus two daily-workflow enhancements. All three roadmap phases are now complete; the plugin is feature-complete.

@@ -13,6 +13,7 @@ Automate the end-to-end LinkedIn job-seeking pipeline (CV → profile → search
 3. **`.job-scout/` is the single source of truth for per-project state.** CV profile, tracker, caches, reports, recruiter threads. Never write state to the workspace root or anywhere else.
 4. **Every slash command carries `disable-model-invocation: true`.** Commands are user-invoked only — the model must never auto-fire browser automation, applications, or recruiter replies.
 5. **Subagent dispatch follows `skills/shared-references/subagent-protocol.md`.** If you spawn a subagent for any reason, use the I/O contract, token budget, and delta-return rule defined there. No ad-hoc subagent shapes.
+6. **Skills prefixed with `_` are internal.** User-invokable slash commands have no prefix (`analyze-cv`, `cover-letter`, etc.). Skills starting with `_` (`_cv-optimizer`, `_cover-letter-writer`, etc.) are capability engines loaded by orchestrators or subagents dispatched via the `Agent` tool — never invoke them directly as slash commands. When creating new skills, follow this convention: `_` prefix if the skill is loaded by another skill or dispatched via `Agent`; no prefix if the user types it as a slash command.
 
 ## File layout
 

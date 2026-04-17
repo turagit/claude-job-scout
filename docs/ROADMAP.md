@@ -78,3 +78,4 @@ Each command surfaces capabilities built in Phases 1–2. Spec to be written aft
 - **2026-04-17** — Phase 1 shipped as v0.4.0. Phase 2 (SEO / ATS depth) entering design.
 - **2026-04-17** — Phase 2 shipped as v0.5.0. Phase 3 (new user-facing commands) entering design.
 - **2026-04-17** — Phase 3 shipped as v0.6.0. All three phases complete; plugin is feature-complete per the v0.4.0–v0.6.0 roadmap. Future phases gated on user need.
+- **2026-04-17** — v0.6.1 maintenance release. Renamed 7 internal skills with `_` prefix for menu clarity.
