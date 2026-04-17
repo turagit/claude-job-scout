@@ -50,7 +50,7 @@ Prerequisite for every later phase. Nothing in Phase 2 or 3 can ship cleanly wit
 Builds on the Phase 1 subagent protocol and state-layout foundations.
 
 - [x] **Learned JD keyword corpus** at `.job-scout/cache/jd-keyword-corpus.json` (extraction reference shipped; wiring in Task 2)
-- [ ] **Wire corpus extraction** into `/match-jobs`, `/check-job-notifications`, `/job-search`
+- [x] **Wire corpus extraction** into `/match-jobs`, `/check-job-notifications`, `/job-search`
 - [ ] **ATS scan simulator** (Workday / Greenhouse / Lever behaviour)
 - [ ] **Post-rewrite keyword-density check** (>3% = stuffing, <0.5% = undershoot)
 - [ ] **Banner + Featured concrete templates**
