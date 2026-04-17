@@ -80,7 +80,7 @@ After proposing all content, generate an alignment report:
 4. **Check activity & engagement** — SSI score, recent posting activity, creator mode status
 5. **Run Boolean search simulation** — would a recruiter find this profile?
 5a. **Optional: company enrichment** — if the user pastes in a specific job listing during this run, dispatch `company-researcher/SKILL.md` with the JD blob to get a size/stage/reputation digest. Use the digest to shape the Featured section and About-paragraph proposals.
-6. **Generate section-by-section proposals** — ready-to-paste content derived from CV
+6. **Generate section-by-section proposals** — ready-to-paste content derived from CV. For sections with supporting-doc coverage (Featured, About, Experience), consult `.job-scout/cache/supporting-docs.json` and cite source documents in the proposal table per `shared-references/supporting-docs.md` consumer contract.
 7. **Calculate all scores** — section scores, cross-cutting scores, overall score
 8. **Present before/after comparison** for each section with the CV source highlighted
 9. **Show alignment report** — keyword coverage, missing achievements, discrepancies

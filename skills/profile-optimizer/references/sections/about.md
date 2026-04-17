@@ -11,3 +11,12 @@ Build from CV content in this structure:
 - **What I'm looking for:** Derive from CV's target role, seniority, and work preferences (remote/contract/permanent)
 - **Call to action:** "Drop me a message if..." or "Let's connect if you're looking for..."
 - Weave CV keywords naturally throughout — primary keywords 2-3x, secondary 1-2x
+
+### Supporting-doc citations
+
+When weaving in achievements backed by the user's supporting documents, cite the source inline in the proposal:
+
+- "Led platform migration for 50k users (documented in `case-studies/platform-migration-2024.pdf`)"
+- "Presented at KubeCon 2025 on event-driven architectures (slides: `talks/kubecon-2025-eda.pdf`)"
+
+Consult `.job-scout/cache/supporting-docs.json` for available documents. Only cite docs with `status: "ok"` — skip `"missing"` entries.
