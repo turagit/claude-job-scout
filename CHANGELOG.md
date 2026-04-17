@@ -4,6 +4,30 @@ All notable changes to the LinkedIn Job Hunter plugin are documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] — 2026-04-17
+
+Phase 3 of the v0.4.0–v0.6.0 roadmap: new user-facing commands. Surfaces the infrastructure built in Phases 1 and 2 as four new slash commands plus two daily-workflow enhancements. All three roadmap phases are now complete; the plugin is feature-complete.
+
+### Added
+
+- **`/cover-letter <tracker-id|url>`** + **`cover-letter-writer`** subagent — generates 3 angle options (hiring-manager pitch, recruiter-gate, culture-match) per job. Each draft cites supporting documents from the index, places target keywords naturally, respects tone preference and voice continuity. Output saved to `.job-scout/cover-letters/`.
+- **`/interview-prep <tracker-id>`** — interview-prep packet: top 5 SPAR narratives mapped to predicted questions, 10-15 predicted questions (technical / behavioural / situational), 5 specific questions to ask them, risk areas with proactive framing, optional company signals as conversation hooks. Output saved to `.job-scout/interview-prep/`.
+- **`/funnel-report`** — pipeline analytics: 30/60/90-day funnel counts, conversion rates, week-over-week trends, top drop-off with prescriptive recommendation, top-10 trending corpus keywords, recruiter pipeline summary, 3 prioritised suggested next actions. Output saved to `.job-scout/reports/<date>-funnel.md`.
+- **`/index-docs`** — explicit (re)scan of the supporting-docs index. Computes diff (new / re-indexed / missing / unchanged), presents to user, applies on approval. Also serves as the opt-back-in path after declining the bootstrap-time scan.
+
+### Changed
+
+- **`/check-job-notifications`** opens with a daily-driver context line (Step 0a): days since last run, tracker counts (seen / A-tier / applied), best-effort new-alerts count. First-run shows a setup line.
+- **Bootstrap procedure** (`shared-references/workspace-layout.md`) gains a Step 5 nudge: after standard files are written, if 1+ likely supporting-doc files are detected at the workspace root, prompt the user to run `/index-docs` immediately. Decline persists per session.
+- **README** commands table updated to list the 4 new commands.
+- **`.claude-plugin/plugin.json`** version bumped from 0.5.0 to 0.6.0.
+
+### Development process
+
+Built using the same subagent-driven development methodology as v0.4.0 and v0.5.0: fresh implementer subagent per task, two-stage review (spec compliance + code quality), review-fix-re-review loops, auto-merge on dual approval. See v0.4.0 development process notes for the full methodology description.
+
+---
+
 ## [0.5.0] — 2026-04-17
 
 Phase 2 of the v0.4.0–v0.6.0 roadmap: SEO / ATS depth. Builds on the Phase 1 subagent protocol and state-layout foundations.

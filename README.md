@@ -28,6 +28,10 @@ All commands are user-invoked slash commands. The model will **not** auto-trigge
 | `/apply` | Apply to approved jobs via LinkedIn Easy Apply |
 | `/check-inbox` | Monitor LinkedIn inbox for recruiter messages and leads |
 | `/optimize-profile` | Analyze and improve your LinkedIn profile |
+| `/cover-letter` | Generate a tailored cover letter (3 angle options) for a specific job |
+| `/interview-prep` | Generate an interview-prep packet (SPAR narratives, predicted questions, questions to ask) for a specific job |
+| `/funnel-report` | Pipeline analytics: 30/60/90-day funnel, drop-offs, trending keywords, suggested next actions |
+| `/index-docs` | Re-scan workspace for supporting documents and rebuild the index |
 
 ## Skills
 
