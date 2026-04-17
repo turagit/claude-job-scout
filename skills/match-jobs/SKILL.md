@@ -29,9 +29,40 @@ Navigate to the source page. Collect job IDs/URLs for every visible listing. Loa
 
 Also check `.job-scout/cache/scores.json` for cached `(job_id, cv_hash, profile_hash)` scores. Reuse cached scores; don't re-score unchanged jobs against an unchanged CV and profile.
 
-## Step 4: Extract and score new jobs
+## Step 4: Extract and score new jobs (parallel)
 
-For each *new* job, extract title, company, location, salary, experience level, required/preferred skills, description, Easy Apply status, posting date, applicant count. Apply the job-matcher scoring framework, filter out D-Tier, and write each new score into `.job-scout/cache/scores.json` under the `(job_id, cv_hash, profile_hash)` key.
+For each *new* job, extract title, company, location, salary, experience level, required/preferred skills, description, Easy Apply status, posting date, applicant count.
+
+**Scoring fan-out:** batch the new jobs into groups of 5 (the last batch may be smaller). For each batch, dispatch one subagent per the contract in `../shared-references/subagent-protocol.md`:
+
+```json
+{
+  "task": "score-job-batch",
+  "inputs": {
+    "jobs": [ /* extracted job blobs */ ],
+    "user_profile": { "cv_summary": "...", "requirements": "...", "master_keyword_list": "..." },
+    "cv_hash": "...",
+    "profile_hash": "..."
+  },
+  "budget_lines": 200,
+  "allowed_tools": ["Read"]
+}
+```
+
+The subagent loads the `job-matcher` skill, scores each job, returns deltas:
+
+```json
+{
+  "status": "ok",
+  "deltas": [
+    { "job_id": "...", "score": 87, "tier": "A", "breakdown": { /* per-dimension */ } }
+  ]
+}
+```
+
+Main thread collects all deltas, filters out D-Tier, and writes each score into `.job-scout/cache/scores.json` under the `(job_id, cv_hash, profile_hash)` key.
+
+**Fallback:** if the `Agent` tool is unavailable in this session, fall back to sequential in-thread scoring using the same job-matcher framework. Log the fallback.
 
 ## Step 5: Present Results
 

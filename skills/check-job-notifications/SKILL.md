@@ -52,11 +52,31 @@ Drop jobs that violate default requirements:
 - Non-remote (on-site/hybrid only) — discard. If ambiguous, keep and flag "Remote status unclear".
 - Permanent-only with no contract option — discard. If ambiguous, keep and flag "Contract type unclear".
 
-## Step 6: Score and rank
+## Step 6: Score and rank (parallel)
 
-Load the **job-matcher** skill. Apply the scoring framework with freelance adjustments if applicable. Jobs that disclose compensation sort above same-tier jobs that don't. Cache each score in `.job-scout/cache/scores.json` keyed by `(job_id, cv_hash, profile_hash)`.
+Apply the job-matcher scoring framework with freelance adjustments if applicable. Jobs that disclose compensation sort above same-tier jobs that don't.
+
+**Scoring fan-out:** batch the new jobs into groups of 5 and dispatch one subagent per batch per the contract in `../shared-references/subagent-protocol.md`:
+
+```json
+{
+  "task": "score-job-batch",
+  "inputs": {
+    "jobs": [ /* extracted job blobs */ ],
+    "user_profile": { "cv_summary": "...", "requirements": "...", "master_keyword_list": "..." },
+    "cv_hash": "...",
+    "profile_hash": "..."
+  },
+  "budget_lines": 200,
+  "allowed_tools": ["Read"]
+}
+```
+
+Each subagent loads the `job-matcher` skill, returns `deltas: [{ job_id, score, tier, breakdown }, ...]`. Main thread merges all deltas into `.job-scout/cache/scores.json` keyed by `(job_id, cv_hash, profile_hash)`.
 
 Tiers: **A (85-100)** apply immediately, **B (70-84)** worth applying, **C (55-69)** consider, **D (<55)** discard.
+
+**Fallback:** if the `Agent` tool is unavailable in this session, fall back to sequential in-thread scoring. Log the fallback.
 
 ## Step 7: Present results
 
