@@ -68,7 +68,7 @@ Each command surfaces capabilities built in Phases 1–2. Spec to be written aft
 - [x] **Daily-driver context line** in `/check-job-notifications`
 - [x] **`/cover-letter <tracker-id|url>`** + `cover-letter-writer` subagent
 - [x] **`/interview-prep <tracker-id>`**
-- [ ] **`/funnel-report`**
+- [x] **`/funnel-report`**
 
 ---
 
