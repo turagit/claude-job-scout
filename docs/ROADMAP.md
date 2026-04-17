@@ -55,7 +55,7 @@ Builds on the Phase 1 subagent protocol and state-layout foundations.
 - [x] **Post-rewrite keyword-density check** (>3% = stuffing, <0.5% = undershoot)
 - [x] **Banner + Featured concrete templates**
 - [x] **Supporting-doc-backed claims** in CV + Featured section
-- [ ] **Reverse-Boolean discoverability check** per A-tier job
+- [x] **Reverse-Boolean discoverability check** per A-tier job
 - [ ] **Google snippet literal preview**
 - [ ] **Recruiter lead-memory** in `threads.json`
 
