@@ -56,7 +56,7 @@ Builds on the Phase 1 subagent protocol and state-layout foundations.
 - [x] **Banner + Featured concrete templates**
 - [x] **Supporting-doc-backed claims** in CV + Featured section
 - [x] **Reverse-Boolean discoverability check** per A-tier job
-- [ ] **Google snippet literal preview**
+- [x] **Google snippet literal preview**
 - [ ] **Recruiter lead-memory** in `threads.json`
 
 ## Phase 3 — v0.6.0: New user-facing commands
