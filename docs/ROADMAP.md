@@ -41,7 +41,7 @@ Prerequisite for every later phase. Nothing in Phase 2 or 3 can ship cleanly wit
 - [x] **Delta-aware LinkedIn snapshot** — per-section hashes in `.job-scout/cache/linkedin-profile.json`; only changed sections re-score.
 - [x] **Supporting-docs index** — `.job-scout/cache/supporting-docs.json` auto-built on bootstrap; `/index-docs` surface command deferred to Phase 3.
 - [x] **Parallel job scoring** — `/match-jobs` and `/check-job-notifications` fan out scoring subagents (~5 jobs per subagent).
-- [ ] **Parallel Top Picks pagination** — 1 subagent per page during Step 10 sweep.
+- [x] **Parallel Top Picks pagination** — 1 subagent per page during Step 10 sweep.
 - [ ] **`company-researcher` subagent** — digest-only return (size/stage/rep/red-flags, ≤3 lines).
 - [ ] **`cv-section-rewriter` subagent** — one per role during Phase 3 CV rewrite.
 
