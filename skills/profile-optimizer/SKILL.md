@@ -196,14 +196,21 @@ After proposing all content, generate an alignment report:
     "version": 1,
     "last_full_read": "<ISO>",
     "sections": {
-      "headline":  { "content": "...", "hash": "<sha256>", "scored_at": "<ISO>" },
-      "about":     { "content": "...", "hash": "<sha256>", "scored_at": "<ISO>" },
-      "experience_<role_id>": { "content": "...", "hash": "<sha256>", "scored_at": "<ISO>" },
-      "skills":    { "content": [...], "hash": "<sha256>", "scored_at": "<ISO>" },
-      "featured":  { "content": [...], "hash": "<sha256>", "scored_at": "<ISO>" }
+      "headline":            { "content": "...", "hash": "<sha256>", "score": 8, "scored_at": "<ISO>" },
+      "about":               { "content": "...", "hash": "<sha256>", "score": 7, "scored_at": "<ISO>" },
+      "experience_0":        { "content": "...", "hash": "<sha256>", "score": 6, "scored_at": "<ISO>" },
+      "skills":              { "content": [...], "hash": "<sha256>", "score": 5, "scored_at": "<ISO>" },
+      "featured":            { "content": [...], "hash": "<sha256>", "score": 7, "scored_at": "<ISO>" },
+      "education":           { "content": "...", "hash": "<sha256>", "score": 8, "scored_at": "<ISO>" },
+      "certifications":      { "content": [...], "hash": "<sha256>", "score": 9, "scored_at": "<ISO>" },
+      "recommendations":     { "content": [...], "hash": "<sha256>", "score": 6, "scored_at": "<ISO>" },
+      "open_to_work":        { "content": "...", "hash": "<sha256>", "score": 7, "scored_at": "<ISO>" },
+      "structured_fields":   { "content": "...", "hash": "<sha256>", "score": 8, "scored_at": "<ISO>" }
     }
   }
   ```
+
+  Experience entries use zero-indexed keys (`experience_0`, `experience_1`, …). `structured_fields` is a single bucket covering location, industry, custom URL, photo, and banner. The `score` field (1–10) is the cached section score — when hashes match, the inner gate returns this value directly instead of re-scoring.
 
   **Two-tier reuse:**
   1. **Outer gate (cheap):** if `last_full_read < 7 days ago` and the user hasn't indicated edits, skip the browser read entirely and reuse all cached section scores.

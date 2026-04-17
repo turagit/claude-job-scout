@@ -23,7 +23,7 @@ Follow `shared-references/cv-loading.md` — **do not proceed without a CV**. Pa
 
 Check `.job-scout/cache/linkedin-profile.json`.
 
-**Outer gate:** if `last_full_read` is < 7 days ago AND the user has not indicated edits, skip the browser read entirely and reuse all cached section scores from Step 4.
+**Outer gate:** if `last_full_read` < 7 days ago and the user has not indicated edits, skip the browser read entirely and reuse all cached section scores from Step 4.
 
 **Inner gate:** otherwise, navigate to the user's LinkedIn profile and read all sections: headline, about, each experience entry, education, skills, featured, certifications, recommendations, plus custom URL, location, industry, profile photo, banner image, Open to Work status, creator mode status.
 
