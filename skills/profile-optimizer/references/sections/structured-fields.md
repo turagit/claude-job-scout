@@ -11,3 +11,7 @@ These fields act as recruiter search filters and ATS import fields:
 - **Profile photo:** Required for All-Star status. Professional headshot.
 - **Banner image:** Use as a visual keyword billboard — role title, key skills, or professional tagline.
 - **Name pronunciation / audio intro:** Profiles with these get a badge and extra visibility in search.
+
+### Banner templates
+
+See `../banner-featured-templates.md` for 3 concrete banner templates (keyword billboard, achievement spotlight, authority signal). Choose based on the user's strongest signal from their CV.
