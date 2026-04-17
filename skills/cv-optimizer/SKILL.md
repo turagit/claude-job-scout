@@ -21,6 +21,7 @@ This file is the **orchestrator**: it names the phases, the gates between them, 
 | 0 | Discovery interview | `references/phase-0-discovery-interview.md` | `user-profile.json.discovery_complete != true` |
 | 1 | Seven-dimension scoring | `references/phase-1-seven-dimension-scoring.md` | Always, unless a valid `cv-analysis-<hash>.json` cache hit exists |
 | 2 | Scoring & gap analysis | `references/phase-2-gap-analysis.md` | Always after Phase 1 |
+| 2a | ATS scan simulation | `references/ats-simulator.md` | Always after Phase 2 (supplementary robot-gate check) |
 | 3 | Optimized rewrite | `references/phase-3-optimized-rewrite.md` | User requests a rewrite |
 | 4 | Output deliverables | `references/phase-4-output-deliverables.md` | Always at end |
 
@@ -65,6 +66,7 @@ For each role block in the CV:
 - **`references/phase-0-discovery-interview.md`** — Phase 0 content (lazy)
 - **`references/phase-1-seven-dimension-scoring.md`** — Phase 1 content (lazy)
 - **`references/phase-2-gap-analysis.md`** — Phase 2 content (lazy)
+- **`references/ats-simulator.md`** — ATS scan simulation: Workday, Greenhouse, Lever (lazy, Phase 2a)
 - **`references/phase-3-optimized-rewrite.md`** — Phase 3 content (lazy)
 - **`references/phase-4-output-deliverables.md`** — Phase 4 content (lazy)
 - **`references/ats-keywords.md`** — ATS keyword categories by industry
