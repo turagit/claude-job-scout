@@ -32,7 +32,7 @@ Load the **recruiter-engagement** skill. Classify each message: Hot Lead (specif
 
 ## Step 3: Present Summary
 
-Show leads grouped by category with: recruiter name, company, role mentioned, date received, and brief summary of why it was categorized that way. Recommend responding to Hot Leads first.
+Show leads grouped by category with: recruiter name, company, role mentioned, date received, brief summary of why it was categorized that way, and **known facts** from lead-memory notes (if any — e.g., "Known: IR35 outside, rate £650-750/day"). Recommend responding to Hot Leads first.
 
 ## Step 4: Draft and Send Responses
 

@@ -59,12 +59,32 @@ Per-thread state lives in `.job-scout/recruiters/threads.json`:
     "lead_tier": "hot | warm | cold",
     "last_seen_msg_id": "...",
     "last_drafted_reply": "...",
-    "last_updated": "2026-04-08"
+    "last_updated": "2026-04-08",
+    "notes": [
+      { "date": "2026-04-01", "note": "asked IR35 — confirmed outside" },
+      { "date": "2026-04-05", "note": "rate range: £650-750/day" }
+    ]
   }
 }
 ```
 
-Before reading any thread's full history, check `last_seen_msg_id`. If the latest visible message id matches, skip the thread — there's nothing new. Only deep-read threads with new activity. This avoids re-reading unchanged conversations on every `/check-inbox` run.
+Before reading any thread's full history, check `last_seen_msg_id`. If the latest visible message id matches, skip the thread — there's nothing new. Only deep-read threads with new activity. After processing, update `last_seen_msg_id` and `lead_tier` per thread.
+
+### Lead-memory notes
+
+The `notes` array is an append-only log of facts established during the conversation. Notes persist across sessions so the skill never re-asks a question the recruiter already answered.
+
+**Write trigger:** after each user-approved reply that contains a qualifying question or confirms a factual detail, append a note. Format: `{ "date": "<YYYY-MM-DD>", "note": "<topic> — <resolution or 'pending'>" }`. Examples: "asked IR35 — confirmed outside", "rate range: £650-750/day", "start date — pending, recruiter will confirm by Friday".
+
+**Read trigger:** before drafting any reply:
+1. Load `notes` for the thread.
+2. Build a "known facts" summary from the latest note per topic.
+3. Do not re-ask any question that has a resolved (non-"pending") note.
+4. For "pending" notes, check if the recruiter's latest message resolves them. If so, update the note.
+
+**Display:** surface the known-facts summary in the thread card presented to the user: "Known: IR35 outside, rate £650-750/day, available immediately."
+
+Notes are never deleted. Contradictions are handled by reading the most recent note on a topic — it supersedes earlier entries.
 
 ## Reference Materials
 
