@@ -17,6 +17,7 @@ Every command in this plugin reads and writes state inside a single per-project 
     scores.json             # job scores keyed by (job_id, cv_hash, profile_hash)
     linkedin-profile.json   # last-seen snapshot of the user's LinkedIn profile
     supporting-docs.json    # index of non-CV workspace docs (see supporting-docs.md)
+    jd-keyword-corpus.json  # learned keyword model from ingested JDs (see jd-keyword-extraction.md)
   recruiters/
     threads.json        # per-thread state: last_seen_msg_id, lead_tier, last_drafted_reply
 ```
