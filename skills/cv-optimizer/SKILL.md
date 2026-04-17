@@ -47,14 +47,16 @@ When the user's profile indicates freelance/contract work, apply adjustments fro
 
 ## Parallel rewrite (Phase 3)
 
-When Phase 3 runs, the orchestrator dispatches one subagent per role section to `cv-section-rewriter/SKILL.md`:
+When Phase 3 runs, the orchestrator dispatches one subagent per role section to `cv-section-rewriter/SKILL.md`, following `../shared-references/subagent-protocol.md`:
 
 For each role block in the CV:
-1. Classify role weight: `current` (most recent), `previous` (roles 2 through N-1), `older` (roles 1 through 2).
-2. Dispatch `cv-section-rewriter` with the role block, the user profile, target keywords from the master keyword list, and the role weight.
-3. Collect deltas, merge into the final CV document.
-
-Follows the contract in `../shared-references/subagent-protocol.md`.
+1. Classify role weight: `current` (most recent), `previous` (2nd through N-1), `older` (earliest 1-2 roles).
+2. Dispatch `cv-section-rewriter` with:
+   - `task: "rewrite-cv-role"`
+   - `inputs`: the role block, the user profile (cv_summary, target_roles, tone_preference), target keywords from the master keyword list, and the role weight
+   - `budget_lines: 80`, `allowed_tools: ["Read"]`
+3. Each subagent loads `references/phase-3-optimized-rewrite.md`, applies SPAR rules, and returns `deltas: [{ role_id, bullets_optimized }]`.
+4. Main thread collects all deltas and assembles the final CV document.
 
 **Fallback:** if the `Agent` tool is unavailable, fall back to sequential in-thread rewrite using the same `references/phase-3-optimized-rewrite.md` rules.
 
