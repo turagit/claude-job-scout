@@ -21,6 +21,32 @@ All browser work in this command uses **the Claude Chrome extension exclusively*
 
 Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists in the current workspace. All paths below are inside `.job-scout/`.
 
+## Step 0a: Daily-driver context line
+
+Read `.job-scout/tracker.json`. Compute and display a one-line situational summary as the first user-visible output:
+
+**If `tracker.stats.last_run` is set (prior runs exist):**
+
+```
+📊 Last run [N] days ago. Tracker: [seen] seen, [A-tier] A-tier, [applied] applied.
+   New since last run: [M] alerts.
+```
+
+Where:
+- `[N]` = days between today and `tracker.stats.last_run`.
+- `[seen]` = count of tracker entries with `status: "seen"`.
+- `[A-tier]` = count of tracker entries with `tier: "A"`.
+- `[applied]` = `tracker.stats.applied`.
+- `[M]` = best-effort count of new alerts on the notifications page since `last_run`. If this can't be computed cheaply at this point, omit the second line.
+
+**If `tracker.stats.last_run` is null (first run):**
+
+```
+🚀 First run. Setting up tracker.
+```
+
+This step is read-only. Cost is one tracker.json read plus one timestamp diff. No browser interaction.
+
 ## Step 1: Load CV & Profile
 
 Follow `shared-references/cv-loading.md`. If no profile exists, analyze the CV to extract skills, technologies, seniority, target roles, and domain expertise. Save to `.job-scout/user-profile.json` (create or merge) including `cv_path`, `cv_hash`, `cv_summary`, and `requirements` (defaults: `work_arrangement: "remote"`, `contract_type: "freelance"`).
