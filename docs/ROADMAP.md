@@ -66,7 +66,7 @@ Each command surfaces capabilities built in Phases 1–2. Spec to be written aft
 - [x] **`/index-docs`** (explicit re-scan over Phase 1 supporting-docs cache)
 - [x] **Bootstrap nudge** to index supporting docs on first run
 - [x] **Daily-driver context line** in `/check-job-notifications`
-- [ ] **`/cover-letter <tracker-id|url>`** + `cover-letter-writer` subagent
+- [x] **`/cover-letter <tracker-id|url>`** + `cover-letter-writer` subagent
 - [ ] **`/interview-prep <tracker-id>`**
 - [ ] **`/funnel-report`**
 
