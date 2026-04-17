@@ -35,6 +35,30 @@ Phase 1 of the v0.4.0–v0.6.0 roadmap: token and agentic foundations. Prerequis
 - First run after upgrade: the bootstrap procedure writes `.job-scout/schema-version` = `{ version: 1, upgraded_at: <ISO> }` if missing, and clears `.job-scout/cache/scores.json` once to account for the cache-key expansion. Subsequent runs use caches normally.
 - No user action required.
 
+### Development process
+
+v0.4.0 was built using subagent-driven development with a two-stage review gate on every task:
+
+- **16 tasks** planned in a serial implementation plan (`docs/superpowers/plans/2026-04-16-phase-1-token-agentic-foundations.md`), each shipping as an independent branch merged to `main` after dual approval.
+- **Implementer subagent** per task — fresh context, no cross-task bleed. Each subagent received the full task spec, executed, committed, pushed, and self-reviewed.
+- **Spec-compliance reviewer subagent** — independently verified each implementation against the plan's requirements. Caught spec deviations the implementer missed.
+- **Code-quality reviewer subagent** — independently audited each task for internal consistency, contract compatibility, forward-reference clarity, and cross-file coherence. Found and escalated issues the spec reviewer's byte-match checks couldn't catch.
+- **Review-fix-re-review loops** — when reviewers flagged issues (7 of 15 shipped tasks had findings), the implementer applied targeted fixes and reviewers re-verified before merge. No task merged with open issues.
+
+Notable defects caught by reviewers during Phase 1:
+- **Critical:** `budget_tokens` vs `budget_lines` naming mismatch between spec and reference (Task 4). Fixed by aligning the spec.
+- **Important:** `profile_hash` incorrectly attributed to `cv-optimizer` in a subagent-initiated extra edit (Task 6). Fixed before merge.
+- **Important:** `tracker-schema.md` named only `cv_hash` as re-score trigger, missing the newly-introduced `profile_hash` (Task 6). Fixed in the same PR.
+- **Important:** `continuation_cursor` semantics underspecified in subagent protocol — no schema for follow-up dispatches (Task 4). Fixed with explicit schema block and idempotency extension.
+- **Important:** LinkedIn snapshot JSON shape covered only 5 of 12 sections read by `optimize-profile`, and had no `score` field for cache reuse (Task 9). Expanded to 10 sections with score field.
+- **Important:** Supporting-docs Purpose section contradicted Phase-1 scope on whether `profile-optimizer` reads the index in Phase 1 (Task 8). Fixed: Phase 2 consumer, not Phase 1.
+- **Important:** `skipped` job status had undefined archival fate in tracker schema (Task 7). Resolved: protected alongside `rejected`.
+- **Pre-existing:** duplicate `## Step 4` heading in `match-jobs/SKILL.md` discovered during Task 6 review and fixed.
+
+1 task (`.claude/settings.local.json` trim) was closed as N/A after the implementer discovered the file is globally gitignored, never tracked in this repo, and auto-regrows via the Claude Code harness.
+
+This process is documented so Phase 2 and 3 can follow the same methodology. The design spec, implementation plan, and roadmap all live in `docs/` for cold-start resumability.
+
 ---
 
 ## [0.3.0] — 2026-04-08
