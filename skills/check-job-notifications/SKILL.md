@@ -46,6 +46,8 @@ This is the primary token-saving step. Never extract a job you already know.
 
 For each *new* job: open it and extract title, company, location (remote/hybrid/on-site + city), salary/rate, contract type, experience level, required skills, preferred skills, full description, Easy Apply status, posting date, applicant count, job URL.
 
+**Corpus enrichment:** after extraction, run the JD keyword extraction procedure from `../shared-references/jd-keyword-extraction.md` on each new job's description. Merges keywords into `.job-scout/cache/jd-keyword-corpus.json`.
+
 ## Step 5: Filter
 
 Drop jobs that violate default requirements:

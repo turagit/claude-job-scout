@@ -24,6 +24,8 @@ Follow `shared-references/cv-loading.md`. If argument provided ($1), use as prim
 
 Navigate to `https://www.linkedin.com/jobs/`. Enter target title, set location and filters (Experience Level, Remote, Date Posted — prioritize "Past Week"). Collect job IDs first and dedupe against `.job-scout/tracker.json` (see `shared-references/tracker-schema.md`) before opening any listing. Only extract details for new jobs: title, company, location, salary, requirements, description, Easy Apply status.
 
+**Corpus enrichment:** after extraction, run the JD keyword extraction procedure from `../shared-references/jd-keyword-extraction.md` on each new job's description. Merges keywords into `.job-scout/cache/jd-keyword-corpus.json`.
+
 ## Step 4: Score and Present
 
 Load the **job-matcher** skill. Score each listing, assign tiers. Present ranked markdown table (title, company, score, tier, Easy Apply, key match, key gap). For A-Tier and top B-Tier, provide detailed analysis with score breakdown and matched skills vs gaps.
