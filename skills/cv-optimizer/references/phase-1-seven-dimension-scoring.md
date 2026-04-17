@@ -1,6 +1,6 @@
 # Phase 1 — Deep Analysis (Seven-Dimension Scoring)
 
-Loaded on demand by `cv-optimizer/SKILL.md` during the scoring phase. Covers dimensions 1-7 with weights, inline examples, and references to `psychology-cheatsheet.md`, `action-verbs.md`, and `ats-keywords.md`.
+Loaded on demand by `cv-optimizer/SKILL.md`. Runs always unless a valid `.job-scout/cache/cv-analysis-<hash>.json` cache hit exists — in which case the cached result is used and this phase is skipped. Covers dimensions 1-7 with weights, inline examples, and references to `psychology-cheatsheet.md`, `action-verbs.md`, and `ats-keywords.md`.
 
 ---
 

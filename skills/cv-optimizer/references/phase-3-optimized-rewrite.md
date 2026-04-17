@@ -1,6 +1,6 @@
 # Phase 3 — Optimized Rewrite
 
-Loaded on demand by `cv-optimizer/SKILL.md` when the user asks for a rewrite. Contains SPAR rules, the bullet formula, and the professional summary template. For per-role parallel rewrite, see `cv-section-rewriter/SKILL.md` (Task 15).
+Loaded on demand by `cv-optimizer/SKILL.md` when the user asks for a rewrite. Contains SPAR rules, the bullet formula, and the professional summary template. For per-role parallel rewrite, see `cv-section-rewriter/SKILL.md`.
 
 ---
 
