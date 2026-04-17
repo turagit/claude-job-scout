@@ -102,11 +102,41 @@ If declined, skip to Next Steps.
 
 If accepted:
 1. Navigate to `https://www.linkedin.com/jobs/` and locate **"Top job picks for you"**.
-2. Collect job IDs from each card. **Filter against `tracker.json` before extracting** (same dedupe rule as Step 3).
-3. For each *new* job, extract details and tag source as "Top Picks".
-4. Paginate via "Show more" / next page. Stop when (a) a page yields zero new jobs after dedupe, (b) you've covered 5 pages, or (c) the user says stop.
-5. Run new jobs through Steps 5–9. Append to today's report under a **"Top Picks Sweep"** section rather than overwriting.
-6. Present the new A/B/C matches.
+2. Load `tracker.json` once and snapshot into memory — every subagent receives this snapshot.
+3. For pages 1..5 (or until a stop condition fires): dispatch one subagent per page, each with `subagent_type: "general-purpose"` per `../shared-references/subagent-protocol.md`:
+
+   ```json
+   {
+     "task": "top-picks-page",
+     "inputs": {
+       "page_number": 1,
+       "tracker_snapshot_ids": ["..."],
+       "source": "Top Picks"
+     },
+     "budget_lines": 200,
+     "allowed_tools": ["Read"]
+   }
+   ```
+
+   The subagent receives the page URL pattern in its prompt and extracts job blobs for any id not in `tracker_snapshot_ids`. It returns:
+
+   ```json
+   {
+     "status": "ok",
+     "deltas": [
+       { "job_id": "...", "title": "...", "company": "...", "raw_blob": "...", "source": "Top Picks" }
+     ]
+   }
+   ```
+
+   Note: page-fetching in Phase 1 still happens via the main thread's Chrome extension (subagents do not have browser access). The main thread fetches the raw HTML or listing JSON for each page, then dispatches the subagent with that data in `inputs`. Subagents dedupe and parse only.
+
+4. Collect all subagent deltas. Dedupe again against the live tracker (in case concurrent runs updated it).
+5. Stop early if: any page's subagent returns zero new jobs, the user says stop, or the 5-page cap is hit.
+6. Hand the collected new-job blobs to Step 6's scoring fan-out. Append to today's report under a **"Top Picks Sweep"** section rather than overwriting.
+7. Present the new A/B/C matches.
+
+**Fallback:** if the `Agent` tool is unavailable, fall back to the sequential in-thread loop (fetch → dedupe → extract → score) page by page.
 
 ## Next Steps
 
