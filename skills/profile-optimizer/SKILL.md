@@ -84,6 +84,14 @@ After proposing all content, generate an alignment report:
 7. **Calculate all scores** — section scores, cross-cutting scores, overall score
 8. **Present before/after comparison** for each section with the CV source highlighted
 9. **Show alignment report** — keyword coverage, missing achievements, discrepancies
+9a. **Google snippet preview** — render the literal Google search result for the user's name:
+
+    ```
+    [Name] - [Headline]
+    LinkedIn · [First ~160 characters of About section]
+    ```
+
+    Show two versions: **Current** (from cached profile) and **Proposed** (from this session's proposals). Check: does the snippet contain the target role title? The user's location? At least one quantified achievement? Does it truncate cleanly (not mid-word)? If the proposed snippet is weaker than the current, flag it.
 10. **Apply changes** via browser with user permission — one section at a time. After each write, recompute `profile_hash` (SHA-256 over canonical JSON of headline, about, experience bullets, skills list, Open to Work config) and persist to `.job-scout/user-profile.json`.
 
 ## State & Caching
