@@ -53,7 +53,7 @@ Builds on the Phase 1 subagent protocol and state-layout foundations.
 - [x] **Wire corpus extraction** into `/match-jobs`, `/check-job-notifications`, `/job-search`
 - [x] **ATS scan simulator** (Workday / Greenhouse / Lever behaviour)
 - [x] **Post-rewrite keyword-density check** (>3% = stuffing, <0.5% = undershoot)
-- [ ] **Banner + Featured concrete templates**
+- [x] **Banner + Featured concrete templates**
 - [ ] **Supporting-doc-backed claims** in CV + Featured section
 - [ ] **Reverse-Boolean discoverability check** per A-tier job
 - [ ] **Google snippet literal preview**
