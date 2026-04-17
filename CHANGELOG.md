@@ -4,6 +4,39 @@ All notable changes to the LinkedIn Job Hunter plugin are documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — 2026-04-17
+
+Phase 1 of the v0.4.0–v0.6.0 roadmap: token and agentic foundations. Prerequisite for every later phase.
+
+### Added
+
+- **`skills/shared-references/subagent-protocol.md`** — canonical I/O, budget, and fan-in contract for every skill that dispatches subagents.
+- **`CLAUDE.md`** at repo root — goal, hard rules (browser policy, dedupe-before-extract, `.job-scout/` SSOT, `disable-model-invocation`, subagent protocol), file layout, versioning policy.
+- **Repo `.gitignore`** — ensures `.job-scout/` (per-project state for users of the plugin) never ends up in the plugin repo itself.
+- **`.job-scout/schema-version`** file + migration runner scaffolding in `workspace-layout.md`. No migrations ship in 0.4.0; the scaffolding unblocks Phase 2.
+- **Tracker archival policy** — `status:seen` entries older than 60 days rotate to `.job-scout/archive/tracker-YYYY.json`. Hot tracker stays small; dedupe fall-through only reads the current-year archive.
+- **`.job-scout/cache/supporting-docs.json`** + scan-on-bootstrap — workspace-root certificates, talks, decks, case studies, publications, and recommendations get indexed once and summarised. First consumer lands in Phase 2.
+- **`skills/company-researcher/`** — new subagent skill returning a short structured digest (size, stage, reputation, red flags). Dispatched by `profile-optimizer` (optional, when a specific JD is provided).
+- **`skills/cv-section-rewriter/`** — new subagent skill. Dispatched by `cv-optimizer` during Phase 3, one subagent per role block. Returns SPAR-optimized bullets.
+
+### Changed
+
+- **Score cache key** reconciled to `(job_id, cv_hash, profile_hash)` across `job-matcher/SKILL.md`, `match-jobs/SKILL.md`, `check-job-notifications/SKILL.md`, and `workspace-layout.md`. First run after upgrade invalidates `scores.json` once.
+- **`profile-optimizer`** writes `profile_hash` to `user-profile.json` on any content-changing edit, so a profile rewrite invalidates stale scores downstream.
+- **`profile-optimizer` LinkedIn snapshot cache** now delta-aware: per-section content hashes let the inner gate re-score only changed sections when the 7-day outer gate expires.
+- **`cv-optimizer/SKILL.md`** split into a ≤5KB orchestrator + five lazy-loaded phase references (`phase-0-discovery-interview.md` through `phase-4-output-deliverables.md`). Phases load only when their gate fires.
+- **`profile-optimizer/SKILL.md`** split into a ≤10KB orchestrator + eight `references/sections/*.md` files plus `activity-engagement.md` and `scoring-framework.md`. Section content loads only when that section is proposed or re-scored.
+- **`/match-jobs` and `/check-job-notifications`** scoring paths fan out across subagents (batch size 5), following `subagent-protocol.md`. Falls back to sequential in-thread scoring when the `Agent` tool is unavailable.
+- **`/check-job-notifications` Step 10 Top Picks sweep** paginates via one subagent per page (up to 5).
+- **`.claude-plugin/plugin.json`** version bumped from 0.3.0 to 0.4.0.
+
+### Migration notes
+
+- First run after upgrade: the bootstrap procedure writes `.job-scout/schema-version` = `{ version: 1, upgraded_at: <ISO> }` if missing, and clears `.job-scout/cache/scores.json` once to account for the cache-key expansion. Subsequent runs use caches normally.
+- No user action required.
+
+---
+
 ## [0.3.0] — 2026-04-08
 
 Major refactor focused on persistent per-project state, token efficiency, and migrating to the modern plugin format.
