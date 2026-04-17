@@ -66,6 +66,24 @@ Main thread collects all deltas, filters out D-Tier, and writes each score into 
 
 **Fallback:** if the `Agent` tool is unavailable in this session, fall back to sequential in-thread scoring using the same job-matcher framework. Log the fallback.
 
+## Step 4b: Reverse-Boolean discoverability check (A-tier only)
+
+For each job scoring A-tier (85-100):
+1. Extract from the JD: role title, top 3 required skills, location preference.
+2. Construct the likely recruiter Boolean query using templates from `../profile-optimizer/references/recruiter-search-patterns.md`: `"<role>" AND ("<skill1>" OR "<skill2>") AND "<skill3>"`.
+3. Load the user's cached LinkedIn profile from `.job-scout/cache/linkedin-profile.json`. Check for each Boolean term in: headline, current job title, skills list, about section, experience descriptions.
+4. Classify: **Match** (all required terms found) or **Miss** (one or more terms absent).
+5. Append to the A-tier match card:
+
+```
+🔍 Recruiter search simulation for: [Job Title] at [Company]
+   Boolean: "<role>" AND ("<skill1>" OR "<skill2>") AND "<skill3>"
+   Result: [MATCH | MISS — "<missing_keyword>" not found on your LinkedIn profile]
+   Fix: Add "<missing_keyword>" to your LinkedIn Skills section and mention in your current role's bullets
+```
+
+Skip B/C-tier jobs — the user may not apply, so the discoverability check is not worth the analysis.
+
 ## Step 5: Present Results
 
 Show ranked markdown table (title, company, score, tier, Easy Apply, posted, applicants). For A-Tier and top B-Tier, provide detailed match cards with score breakdown, matched skills, gaps, and red flags. Keep B/C tiers as compact rows — no paragraph rationales.
