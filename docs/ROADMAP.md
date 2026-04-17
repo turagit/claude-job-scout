@@ -63,12 +63,12 @@ Builds on the Phase 1 subagent protocol and state-layout foundations.
 
 Each command surfaces capabilities built in Phases 1–2. Spec to be written after Phase 2 ships.
 
-- `/cover-letter <tracker-id|url>` + `cover-letter-writer` subagent
-- `/interview-prep <tracker-id>`
-- `/funnel-report`
-- `/index-docs` (explicit command over Phase 1 cache)
-- Daily-driver context line (`last run N days ago, X alerts since`)
-- Bootstrap nudge to index supporting docs on first run
+- [x] **`/index-docs`** (explicit re-scan over Phase 1 supporting-docs cache)
+- [ ] **Bootstrap nudge** to index supporting docs on first run
+- [ ] **Daily-driver context line** in `/check-job-notifications`
+- [ ] **`/cover-letter <tracker-id|url>`** + `cover-letter-writer` subagent
+- [ ] **`/interview-prep <tracker-id>`**
+- [ ] **`/funnel-report`**
 
 ---
 
