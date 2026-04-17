@@ -47,16 +47,17 @@ Prerequisite for every later phase. Nothing in Phase 2 or 3 can ship cleanly wit
 
 ## Phase 2 — v0.5.0: SEO / ATS depth
 
-Builds on the Phase 1 subagent protocol and corpus machinery. Spec to be written after Phase 1 ships.
+Builds on the Phase 1 subagent protocol and state-layout foundations.
 
-- ATS scan simulator (Workday / Greenhouse / Lever behaviour)
-- Learned JD keyword corpus at `.job-scout/cache/jd-keyword-corpus.json`
-- Post-rewrite keyword-density check (>3% = stuffing, <0.5% = undershoot)
-- Supporting-doc-backed claims in CV + Featured section
-- Reverse-Boolean discoverability check per A-tier job
-- Google snippet literal preview
-- Banner + Featured concrete templates
-- Recruiter lead-memory in `threads.json`
+- [x] **Learned JD keyword corpus** at `.job-scout/cache/jd-keyword-corpus.json` (extraction reference shipped; wiring in Task 2)
+- [ ] **Wire corpus extraction** into `/match-jobs`, `/check-job-notifications`, `/job-search`
+- [ ] **ATS scan simulator** (Workday / Greenhouse / Lever behaviour)
+- [ ] **Post-rewrite keyword-density check** (>3% = stuffing, <0.5% = undershoot)
+- [ ] **Banner + Featured concrete templates**
+- [ ] **Supporting-doc-backed claims** in CV + Featured section
+- [ ] **Reverse-Boolean discoverability check** per A-tier job
+- [ ] **Google snippet literal preview**
+- [ ] **Recruiter lead-memory** in `threads.json`
 
 ## Phase 3 — v0.6.0: New user-facing commands
 
