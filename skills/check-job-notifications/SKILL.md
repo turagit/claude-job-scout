@@ -82,7 +82,7 @@ Drop jobs that violate default requirements:
 
 ## Step 6: Score and rank (parallel)
 
-Apply the job-matcher scoring framework with freelance adjustments if applicable. Jobs that disclose compensation sort above same-tier jobs that don't.
+Apply the _job-matcher scoring framework with freelance adjustments if applicable. Jobs that disclose compensation sort above same-tier jobs that don't.
 
 **Scoring fan-out:** batch the new jobs into groups of 5 and dispatch one subagent per batch per the contract in `../shared-references/subagent-protocol.md`:
 
@@ -100,7 +100,7 @@ Apply the job-matcher scoring framework with freelance adjustments if applicable
 }
 ```
 
-Each subagent loads the `job-matcher` skill, returns `deltas: [{ job_id, score, tier, breakdown }, ...]`. Main thread merges all deltas into `.job-scout/cache/scores.json` keyed by `(job_id, cv_hash, profile_hash)`.
+Each subagent loads the `_job-matcher` skill, returns `deltas: [{ job_id, score, tier, breakdown }, ...]`. Main thread merges all deltas into `.job-scout/cache/scores.json` keyed by `(job_id, cv_hash, profile_hash)`.
 
 Tiers: **A (85-100)** apply immediately, **B (70-84)** worth applying, **C (55-69)** consider, **D (<55)** discard.
 
@@ -110,7 +110,7 @@ Tiers: **A (85-100)** apply immediately, **B (70-84)** worth applying, **C (55-6
 
 For each job scoring A-tier (85-100):
 1. Extract from the JD: role title, top 3 required skills, location preference.
-2. Construct the likely recruiter Boolean query using templates from `../profile-optimizer/references/recruiter-search-patterns.md`: `"<role>" AND ("<skill1>" OR "<skill2>") AND "<skill3>"`.
+2. Construct the likely recruiter Boolean query using templates from `../_profile-optimizer/references/recruiter-search-patterns.md`: `"<role>" AND ("<skill1>" OR "<skill2>") AND "<skill3>"`.
 3. Load the user's cached LinkedIn profile from `.job-scout/cache/linkedin-profile.json`. Check for each Boolean term in: headline, current job title, skills list, about section, experience descriptions.
 4. Classify: **Match** or **Miss** with specific missing keywords.
 5. Append to the A-tier match card in the report (same format as match-jobs Step 4b).

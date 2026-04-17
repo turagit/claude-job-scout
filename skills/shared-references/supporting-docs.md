@@ -4,7 +4,7 @@ The user's CV is the primary input, but the README asks users to bring everythin
 
 ## Purpose
 
-`.job-scout/cache/supporting-docs.json` lets downstream skills read a small summary of each document instead of re-parsing the originals. Planned consumers: `profile-optimizer` (Featured section and About-section claims) in Phase 2, `cover-letter-writer` in Phase 3, ATS simulator in Phase 2, `/index-docs` in Phase 3. **No Phase 1 skill reads this index** — see "Phase-1 scope" below. Docs are keyed by path and validated by content hash.
+`.job-scout/cache/supporting-docs.json` lets downstream skills read a small summary of each document instead of re-parsing the originals. Planned consumers: `_profile-optimizer` (Featured section and About-section claims) in Phase 2, `_cover-letter-writer` in Phase 3, ATS simulator in Phase 2, `/index-docs` in Phase 3. **No Phase 1 skill reads this index** — see "Phase-1 scope" below. Docs are keyed by path and validated by content hash.
 
 ## File location
 
@@ -77,7 +77,7 @@ Re-scans should be non-blocking: if a downstream skill needs the index immediate
 Any skill reading `supporting-docs.json` must:
 
 - Read the index, not the source files, for keyword and summary data.
-- Cite the `path` when a claim on a CV or LinkedIn section derives from a specific doc (Phase 2 introduces this explicitly in `profile-optimizer` for the Featured section).
+- Cite the `path` when a claim on a CV or LinkedIn section derives from a specific doc (Phase 2 introduces this explicitly in `_profile-optimizer` for the Featured section).
 - Treat `type: "other"` as "ask the user before acting on this."
 
 ## Phase-1 scope

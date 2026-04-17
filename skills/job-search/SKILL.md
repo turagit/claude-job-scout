@@ -28,7 +28,7 @@ Navigate to `https://www.linkedin.com/jobs/`. Enter target title, set location a
 
 ## Step 4: Score and Present
 
-Load the **job-matcher** skill. Score each listing, assign tiers. Present ranked markdown table (title, company, score, tier, Easy Apply, key match, key gap). For A-Tier and top B-Tier, provide detailed analysis with score breakdown and matched skills vs gaps.
+Load the **_job-matcher** skill. Score each listing, assign tiers. Present ranked markdown table (title, company, score, tier, Easy Apply, key match, key gap). For A-Tier and top B-Tier, provide detailed analysis with score breakdown and matched skills vs gaps.
 
 Perform multiple searches if user has several target roles. If profile is >30 days old, suggest `/analyze-cv`.
 

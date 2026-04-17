@@ -161,4 +161,4 @@ Confirm to the user with the file path. Suggest re-running weekly.
 - **`../shared-references/tracker-schema.md`** — tracker.json shape (read), archive policy
 - **`../shared-references/supporting-docs.md`** — not needed in Phase 3, but referenced for completeness
 - **`../shared-references/workspace-layout.md`** — bootstrap + state layout
-- **`../recruiter-engagement/SKILL.md`** — for `notes` array shape (read)
+- **`../_recruiter-engagement/SKILL.md`** — for `notes` array shape (read)

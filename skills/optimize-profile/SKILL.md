@@ -17,7 +17,7 @@ Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists.
 
 ## Step 1: Load CV (Required)
 
-Follow `shared-references/cv-loading.md` — **do not proceed without a CV**. Parse the CV and extract: role titles, skills, quantified achievements, career narrative, industry context, certifications, education. Reuse the `master_keyword_list` from `.job-scout/user-profile.json` (built by `cv-optimizer`); rebuild only if the CV's hash has changed.
+Follow `shared-references/cv-loading.md` — **do not proceed without a CV**. Parse the CV and extract: role titles, skills, quantified achievements, career narrative, industry context, certifications, education. Reuse the `master_keyword_list` from `.job-scout/user-profile.json` (built by `_cv-optimizer`); rebuild only if the CV's hash has changed.
 
 ## Step 2: Read LinkedIn Profile (two-tier cache)
 
@@ -33,7 +33,7 @@ For each section just read:
 3. If the hash matches the cached hash, reuse the cached score for that section.
 4. If the hash differs, mark the section "needs re-score" for Step 4.
 
-After the read, update each section's `content`, `hash`, and `scored_at` in `.job-scout/cache/linkedin-profile.json`. Update `last_full_read` to the current ISO timestamp. See `profile-optimizer` "State & Caching" for the full cache shape.
+After the read, update each section's `content`, `hash`, and `scored_at` in `.job-scout/cache/linkedin-profile.json`. Update `last_full_read` to the current ISO timestamp. See `_profile-optimizer` "State & Caching" for the full cache shape.
 
 ## Step 3: Check Activity & Engagement
 
@@ -41,7 +41,7 @@ Check SSI score at `linkedin.com/sales/ssi`. Note recent posting activity and en
 
 ## Step 4: Analyze and Score
 
-Load the **profile-optimizer** skill.
+Load the **_profile-optimizer** skill.
 
 Only re-score sections marked "needs re-score" by Step 2. Sections with unchanged hashes reuse their cached score directly. Cross-cutting scores (keyword coverage, search appearance, 10-second test, CV alignment) always recompute — they're cheap and depend on the whole profile.
 

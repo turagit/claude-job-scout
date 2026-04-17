@@ -6,7 +6,7 @@ argument-hint: [cv-file-path]
 disable-model-invocation: true
 ---
 
-Analyze and improve the user's CV using the **cv-optimizer** skill.
+Analyze and improve the user's CV using the **_cv-optimizer** skill.
 
 ## Step 0: Bootstrap workspace
 
@@ -20,7 +20,7 @@ If argument provided, read file at @$1. Otherwise, follow `shared-references/cv-
 
 ## Step 2: Discovery Interview (MANDATORY — DO NOT SKIP)
 
-Run the **Phase 0 Discovery Interview** from the cv-optimizer skill. Ask all questions in a single structured message grouped by category (Identity & Career Context, Strengths & Differentiators, Target & Constraints). This is critical — the quality of the optimization depends entirely on having this context upfront.
+Run the **Phase 0 Discovery Interview** from the _cv-optimizer skill. Ask all questions in a single structured message grouped by category (Identity & Career Context, Strengths & Differentiators, Target & Constraints). This is critical — the quality of the optimization depends entirely on having this context upfront.
 
 If the user has an existing `user-profile.json`, pre-fill what you can and confirm: "I have these details saved — are they still accurate?" Only ask for missing or potentially stale information.
 
@@ -30,7 +30,7 @@ If the user provides a target job description, extract it and use it for keyword
 
 ## Step 3: Analyze
 
-Load the **cv-optimizer** skill. Score all seven dimensions (1–10 each, weighted). Present:
+Load the **_cv-optimizer** skill. Score all seven dimensions (1–10 each, weighted). Present:
 
 1. **Overall score** with letter grade (A/B/C/D) and per-dimension breakdown with evidence
 2. **Strength spotlight** — top 3 things the CV already does well (lead with positives)

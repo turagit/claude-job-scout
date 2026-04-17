@@ -13,7 +13,7 @@ Every command in this plugin reads and writes state inside a single per-project 
   archive/              # tracker-YYYY.json — aged seen-status jobs rotated out of tracker.json
   cache/
     cv-<hash>.json          # parsed CV text + extracted keywords, keyed by file content hash
-    cv-analysis-<hash>.json # full cv-optimizer scoring output, keyed by content hash
+    cv-analysis-<hash>.json # full _cv-optimizer scoring output, keyed by content hash
     scores.json             # job scores keyed by (job_id, cv_hash, profile_hash)
     linkedin-profile.json   # last-seen snapshot of the user's LinkedIn profile
     supporting-docs.json    # index of non-CV workspace docs (see supporting-docs.md)
@@ -87,7 +87,7 @@ if current < target:
 If `.job-scout/` exists but `schema-version` is missing, treat the workspace as pre-schema-versioning: write `schema-version` with `{ "version": 1, "upgraded_at": "<ISO>" }` and continue. Do not re-run any migrations.
 
 On the specific v0.3.0 → v0.4.0 upgrade, two additional one-time actions are performed alongside the `schema-version` write (mechanics live in the owning references, not here):
-- **Clear `.job-scout/cache/scores.json`** — the cache key shape expanded to include `profile_hash`, so pre-upgrade entries cannot match post-upgrade lookups. See `job-matcher/SKILL.md`.
+- **Clear `.job-scout/cache/scores.json`** — the cache key shape expanded to include `profile_hash`, so pre-upgrade entries cannot match post-upgrade lookups. See `_job-matcher/SKILL.md`.
 - **Run one tracker archive pass** — aged `status: seen` entries rotate to `.job-scout/archive/tracker-YYYY.json`. See `tracker-schema.md`.
 
 Inform the user about the upgrade actions in a single message, not interactively.

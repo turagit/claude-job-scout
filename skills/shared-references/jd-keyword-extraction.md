@@ -46,10 +46,10 @@ After extracting job details (Step 4 in most commands) and before scoring. The e
 
 ## Consumers
 
-- **cv-optimizer** (Phase 2 gap analysis): supplements the master keyword list with corpus terms the user's market actually demands.
+- **_cv-optimizer** (Phase 2 gap analysis): supplements the master keyword list with corpus terms the user's market actually demands.
 - **ATS simulator**: uses corpus frequency to weight keyword-match scores — a keyword that appears in 80% of JDs in the user's market is more important than one that appears in 10%.
 - **Density check**: uses corpus + master keyword list as the target keyword set.
-- **Profile-optimizer** (keyword coverage score): compares profile keywords against corpus.
+- **_profile-optimizer** (keyword coverage score): compares profile keywords against corpus.
 
 ## Token cost
 

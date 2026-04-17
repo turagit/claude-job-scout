@@ -39,9 +39,9 @@ Gather the materials the writer needs:
 - JD-specific keywords extracted from the JD blob (use `shared-references/jd-keyword-extraction.md` procedure for the extraction step only — the merge into the corpus is optional here since this command isn't a corpus consumer).
 - Voice sample: first 500 characters of the cached LinkedIn About section from `.job-scout/cache/linkedin-profile.json` → `sections.about.content`.
 
-## Step 3: Dispatch cover-letter-writer subagent
+## Step 3: Dispatch _cover-letter-writer subagent
 
-Per `shared-references/subagent-protocol.md`, dispatch `cover-letter-writer` once with all three angles requested:
+Per `shared-references/subagent-protocol.md`, dispatch `_cover-letter-writer` once with all three angles requested:
 
 ```json
 {
@@ -100,7 +100,7 @@ Confirm to the user with the file path. Suggest `/apply` for Easy Apply jobs.
 
 ## Reference Materials
 
-- **`../cover-letter-writer/SKILL.md`** — internal subagent that produces the drafts
+- **`../_cover-letter-writer/SKILL.md`** — internal subagent that produces the drafts
 - **`../shared-references/subagent-protocol.md`** — dispatch contract
 - **`../shared-references/supporting-docs.md`** — supporting-docs index consumer contract
 - **`../shared-references/jd-keyword-extraction.md`** — keyword extraction procedure (for target_keywords)

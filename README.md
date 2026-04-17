@@ -39,10 +39,10 @@ These are model-auto-loaded playbooks used by the commands above. You don't invo
 
 | Skill | Purpose |
 |-------|---------|
-| `cv-optimizer` | ATS analysis, keyword optimization, SPAR-method rewrites |
-| `job-matcher` | Job scoring framework, requirement matching, batch ranking |
-| `profile-optimizer` | LinkedIn SEO, headline formulas, section-by-section optimization |
-| `recruiter-engagement` | Lead qualification, response drafting, conversation management |
+| `_cv-optimizer` | ATS analysis, keyword optimization, SPAR-method rewrites |
+| `_job-matcher` | Job scoring framework, requirement matching, batch ranking |
+| `_profile-optimizer` | LinkedIn SEO, headline formulas, section-by-section optimization |
+| `_recruiter-engagement` | Lead qualification, response drafting, conversation management |
 
 ---
 

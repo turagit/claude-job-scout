@@ -31,7 +31,7 @@ If no cache exists, parse the CV once, write the cache, then proceed.
 
 ## Step 4: Master Keyword List
 
-Reuse `master_keyword_list` from `user-profile.json` (populated by `cv-optimizer`). Do not re-extract keywords unless the CV's hash has changed.
+Reuse `master_keyword_list` from `user-profile.json` (populated by `_cv-optimizer`). Do not re-extract keywords unless the CV's hash has changed.
 
 ## Rules
 

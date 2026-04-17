@@ -21,7 +21,7 @@ Ask the user where to find jobs: job alerts (LinkedIn notifications), saved jobs
 
 ## Step 2: Load Profile
 
-Follow `shared-references/cv-loading.md`. Load the **job-matcher** skill.
+Follow `shared-references/cv-loading.md`. Load the **_job-matcher** skill.
 
 ## Step 3: Collect IDs and dedupe FIRST
 
@@ -51,7 +51,7 @@ For each *new* job, extract title, company, location, salary, experience level, 
 }
 ```
 
-The subagent loads the `job-matcher` skill, scores each job, returns deltas:
+The subagent loads the `_job-matcher` skill, scores each job, returns deltas:
 
 ```json
 {
@@ -64,13 +64,13 @@ The subagent loads the `job-matcher` skill, scores each job, returns deltas:
 
 Main thread collects all deltas, filters out D-Tier, and writes each score into `.job-scout/cache/scores.json` under the `(job_id, cv_hash, profile_hash)` key.
 
-**Fallback:** if the `Agent` tool is unavailable in this session, fall back to sequential in-thread scoring using the same job-matcher framework. Log the fallback.
+**Fallback:** if the `Agent` tool is unavailable in this session, fall back to sequential in-thread scoring using the same _job-matcher framework. Log the fallback.
 
 ## Step 4b: Reverse-Boolean discoverability check (A-tier only)
 
 For each job scoring A-tier (85-100):
 1. Extract from the JD: role title, top 3 required skills, location preference.
-2. Construct the likely recruiter Boolean query using templates from `../profile-optimizer/references/recruiter-search-patterns.md`: `"<role>" AND ("<skill1>" OR "<skill2>") AND "<skill3>"`.
+2. Construct the likely recruiter Boolean query using templates from `../_profile-optimizer/references/recruiter-search-patterns.md`: `"<role>" AND ("<skill1>" OR "<skill2>") AND "<skill3>"`.
 3. Load the user's cached LinkedIn profile from `.job-scout/cache/linkedin-profile.json`. Check for each Boolean term in: headline, current job title, skills list, about section, experience descriptions.
 4. Classify: **Match** (all required terms found) or **Miss** (one or more terms absent).
 5. Append to the A-tier match card:

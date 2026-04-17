@@ -28,7 +28,7 @@ Navigate to `https://www.linkedin.com/messaging/`. Scan recent messages (unread 
 
 ## Step 2: Categorize
 
-Load the **recruiter-engagement** skill. Classify each message: Hot Lead (specific role, relevant, details shared), Warm Lead (generic but relevant company), Cold Lead (mass outreach, irrelevant), Red Flag (suspicious/scam signals).
+Load the **_recruiter-engagement** skill. Classify each message: Hot Lead (specific role, relevant, details shared), Warm Lead (generic but relevant company), Cold Lead (mass outreach, irrelevant), Red Flag (suspicious/scam signals).
 
 ## Step 3: Present Summary
 
@@ -36,7 +36,7 @@ Show leads grouped by category with: recruiter name, company, role mentioned, da
 
 ## Step 4: Draft and Send Responses
 
-For each lead the user wants to respond to: read full conversation thread, cross-reference against CV/requirements, draft response using recruiter-engagement templates adapted to the specific opportunity. Present draft with context and ask for approval. Only send after explicit user confirmation — navigate to conversation, type message, confirm once more before sending.
+For each lead the user wants to respond to: read full conversation thread, cross-reference against CV/requirements, draft response using _recruiter-engagement templates adapted to the specific opportunity. Present draft with context and ask for approval. Only send after explicit user confirmation — navigate to conversation, type message, confirm once more before sending.
 
 ## Next Steps
 

@@ -30,7 +30,7 @@ If the ID exists but `tracker.jobs.<id>.description` is missing or stub-only (th
 - **Master keyword list:** `user-profile.json.master_keyword_list`.
 - **JD-specific keywords:** extract from the JD blob using `shared-references/jd-keyword-extraction.md` (extraction step only).
 - **Recruiter notes (optional):** scan `.job-scout/recruiters/threads.json` for any thread where `company` matches the job's company. If found, load that thread's `notes` array.
-- **Company-researcher digest (optional):** if the orchestrator wants company context, dispatch `company-researcher/SKILL.md` per `shared-references/subagent-protocol.md`. The dispatch payload must include `company_name` (from `tracker.jobs.<id>.company`), `job_id`, `source_blob` (the JD text), `cached_files` (matching supporting-docs paths — filter the index to docs whose filename or summary references this company), and `signals_requested` (default: `["size", "stage", "reputation", "red_flags"]`). This is optional — skip if the JD already provides sufficient company context.
+- **Company-researcher digest (optional):** if the orchestrator wants company context, dispatch `_company-researcher/SKILL.md` per `shared-references/subagent-protocol.md`. The dispatch payload must include `company_name` (from `tracker.jobs.<id>.company`), `job_id`, `source_blob` (the JD text), `cached_files` (matching supporting-docs paths — filter the index to docs whose filename or summary references this company), and `signals_requested` (default: `["size", "stage", "reputation", "red_flags"]`). This is optional — skip if the JD already provides sufficient company context.
 
 ## Step 3: Synthesise the prep packet
 
@@ -64,7 +64,7 @@ For each question, note which SPAR(s) from section 1 are the best response.
 Specific to this role/company. Drawn from:
 
 - The JD (gaps, ambiguities)
-- The company-researcher digest (red flags, growth stage) — if obtained
+- The _company-researcher digest (red flags, growth stage) — if obtained
 - The user's deal-breakers / nice-to-haves from `user-profile.json.requirements`
 - Recruiter notes (anything still pending or worth confirming)
 
@@ -87,7 +87,7 @@ Gaps between CV and JD where the interviewer may push:
 
 ### 5. Recent company signals
 
-If `company-researcher` returned reputation digest items or red flags, surface them:
+If `_company-researcher` returned reputation digest items or red flags, surface them:
 
 ```
 **Signal 1:** Company recently raised Series C ($120M) — likely scaling pressure.
@@ -97,7 +97,7 @@ If `company-researcher` returned reputation digest items or red flags, surface t
    Worth checking: "How does the team handle launch-period intensity? What's the recovery cadence after?"
 ```
 
-If no `company-researcher` signals are available, this section is omitted.
+If no `_company-researcher` signals are available, this section is omitted.
 
 ## Step 4: Write the prep packet
 
@@ -143,7 +143,7 @@ Confirm to the user with the file path.
 
 - **`../shared-references/jd-keyword-extraction.md`** — keyword extraction (extraction step only)
 - **`../shared-references/supporting-docs.md`** — supporting-docs consumer contract
-- **`../shared-references/subagent-protocol.md`** — for optional company-researcher dispatch
-- **`../company-researcher/SKILL.md`** — optional company context
+- **`../shared-references/subagent-protocol.md`** — for optional _company-researcher dispatch
+- **`../_company-researcher/SKILL.md`** — optional company context
 - **`../shared-references/workspace-layout.md`** — bootstrap + state layout
-- **`../cv-optimizer/references/psychology-cheatsheet.md`** — informs SPAR narrative framing
+- **`../_cv-optimizer/references/psychology-cheatsheet.md`** — informs SPAR narrative framing
