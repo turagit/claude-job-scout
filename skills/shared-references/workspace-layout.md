@@ -41,7 +41,14 @@ Before doing any real work, every command must ensure `.job-scout/` exists in th
    - An empty `cache/supporting-docs.json` with `{ "version": 1, "last_scanned": null, "docs": {} }`.
 
    Then run the supporting-docs scan described in `supporting-docs.md` — the user is prompted once per workspace; the scan itself runs silently on subsequent commands. Does not block the command that triggered the bootstrap.
-5. **On decline:** tell the user the command needs a state folder to work properly and offer to fall back to the workspace root for this run only (legacy mode). Do not nag again in the same session.
+
+5. **Bootstrap nudge for supporting docs.** Immediately after the standard files are written (step 4), run a quick `Glob` for likely supporting-doc files at the workspace root: `*.pdf`, `*.docx`, `*.pptx`, `*.md`, `*.txt`. Filter out the CV (matches `cv.*`, `resume.*`, `curriculum.*`) and anything inside `.job-scout/`, `.git/`, or dotted directories. If 1+ files found, prompt the user:
+
+   > "📎 I noticed [N] files in your workspace that look like supporting materials (certs, talks, decks, recommendations). Indexing them now will make every future CV rewrite, profile proposal, and cover letter sharper. Run `/index-docs` now? (Y/n)"
+
+   On Y: dispatch `/index-docs` immediately. On n: remember per session (the supporting-docs reference's opt-out behaviour applies). If zero files found, proceed silently — the user can run `/index-docs` later when they add docs.
+
+6. **On decline:** tell the user the command needs a state folder to work properly and offer to fall back to the workspace root for this run only (legacy mode). Do not nag again in the same session.
 
 ## Why per-project (not per-user)
 
