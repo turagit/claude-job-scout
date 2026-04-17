@@ -43,7 +43,7 @@ Prerequisite for every later phase. Nothing in Phase 2 or 3 can ship cleanly wit
 - [x] **Parallel job scoring** — `/match-jobs` and `/check-job-notifications` fan out scoring subagents (~5 jobs per subagent).
 - [x] **Parallel Top Picks pagination** — 1 subagent per page during Step 10 sweep.
 - [x] **`company-researcher` subagent** — digest-only return (size/stage/rep/red-flags, ≤3 lines).
-- [ ] **`cv-section-rewriter` subagent** — one per role during Phase 3 CV rewrite.
+- [x] **`cv-section-rewriter` subagent** — one per role during Phase 3 CV rewrite.
 
 ## Phase 2 — v0.5.0: SEO / ATS depth
 
