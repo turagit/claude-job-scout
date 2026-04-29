@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ data.title }} — linkedin-job-hunter</title>
+<style>
+{{ assets.theme_css | raw }}
+</style>
+</head>
+<body>
+<main>
+{{ view_body | raw }}
+<footer>Generated {{ data.generated_at }} · linkedin-job-hunter v{{ plugin_version }}</footer>
+</main>
+<script type="application/json" id="report-data">
+{{ data | json }}
+</script>
+<script>
+{{ assets.interactive_js | raw }}
+</script>
+</body>
+</html>
