@@ -390,4 +390,11 @@ footer {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+  .score-pill.tier-b,
+  .score-pill.tier-c,
+  .tag-chip,
+  .tag-chip.accent {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }

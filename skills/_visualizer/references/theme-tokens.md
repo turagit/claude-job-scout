@@ -15,7 +15,7 @@ The full token set is implemented as CSS custom properties in `../assets/theme.c
 | `--accent-to` | #ec4899 (pink 500) | Primary gradient end |
 | `--accent-warn` | #fbbf24 (amber 400) | B-tier pill background |
 | `--accent-warn-fg` | #78350f (amber 900) | B-tier pill text |
-| `--accent-mute` | #9ca3af (gray 400) | C-tier text, muted accents |
+| `--accent-mute` | #9ca3af (gray 400) | Muted accents (e.g., flat-delta indicator) |
 | `--text-strong` | #1f1f2e | Body text, titles |
 | `--text-muted` | #6b7280 | Secondary text, metadata lines |
 | `--ring-soft` | rgba(124, 58, 237, 0.10) | Card borders, divider lines |
