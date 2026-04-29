@@ -1,6 +1,9 @@
 (function () {
   'use strict';
 
+  if (window.__REPORT_INTERACTIVE_LOADED__) return;
+  window.__REPORT_INTERACTIVE_LOADED__ = true;
+
   // Sort handlers
   document.querySelectorAll('.toolbar [data-sort]').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -9,7 +12,7 @@
       var list = toolbar && toolbar.nextElementSibling;
       if (!list) return;
       var items = Array.prototype.slice.call(list.children).filter(function (el) {
-        return el.dataset && (el.dataset.sortScore !== undefined || el.dataset['sort_' + key] !== undefined);
+        return el.dataset && el.dataset['sort_' + key] !== undefined;
       });
       items.sort(function (a, b) {
         var av = a.dataset['sort_' + key] || '';
@@ -64,7 +67,6 @@
       var target = document.getElementById(targetId);
       if (!target) return;
       target.classList.toggle('read');
-      target.style.opacity = target.classList.contains('read') ? '0.55' : '';
     });
   });
 
@@ -97,6 +99,9 @@
       window.__REPORT_DATA__ = JSON.parse(dataEl.textContent);
     } catch (e) {
       window.__REPORT_DATA__ = null;
+      if (window.console && console.warn) {
+        console.warn('interactive.js: failed to parse #report-data JSON', e);
+      }
     }
   }
 })();
