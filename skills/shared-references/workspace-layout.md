@@ -75,7 +75,7 @@ On a freshly bootstrapped workspace (folder just created by step 4 above), no mi
 
 ```
 current = read(.job-scout/schema-version).version
-target  = SCHEMA_VERSION  # canonical value documented in this file; currently 1
+target  = SCHEMA_VERSION  # canonical value documented in this file; currently 2 (bumped from 1 in the v0.7.0 release)
 if current < target:
   for v in range(current, target):
     apply_migration(v -> v+1)
@@ -98,11 +98,11 @@ Inform the user about the upgrade actions in a single message, not interactively
 2. Add a subsection below this one describing `v<N> → v<N+1>`: what fields change, how to transform data in place, any files that are renamed or moved.
 3. Update every skill that reads the affected files to use the new shape.
 
-No migrations exist in Phase 1. The scaffolding is in place for Phase 2+.
+First migration (`v1 → v2`) ships with the v0.7.0 release; see below.
 
-### 0.6 → 0.7 (visual render layer)
+### v1 → v2 (visual render layer; ships with plugin v0.7.0)
 
-Triggered when `.job-scout/schema-version` reads `0.6` and the running plugin is v0.7.0 or later.
+Applies when the migration runner reads `version: 1` from `.job-scout/schema-version` and the canonical `SCHEMA_VERSION` is `2`.
 
 1. **Add config keys for retention** (idempotent — only adds missing keys, preserves existing values):
    - If `.job-scout/config.json` does not exist, create it with `{}`.
@@ -115,6 +115,6 @@ Triggered when `.job-scout/schema-version` reads `0.6` and the running plugin is
    - Create `.job-scout/reports/archive/` if missing.
 
 3. **Bump schema version**:
-   - Write `0.7` to `.job-scout/schema-version`.
+   - The runner writes `{ "version": 2, "upgraded_at": "<ISO>" }` to `.job-scout/schema-version` after every per-version migration in the loop completes (per the runner shape above). This step is documented here for completeness; the runner handles the actual write.
 
-This migration is safe to run repeatedly — every step is idempotent.
+This migration is safe to run repeatedly: every per-step write is itself idempotent, and the runner's `current < target` guard prevents re-execution once `version: 2` lands.
