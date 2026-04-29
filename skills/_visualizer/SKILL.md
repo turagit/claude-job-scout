@@ -51,6 +51,8 @@ The full contract — including the `data` shape per view — is in `references/
 
 Exactly one delta per dispatch.
 
+**Note on `status`:** The universal subagent protocol (`../shared-references/subagent-protocol.md`) allows `status: "ok | partial | error"`. `_visualizer` deliberately never returns `"partial"` — rendering is atomic. If the rendered output would exceed the budget, the subagent returns `status: "error"` with code `budget_exceeded` so the dispatcher can fall back to markdown rather than show half a report.
+
 ## Procedure
 
 ### Step 1: Validate inputs
@@ -163,7 +165,7 @@ The result is the `final_body` string.
 
 For `format: "html"`:
 
-1. Compose path: `<inputs.output_dir>/<inputs.data.filename>` (the dispatcher provides the filename — see render-orchestration.md).
+1. Compose path: `<inputs.output_dir>/<inputs.data.filename>` (the dispatcher provides the filename — see `../shared-references/render-orchestration.md`, created in Task 7 of the v0.7.0 plan).
 2. Atomic write: write to `<path>.tmp`, then rename to `<path>`. If write fails, return:
    ```json
    { "status": "error", "deltas": [], "errors": [{ "code": "io_error", "message": "<reason>" }], "continuation_cursor": null }
