@@ -99,3 +99,22 @@ Inform the user about the upgrade actions in a single message, not interactively
 3. Update every skill that reads the affected files to use the new shape.
 
 No migrations exist in Phase 1. The scaffolding is in place for Phase 2+.
+
+### 0.6 → 0.7 (visual render layer)
+
+Triggered when `.job-scout/schema-version` reads `0.6` and the running plugin is v0.7.0 or later.
+
+1. **Add config keys for retention** (idempotent — only adds missing keys, preserves existing values):
+   - If `.job-scout/config.json` does not exist, create it with `{}`.
+   - If the file is missing the key `render_retention_days`, add it with value `90`.
+   - If the file is missing the key `render_archive_days`, add it with value `365`.
+   - **Do not** add the `render` key. Its absence is the signal that the first-run prompt (see `render-orchestration.md` Step B1) has not yet fired; the prompt sets the key on first user answer.
+
+2. **Create reports directories** (idempotent):
+   - Create `.job-scout/reports/` if missing.
+   - Create `.job-scout/reports/archive/` if missing.
+
+3. **Bump schema version**:
+   - Write `0.7` to `.job-scout/schema-version`.
+
+This migration is safe to run repeatedly — every step is idempotent.
