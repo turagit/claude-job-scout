@@ -41,7 +41,7 @@ The dispatcher passes a single JSON envelope as the prompt body:
 }
 ```
 
-Exactly one delta per dispatch. The path is the file the subagent just wrote (HTML) or the markdown body it produced (when `format: "markdown"`). For `markdown` and `plain`, no file is written — the dispatcher prints the body in-conversation; the subagent returns the rendered string in a special `body` field instead of `path`:
+Exactly one delta per dispatch. For `format: "html"`, the `path` field is the absolute path to the file the subagent just wrote, and `body` is omitted. For `format: "markdown"` and `format: "plain"`, no file is written — `path` is `null`, and the rendered string is returned in a `body` field; the dispatcher prints it in-conversation:
 
 ```json
 {
