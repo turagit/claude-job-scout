@@ -1,0 +1,29 @@
+{# schema:
+   required:
+     - data.title
+     - data.subtitle
+     - data.generated_at
+     - data.tier_counts
+     - data.results
+#}
+## {{ data.title }}
+
+_{{ data.subtitle }}_
+
+{% if data.results %}
+| Tier | Score | Title | Company | Location | Salary |
+|------|------:|-------|---------|----------|--------|
+{% for job in data.results %}| {% if job.tier %}{% if job.tier == "a" %}🟢 A{% endif %}{% if job.tier == "b" %}🟡 B{% endif %}{% if job.tier == "c" %}⚪ C{% endif %}{% endif %} | **{{ job.score }}** | {{ job.title }} | {{ job.company }} | {{ job.location }} | {% if job.salary %}{{ job.salary }}{% endif %} |
+{% endfor %}
+
+**Tier counts:** A: {{ data.tier_counts.a }} · B: {{ data.tier_counts.b }} · C: {{ data.tier_counts.c }} · Total: {{ data.tier_counts.total }}
+
+{% for job in data.results %}{% if job.rationale %}
+### {% if job.tier == "a" %}🟢{% endif %}{% if job.tier == "b" %}🟡{% endif %}{% if job.tier == "c" %}⚪{% endif %} {{ job.title }} · {{ job.company }} ({{ job.score }})
+
+{{ job.rationale }}
+{% endif %}{% endfor %}
+
+{% else %}
+🌱 **No matching jobs found.** Try refining your search filters or running again later.
+{% endif %}

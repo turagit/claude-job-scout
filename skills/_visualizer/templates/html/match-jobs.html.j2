@@ -1,0 +1,55 @@
+{# schema:
+   required:
+     - data.title
+     - data.subtitle
+     - data.generated_at
+     - data.filename
+     - data.tier_counts
+     - data.results
+#}
+<header class="report-header">
+  <div class="icon">★</div>
+  <div>
+    <h1>{{ data.title }}</h1>
+    <div class="subtitle">{{ data.subtitle }}</div>
+  </div>
+</header>
+
+{% if data.results %}
+<div class="toolbar">
+  <button data-sort="score" class="active">Score ↓</button>
+  <button data-sort="date">Date ↓</button>
+  <button data-sort="company">Company A–Z</button>
+  <span style="flex:1"></span>
+  <button data-filter="all" data-filter-attr="tier" class="active">All ({{ data.tier_counts.total }})</button>
+  <button data-filter="a" data-filter-attr="tier">A-tier ({{ data.tier_counts.a }})</button>
+  <button data-filter="b" data-filter-attr="tier">B-tier ({{ data.tier_counts.b }})</button>
+  <button data-filter="c" data-filter-attr="tier">C-tier ({{ data.tier_counts.c }})</button>
+</div>
+
+<section>
+{% for job in data.results %}
+  <article class="job-card" data-tier="{{ job.tier }}" data-sort_score="{{ job.score }}" data-sort_date="{{ job.posted_at }}" data-sort_company="{{ job.company }}">
+    <div class="header">
+      <div class="title">{{ job.title }}</div>
+      <div class="score-pill tier-{{ job.tier }}">{{ job.score }}</div>
+    </div>
+    <div class="meta">{{ job.company }} · {{ job.location }}{% if job.salary %} · {{ job.salary }}{% endif %}{% if job.posted_at %} · {{ job.posted_at }}{% endif %}</div>
+    {% if job.tags %}
+    <div>
+      {% for tag in job.tags %}<span class="tag-chip">{{ tag }}</span>{% endfor %}
+    </div>
+    {% endif %}
+    {% if job.rationale %}
+    <div style="font-size:13px;color:var(--text-strong);margin-top:8px;line-height:1.5">{{ job.rationale }}</div>
+    {% endif %}
+  </article>
+{% endfor %}
+</section>
+{% else %}
+<div class="empty-state">
+  <div class="icon">🌱</div>
+  <div class="title">No matching jobs found.</div>
+  <div class="hint">Try refining your search filters or running again later.</div>
+</div>
+{% endif %}
