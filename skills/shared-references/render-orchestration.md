@@ -8,7 +8,9 @@ At the **end** of a Tier 1 command, after the command has computed its results a
 
 ## Step A: Build the data payload
 
-The dispatching skill builds a `data` object whose shape matches the requirements declared in `_visualizer/templates/html/<view>.html.j2`'s `{# schema: #}` frontmatter. Every payload includes these universal fields, plus view-specific fields:
+The dispatching skill builds a `data` object whose shape matches the requirements declared in `_visualizer/templates/html/<view>.html.j2`'s `{# schema: #}` frontmatter. The schema frontmatter is authoritative for each view's required keys.
+
+Universal fields (every view):
 
 ```json
 {
@@ -16,10 +18,18 @@ The dispatching skill builds a `data` object whose shape matches the requirement
   "subtitle": "<one-line subtitle>",
   "generated_at": "2026-04-29 14:30",
   "filename": "<view>-latest.html | <view>-2026-04-29-1430.html",
-  "tier_counts": { "a": 0, "b": 0, "c": 0, "total": 0 },
-  "results": [ /* view-specific items */ ]
+  "results": [ /* view-specific items, may be empty */ ]
 }
 ```
+
+Per-view extensions (only when the view's schema requires them):
+
+- `tier_counts: { a, b, c, total }` — for views that bucket scored items: `match-jobs`, `job-search`, `check-job-notifications`. Populate all four keys (use `0` when none) so toolbar buttons render `(0)` rather than blank.
+- `unread_count` — for `check-job-notifications` and `check-inbox`.
+- `thread_count` — for `check-inbox`.
+- `metrics`, `stages` — for `funnel-report`.
+- `role`, `company`, `sections` — for `interview-prep`.
+- `query` — for `job-search`.
 
 ### Filename rules
 
@@ -36,10 +46,12 @@ For `interview-prep`: `<role-slug>` is `<tracker-id>-<4-char-disambiguator>`. Th
 
 ### Tier classification (used by views with scored items)
 
-The dispatcher classifies before passing to `_visualizer`:
-- `score >= 80` → `"a"`
-- `60 <= score < 80` → `"b"`
-- `score < 60` → `"c"`
+The dispatcher uses the canonical scoring tiers from `_job-matcher` and passes the tier value directly to `_visualizer`:
+- `score >= 85` → `"a"`
+- `70 <= score < 85` → `"b"`
+- `55 <= score < 70` → `"c"`
+
+D-tier jobs (`score < 55`) are pre-filtered by `match-jobs` and `check-job-notifications` before reaching the renderer (per `_job-matcher`'s scoring framework); the visualizer never sees them. Templates render only `tier-a` / `tier-b` / `tier-c` pill variants.
 
 ## Step B: Read the render config
 
@@ -149,7 +161,13 @@ When falling back to markdown, replace the trailing clause with `— rendered ab
 
 ## Step F: Ask-and-fallback
 
-The HTML render or open failed. Print exactly this prompt:
+The HTML render or open failed.
+
+**`budget_exceeded` short-circuit:** if the visualizer returned `errors[0].code == "budget_exceeded"`, skip the prompt and re-dispatch with `format: "markdown"` directly. Print a one-line note `⚠ Report exceeded HTML budget; rendering as markdown.` before the markdown body. The user is not asked because there is no Chrome-open path to fall back from — the rendering itself is what failed.
+
+For all other error codes (`schema_mismatch`, `template_missing`, `io_error`, or extension-unavailable), prompt the user as below.
+
+Print exactly this prompt:
 
 ```
 ⚠ Couldn't open in Chrome (<reason>).

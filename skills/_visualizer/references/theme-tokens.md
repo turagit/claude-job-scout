@@ -41,9 +41,9 @@ A score's tier is derived in the dispatcher (orchestrator) and passed in `inputs
 
 | Tier | Score range | Pill class | Pill background |
 |------|-------------|------------|-----------------|
-| A | ≥ 80 | `score-pill tier-a` | violet→pink gradient |
-| B | 60–79 | `score-pill tier-b` | amber |
-| C | < 60 | `score-pill tier-c` | gray |
+| A | 85–100 | `score-pill tier-a` | violet→pink gradient |
+| B | 70–84 | `score-pill tier-b` | amber |
+| C | 55–69 | `score-pill tier-c` | gray |
 
 Templates never compute the tier themselves — they trust the dispatcher's `tier` field.
 
