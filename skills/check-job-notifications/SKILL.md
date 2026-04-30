@@ -180,7 +180,7 @@ If accepted:
 Construct a `data` payload for the render layer. Tier classification uses the canonical `_job-matcher` thresholds: `score >= 85` → `"a"`, `70 <= score < 85` → `"b"`, `55 <= score < 70` → `"c"`. Notifications with `score < 55` are D-tier and must be pre-filtered before reaching the renderer. View-specific fields:
 
 - `title`: "Today's notifications".
-- `subtitle`: "{{N}} new · {{unread}} unread · A:{{a}} B:{{b}}".
+- `subtitle`: "{{N}} new · {{unread}} unread · A:{{a}} B:{{b}} C:{{c}}".
 - `filename`: "check-job-notifications-latest.html".
 - `unread_count`: integer count of `seen: false` items.
 - `results[]`: each item is `{ id, title, company, received_at, source, score, tier, seen, preview, url }`. The `preview` is the first 140 chars of the notification body. The `url` is an absolute LinkedIn job URL captured during extraction — optional: when present, the templates render a "View posting ↗" link in HTML and a clickable title in markdown; when omitted, the templates fall back to plain title text via `{% if note.url %}` guards.
