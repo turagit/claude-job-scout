@@ -1,0 +1,27 @@
+{# schema:
+   required:
+     - data.title
+     - data.subtitle
+     - data.generated_at
+     - data.results
+     - data.unread_count
+     - data.thread_count
+#}
+## 📬 {{ data.title }}
+
+_{{ data.subtitle }}_
+
+**Unread:** {{ data.unread_count }} of {{ data.thread_count }} threads
+
+{% if data.results %}
+{% for thread in data.results %}
+### {% if thread.unread %}● {% endif %}{% if thread.url %}[{{ thread.recruiter_name }}{% if thread.company %} · {{ thread.company }}{% endif %}]({{ thread.url }}){% else %}{{ thread.recruiter_name }}{% if thread.company %} · {{ thread.company }}{% endif %}{% endif %}
+
+_{{ thread.message_count }} messages · last {{ thread.last_message_at }} from {{ thread.last_message_from }}_{% if thread.lead_tier %} · **Lead tier: {{ thread.lead_tier }}**{% endif %}
+
+{% for msg in thread.messages %}- **{{ msg.sent_at }} · {{ msg.from }}:** {{ msg.body }}
+{% endfor %}
+{% endfor %}
+{% else %}
+📭 **Inbox is quiet.** No active recruiter threads right now.
+{% endif %}

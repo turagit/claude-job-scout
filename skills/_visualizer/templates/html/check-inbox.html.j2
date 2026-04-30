@@ -1,0 +1,62 @@
+{# schema:
+   required:
+     - data.title
+     - data.subtitle
+     - data.generated_at
+     - data.filename
+     - data.results
+     - data.unread_count
+     - data.thread_count
+#}
+<header class="report-header">
+  <div class="icon">📬</div>
+  <div>
+    <h1>{{ data.title }}</h1>
+    <div class="subtitle">{{ data.subtitle }}</div>
+  </div>
+</header>
+
+{% if data.results %}
+<div class="toolbar">
+  <button data-sort="date" class="active">Latest ↓</button>
+  <button data-sort="company">Company A–Z</button>
+  <span style="flex:1"></span>
+  <button data-filter="all" data-filter-attr="seen" class="active">All ({{ data.thread_count }})</button>
+  <button data-filter="false" data-filter-attr="seen">Unread ({{ data.unread_count }})</button>
+</div>
+
+<section>
+{% for thread in data.results %}
+  <article id="thread-{{ thread.id }}" class="thread-card" data-seen="{% if thread.unread %}false{% else %}true{% endif %}" data-sort_date="{{ thread.last_message_at }}" data-sort_company="{{ thread.company }}">
+    <div class="header">
+      <div class="title">{{ thread.recruiter_name }}{% if thread.company %} · {{ thread.company }}{% endif %}{% if thread.unread %} <span class="tag-chip accent">unread</span>{% endif %}</div>
+      <div style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono)">{{ thread.last_message_at }}</div>
+    </div>
+    <div class="meta">{{ thread.message_count }} message{% if thread.message_count %}{% endif %} · last from {{ thread.last_message_from }}{% if thread.url %} · <a href="{{ thread.url }}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-from);text-decoration:none;font-weight:600">View on LinkedIn ↗</a>{% endif %}</div>
+    {% if thread.lead_tier %}<div><span class="tag-chip">Lead tier: {{ thread.lead_tier }}</span></div>{% endif %}
+    <div class="fold" style="margin-top:10px">
+      <div class="fold-header">
+        <span>Conversation ({{ thread.message_count }} message{% if thread.message_count %}{% endif %})</span>
+        <span class="chevron">›</span>
+      </div>
+      <div class="fold-body">
+        <div class="timeline">
+        {% for msg in thread.messages %}
+          <div class="timeline-item">
+            <div class="meta">{{ msg.sent_at }} · {{ msg.from }}</div>
+            <div>{{ msg.body }}</div>
+          </div>
+        {% endfor %}
+        </div>
+      </div>
+    </div>
+  </article>
+{% endfor %}
+</section>
+{% else %}
+<div class="empty-state">
+  <div class="icon">📭</div>
+  <div class="title">Inbox is quiet.</div>
+  <div class="hint">No active recruiter threads right now.</div>
+</div>
+{% endif %}

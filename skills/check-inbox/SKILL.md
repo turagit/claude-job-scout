@@ -18,7 +18,7 @@ All browser work in this command uses **the Claude Chrome extension exclusively*
 
 ## Step 0: Bootstrap workspace
 
-Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists. Recruiter thread state lives in `.job-scout/recruiters/threads.json`.
+Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists. Recruiter thread state lives in `.job-scout/recruiters/threads.json`. Then follow `shared-references/render-orchestration.md` Step G (lifecycle cleanup) to archive expired report files and prune old archives — cheap directory scan; runs at the start of every Tier 1 command.
 
 ## Step 1: Scan Inbox
 
@@ -37,6 +37,31 @@ Show leads grouped by category with: recruiter name, company, role mentioned, da
 ## Step 4: Draft and Send Responses
 
 For each lead the user wants to respond to: read full conversation thread, cross-reference against CV/requirements, draft response using _recruiter-engagement templates adapted to the specific opportunity. Present draft with context and ask for approval. Only send after explicit user confirmation — navigate to conversation, type message, confirm once more before sending.
+
+## Step 5: Build results payload
+
+Construct a `data` payload as in `../shared-references/render-orchestration.md` Step A. View-specific fields:
+
+- `title`: "Recruiter inbox".
+- `subtitle`: "{{N}} threads · {{unread}} unread".
+- `filename`: "check-inbox-latest.html".
+- `thread_count`: integer.
+- `unread_count`: integer count of `unread: true` threads.
+- `results[]`: each item is `{ id, recruiter_name, company, message_count, last_message_at, last_message_from, unread, lead_tier, url, messages[] }`. `messages[]` is `[{ sent_at, from, body }]` chronological. `lead_tier` per `_recruiter-engagement` taxonomy (warm/cold/lukewarm). `url` is the absolute LinkedIn conversation URL or — when the thread is about a specific role — the job posting URL; it is optional. When present, the templates render a "View on LinkedIn ↗" link in HTML and a clickable thread heading in markdown; when omitted, the templates fall back to plain text via `{% if thread.url %}` guards.
+
+## Step 6: Render
+
+Follow `../shared-references/render-orchestration.md` end-to-end (Step G already ran in Step 0):
+
+1. Step A — payload built in Step 5 above.
+2. Steps B–F — read render config, dispatch `_visualizer`, open in Chrome (or fall back), handle errors.
+3. Step E — print the summary line:
+
+```
+✓ {{N}} threads — {{unread}} unread — opened report in Chrome
+```
+
+Fall back to pre-v0.7.0 inline output if `Agent` tool is unavailable.
 
 ## Next Steps
 
