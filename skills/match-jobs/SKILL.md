@@ -84,11 +84,48 @@ For each job scoring A-tier (85-100):
 
 Skip B/C-tier jobs — the user may not apply, so the discoverability check is not worth the analysis.
 
-## Step 5: Present Results
+## Step 5: Build results payload
 
-Show ranked markdown table (title, company, score, tier, Easy Apply, posted, applicants). For A-Tier and top B-Tier, provide detailed match cards with score breakdown, matched skills, gaps, and red flags. Keep B/C tiers as compact rows — no paragraph rationales.
+Construct a `data` payload for the render layer. Tier classification uses the canonical `_job-matcher` thresholds: `score >= 85` → `"a"`, `70 <= score < 85` → `"b"`, `55 <= score < 70` → `"c"`. Jobs with `score < 55` are D-tier and must be pre-filtered before reaching the renderer (existing `match-jobs` behaviour).
+
+```json
+{
+  "title": "{{N}} matches today",
+  "subtitle": "Top score: {{top_score}} · A-tier: {{a_count}} · B-tier: {{b_count}}",
+  "generated_at": "<YYYY-MM-DD HH:MM>",
+  "filename": "match-jobs-latest.html",
+  "tier_counts": { "a": <a_count>, "b": <b_count>, "c": <c_count>, "total": <total> },
+  "results": [
+    {
+      "title": "<job title>",
+      "company": "<company>",
+      "location": "<location>",
+      "salary": "<salary or empty string>",
+      "posted_at": "<YYYY-MM-DD>",
+      "score": <integer>,
+      "tier": "a | b | c",
+      "url": "<absolute job URL on LinkedIn — required when known>",
+      "tags": ["<tag1>", "<tag2>"],
+      "rationale": "<one-paragraph rationale for A-tier and top B-tier; empty string otherwise>"
+    }
+  ]
+}
+```
+
+`tags` should be drawn from the matched skills / signals already computed during scoring. Limit to 5 tags per job. The `url` is the absolute LinkedIn job URL captured during extraction; omit the field for any job whose URL is not known (the templates handle absence gracefully).
 
 Merge newly scored jobs into `.job-scout/tracker.json` with status "seen".
+
+## Step 6: Render
+
+Follow `../shared-references/render-orchestration.md` end-to-end:
+
+1. Step G first — clean up old reports under `.job-scout/reports/`.
+2. Step A — payload built in Step 5 above.
+3. Steps B–F — read render config, dispatch `_visualizer`, open in Chrome (or fall back), handle errors.
+4. Step E — print the `match-jobs` summary line: `✓ {{N}} matches scored — A:{{a}} B:{{b}} C:{{c}} — opened report in Chrome` (or `…rendered as markdown above` when falling back).
+
+If the `Agent` tool is unavailable, fall back to the pre-v0.7.0 markdown table output: ranked markdown table (title, company, score, tier, Easy Apply, posted, applicants). For A-Tier and top B-Tier, provide detailed match cards with score breakdown, matched skills, gaps, and red flags. Keep B/C tiers as compact rows — no paragraph rationales.
 
 ## Next Steps
 
