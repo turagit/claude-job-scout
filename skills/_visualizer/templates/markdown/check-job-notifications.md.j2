@@ -1,0 +1,23 @@
+{# schema:
+   required:
+     - data.title
+     - data.subtitle
+     - data.generated_at
+     - data.tier_counts
+     - data.results
+     - data.unread_count
+#}
+## 🔔 {{ data.title }}
+
+_{{ data.subtitle }}_
+
+**Unread:** {{ data.unread_count }} of {{ data.tier_counts.total }}
+
+{% if data.results %}
+| Status | Tier | Score | Title | Company | Received |
+|:------:|:----:|------:|-------|---------|----------|
+{% for note in data.results %}| {% if note.seen %}✓{% else %}●{% endif %} | {% if note.tier %}{% if note.tier == "a" %}🟢 A{% endif %}{% if note.tier == "b" %}🟡 B{% endif %}{% if note.tier == "c" %}⚪ C{% endif %}{% endif %} | **{{ note.score }}** | {% if note.url %}[{{ note.title }}]({{ note.url }}){% else %}{{ note.title }}{% endif %} | {{ note.company }} | {{ note.received_at }} |
+{% endfor %}
+{% else %}
+🔕 **No notifications today.** Make sure your LinkedIn alerts are still active.
+{% endif %}

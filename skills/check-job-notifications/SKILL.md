@@ -19,7 +19,7 @@ All browser work in this command uses **the Claude Chrome extension exclusively*
 
 ## Step 0: Bootstrap workspace
 
-Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists in the current workspace. All paths below are inside `.job-scout/`.
+Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists in the current workspace. All paths below are inside `.job-scout/`. Then follow `shared-references/render-orchestration.md` Step G (lifecycle cleanup) to archive expired report files and prune old archives — cheap directory scan; runs at the start of every Tier 1 command.
 
 ## Step 0a: Daily-driver context line
 
@@ -174,6 +174,30 @@ If accepted:
 7. Present the new A/B/C matches.
 
 **Fallback:** if the `Agent` tool is unavailable, fall back to the sequential in-thread loop (fetch → dedupe → extract → score) page by page.
+
+## Step 11: Build results payload
+
+Construct a `data` payload for the render layer. Tier classification uses the canonical `_job-matcher` thresholds: `score >= 85` → `"a"`, `70 <= score < 85` → `"b"`, `55 <= score < 70` → `"c"`. Notifications with `score < 55` are D-tier and must be pre-filtered before reaching the renderer. View-specific fields:
+
+- `title`: "Today's notifications".
+- `subtitle`: "{{N}} new · {{unread}} unread · A:{{a}} B:{{b}}".
+- `filename`: "check-job-notifications-latest.html".
+- `unread_count`: integer count of `seen: false` items.
+- `results[]`: each item is `{ id, title, company, received_at, source, score, tier, seen, preview, url }`. The `preview` is the first 140 chars of the notification body. The `url` is an absolute LinkedIn job URL captured during extraction — optional: when present, the templates render a "View posting ↗" link in HTML and a clickable title in markdown; when omitted, the templates fall back to plain title text via `{% if note.url %}` guards.
+
+## Step 12: Render
+
+Follow `../shared-references/render-orchestration.md` end-to-end (Step G already ran in Step 0):
+
+1. Step A — payload built in Step 11 above.
+2. Steps B–F — read render config, dispatch `_visualizer`, open in Chrome (or fall back), handle errors.
+3. Step E — print the summary line:
+
+```
+✓ {{N}} notifications — {{unread}} unread — opened report in Chrome
+```
+
+Fall back to pre-v0.7.0 markdown table if `Agent` tool is unavailable.
 
 ## Next Steps
 

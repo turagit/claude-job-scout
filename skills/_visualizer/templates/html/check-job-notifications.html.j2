@@ -1,0 +1,49 @@
+{# schema:
+   required:
+     - data.title
+     - data.subtitle
+     - data.generated_at
+     - data.filename
+     - data.tier_counts
+     - data.results
+     - data.unread_count
+#}
+<header class="report-header">
+  <div class="icon">🔔</div>
+  <div>
+    <h1>{{ data.title }}</h1>
+    <div class="subtitle">{{ data.subtitle }}</div>
+  </div>
+</header>
+
+{% if data.results %}
+<div class="toolbar">
+  <button data-sort="date" class="active">Latest ↓</button>
+  <button data-sort="score">Score ↓</button>
+  <span style="flex:1"></span>
+  <button data-filter="all" data-filter-attr="seen" class="active">All ({{ data.tier_counts.total }})</button>
+  <button data-filter="false" data-filter-attr="seen">Unread ({{ data.unread_count }})</button>
+  <button data-filter="a" data-filter-attr="tier">A-tier ({{ data.tier_counts.a }})</button>
+  <button data-filter="b" data-filter-attr="tier">B-tier ({{ data.tier_counts.b }})</button>
+</div>
+
+<section>
+{% for note in data.results %}
+  <article id="note-{{ note.id }}" class="event-card" data-tier="{{ note.tier }}" data-seen="{% if note.seen %}true{% else %}false{% endif %}" data-sort_score="{{ note.score }}" data-sort_date="{{ note.received_at }}">
+    <div class="header">
+      <div class="title">{{ note.title }}</div>
+      <div class="score-pill tier-{{ note.tier }}">{{ note.score }}</div>
+    </div>
+    <div class="meta">{{ note.company }} · {{ note.received_at }}{% if note.source %} · {{ note.source }}{% endif %}{% if note.url %} · <a href="{{ note.url }}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-from);text-decoration:none;font-weight:600">View posting ↗</a>{% endif %}</div>
+    {% if note.preview %}<div style="font-size:13px;color:var(--text-muted);margin-top:6px">{{ note.preview }}</div>{% endif %}
+    <div style="margin-top:8px"><button class="copy-btn" data-mark-read="note-{{ note.id }}">{% if note.seen %}Mark unread{% else %}Mark read{% endif %}</button></div>
+  </article>
+{% endfor %}
+</section>
+{% else %}
+<div class="empty-state">
+  <div class="icon">🔕</div>
+  <div class="title">No notifications today.</div>
+  <div class="hint">Make sure your LinkedIn alerts are still active.</div>
+</div>
+{% endif %}
