@@ -46,6 +46,22 @@ These are model-auto-loaded playbooks used by the commands above. You don't invo
 
 ---
 
+### Visual reports (v0.7.0+)
+
+Six Tier 1 commands — `/match-jobs`, `/job-search`, `/check-job-notifications`, `/funnel-report`, `/check-inbox`, `/interview-prep` — now render their output as a self-contained HTML report (Modern Cards aesthetic, light interactivity) that auto-opens in your Chrome via the existing Claude Chrome extension.
+
+Reports are saved under `.job-scout/reports/`. Snapshot views (match-jobs, job-search, check-job-notifications, check-inbox) write `<view>-latest.html`, overwriting on each run. Time-series views (funnel-report, interview-prep) write timestamped files; old files auto-archive after 90 days.
+
+On the first Tier 1 invocation after upgrade, you pick how output is displayed:
+
+- `always` — render HTML and auto-open in Chrome (best experience; higher token cost).
+- `never` — render styled markdown directly in the conversation window (lower token cost).
+- `ask` — choose per-run.
+
+Change later with `/config render <mode>`. When HTML rendering or Chrome-open fails, the plugin asks if you want the markdown view instead — output is never lost.
+
+---
+
 ## The `.job-scout/` workspace (important)
 
 Starting in v0.3.0, every command reads and writes state inside a hidden, **per-project** folder called `.job-scout/`, located at the root of whatever project you invoke the plugin from.

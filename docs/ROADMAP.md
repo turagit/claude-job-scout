@@ -20,8 +20,9 @@ Single source of truth for what this plugin is for, which phase we're in, and wh
 | **1. Token + Agentic foundations** | v0.4.0 | Shipped — v0.4.0 | [`specs/2026-04-16-phase-1-token-agentic-foundations-design.md`](superpowers/specs/2026-04-16-phase-1-token-agentic-foundations-design.md) | _pending_ |
 | 2. SEO / ATS depth | v0.5.0 | Shipped — v0.5.0 | [`specs/2026-04-17-phase-2-seo-ats-depth-design.md`](superpowers/specs/2026-04-17-phase-2-seo-ats-depth-design.md) | [`plans/2026-04-17-phase-2-seo-ats-depth.md`](superpowers/plans/2026-04-17-phase-2-seo-ats-depth.md) |
 | 3. New user-facing commands | v0.6.0 | Shipped — v0.6.0 | [`specs/2026-04-17-phase-3-user-facing-commands-design.md`](superpowers/specs/2026-04-17-phase-3-user-facing-commands-design.md) | [`plans/2026-04-17-phase-3-user-facing-commands.md`](superpowers/plans/2026-04-17-phase-3-user-facing-commands.md) |
+| **4. Visual render layer** | v0.7.0 | In progress | [`specs/2026-04-29-visual-render-layer-design.md`](superpowers/specs/2026-04-29-visual-render-layer-design.md) | [`plans/2026-04-29-visual-render-layer.md`](superpowers/plans/2026-04-29-visual-render-layer.md) |
 
-**Current focus:** All three phases complete. Plugin is at v0.6.0. Future phases gated on user need.
+**Current focus:** Phase 4 (visual render layer) executing toward v0.7.0.
 
 ---
 
@@ -70,6 +71,30 @@ Each command surfaces capabilities built in Phases 1–2. Spec to be written aft
 - [x] **`/interview-prep <tracker-id>`**
 - [x] **`/funnel-report`**
 
+## Phase 4 — v0.7.0: Visual render layer
+
+Adds a beautified HTML report layer for the six Tier 1 user-facing commands. Reports render via the `_visualizer` subagent (Modern Cards aesthetic, light JS interactivity), auto-open in Chrome via the existing extension, and fall back to styled markdown when HTML rendering or browser-open fails.
+
+- [ ] **Task 1: `_visualizer` skill skeleton + reference files**
+- [ ] **Task 2: theme.css asset**
+- [ ] **Task 3: interactive.js asset**
+- [ ] **Task 4: base.html.j2 + base.md.j2 frame templates**
+- [ ] **Task 5: `_visualizer/SKILL.md` full subagent contract**
+- [ ] **Task 6: `match-jobs` HTML + markdown templates**
+- [ ] **Task 7: `render-orchestration.md` shared reference**
+- [ ] **Task 8: Schema migration 0.6 → 0.7**
+- [ ] **Task 9: `/config` slash command**
+- [ ] **Task 10: Wire `/match-jobs` to render orchestration**
+- [ ] **Task 11: End-to-end smoke + token measurement**
+- [ ] **Task 12: Wire `/job-search`**
+- [ ] **Task 13: Wire `/check-job-notifications`**
+- [ ] **Task 14: Wire `/check-inbox`**
+- [ ] **Task 15: Wire `/funnel-report`**
+- [ ] **Task 16: Wire `/interview-prep`**
+- [ ] **Task 17: CLAUDE.md hard rule + `.gitignore` update**
+- [ ] **Task 18: Release prep — versioning, ROADMAP, CHANGELOG, README**
+- [ ] **Task 19: Final 6-command end-to-end smoke**
+
 ---
 
 ## Log
@@ -79,3 +104,4 @@ Each command surfaces capabilities built in Phases 1–2. Spec to be written aft
 - **2026-04-17** — Phase 2 shipped as v0.5.0. Phase 3 (new user-facing commands) entering design.
 - **2026-04-17** — Phase 3 shipped as v0.6.0. All three phases complete; plugin is feature-complete per the v0.4.0–v0.6.0 roadmap. Future phases gated on user need.
 - **2026-04-17** — v0.6.1 maintenance release. Renamed 7 internal skills with `_` prefix for menu clarity.
+- **2026-04-29** — Phase 4 (visual render layer) entering execution. Spec + plan committed; v0.7.0 target.

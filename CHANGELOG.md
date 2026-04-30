@@ -4,6 +4,35 @@ All notable changes to the LinkedIn Job Hunter plugin are documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] — 2026-04-29 (in progress)
+
+### Added
+
+- Visual render layer for Tier 1 user-facing commands. `/match-jobs`, `/job-search`, `/check-job-notifications`, `/funnel-report`, `/check-inbox`, and `/interview-prep` now produce a Modern Cards–styled HTML report that auto-opens in Chrome via the existing extension.
+- New `_visualizer` subagent (`skills/_visualizer/`) — dispatches via the `Agent` tool, returns a delta-only response per the existing subagent protocol. Templates, theme tokens, and asset bundle live in a single skill.
+- New `/config` slash command for viewing and changing per-workspace settings (`.job-scout/config.json`).
+- New shared reference `skills/shared-references/render-orchestration.md` documenting the procedure every Tier 1 command follows: build payload → consult render config → dispatch → open in Chrome → handle failure → terminal summary → lifecycle cleanup.
+- First-run prompt: on first Tier 1 invocation after upgrade, the user picks `always`, `never`, or `ask` for HTML rendering. The choice is stored in `.job-scout/config.json` and can be changed via `/config render <mode>`.
+- Markdown fallback: when HTML rendering or Chrome-open fails, the user is asked whether to show output as styled markdown in the conversation window.
+- Schema migration 0.6 → 0.7: adds retention config keys and creates `.job-scout/reports/` and `.job-scout/reports/archive/`.
+- `.superpowers/` is now gitignored.
+
+### Changed
+
+- Each of the six Tier 1 SKILL.md files gains a final "Render" step that calls into the shared orchestration. Their frontmatter is unchanged (per the project's convention that user-invocable slash commands do not carry `version:` frontmatter — verified by audit during Task 9 review).
+- CLAUDE.md gains a new hard rule (#7): Tier 1 commands must dispatch `_visualizer` rather than rendering HTML inline.
+
+### Out of scope (deferred to v0.8.0+)
+
+- Tier 2 commands (`/analyze-cv`, `/cover-letter`, `/optimize-profile`).
+- Dark mode.
+- Cross-report comparison views.
+- Print/PDF stylesheet polish.
+- Embedded charts in `/funnel-report`.
+- **Token-cost reference table** in `docs/superpowers/specs/2026-04-29-visual-render-layer-design.md` Section 7 — placeholders (`<measured>`) in the first-run prompt copy will be filled by the final end-to-end smoke (Task 19) and pushed in a follow-up commit.
+
+---
+
 ## [0.6.1] — 2026-04-17
 
 Maintenance release. No user-invokable command changes.
