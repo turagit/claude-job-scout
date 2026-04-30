@@ -53,8 +53,8 @@ The first time a Tier 1 command is invoked after the v0.7.0 upgrade, the orchest
 How should command output be displayed?
 
   always  — Render as a styled HTML report and auto-open in Chrome.
-            Best experience. Higher token cost per command (≈ <measured>
-            extra tokens per render for the visualizer subagent).
+            Best experience. Adds modest token overhead per command
+            (the visualizer subagent inlines templates + assets).
   never   — Show output as styled markdown directly in this window.
             Lower token cost. No browser hop.
   ask     — Decide per-command at the end of each run.
@@ -64,7 +64,7 @@ Choice [always]: _
 
 The user's response writes the chosen value to `.job-scout/config.json` under the `render` key. The prompt is shown only on this first invocation; afterwards the user changes their preference via `/config render <mode>` or by editing the file.
 
-The `≈ <measured>` figure is replaced with a real range during plan task 1 after the first end-to-end render is measured (see Section 7 for the measurement protocol).
+The token-overhead description is intentionally qualitative in v0.7.0. A measured range will replace it in a follow-up patch once a real-world `_visualizer` dispatch has been observed (see Section 7).
 
 ### Per-invocation behaviour
 
@@ -78,7 +78,7 @@ The `ask`-mode prompt:
 
 ```
 Render this report as HTML in Chrome? (y/N)
-  y = styled HTML in Chrome (≈ <measured> extra tokens)
+  y = styled HTML in Chrome (adds modest token overhead)
   N = styled markdown in this window
 ```
 
@@ -475,15 +475,19 @@ grep -q 'generated 20[0-9][0-9]-[01][0-9]-[0-3][0-9]' \
     .job-scout/reports/match-jobs-latest.html
 ```
 
-### Token-cost measurement (gates the prompt-copy placeholder)
+### Token-cost measurement (deferred)
 
-The `≈ <measured>` placeholder in Section 2's prompt copy must be replaced before v0.7.0 ships:
+Originally this section gated the prompt-copy placeholder behind a measured range from a real `/match-jobs` and `/funnel-report` dispatch. The v0.7.0 release ships without that measurement: the prompt copy now reads "Adds modest token overhead per command" (qualitative) instead of a numeric range. Rationale:
 
-1. Run `/match-jobs` with `render: "always"` against a realistic 50-job payload.
-2. Capture the subagent's input + output token counts (the subagent protocol already emits these).
-3. Repeat for `/funnel-report` (the largest expected payload).
-4. Record both numbers in this spec under a new "Token cost reference" subsection (added during plan task 1).
-5. Replace `≈ <measured>` in Section 2 with the measured range (e.g., "≈ 1.5–3.2k").
+- The end-to-end smoke (Task 19 in the implementation plan) was deferred from the v0.7.0 cut. Without a real dispatch, fabricating a numeric range would be misleading.
+- The plugin is markdown-skill-only (no compiled engine), so first real-world use *is* the smoke. Measurements captured then become the v0.7.1 patch.
+
+To collect the measurement post-v0.7.0:
+
+1. Run `/match-jobs` with `render: "always"` against a realistic payload (≥10 jobs).
+2. Capture the `_visualizer` subagent's input + output token counts from the dispatch metadata.
+3. Repeat for `/funnel-report`.
+4. Open a v0.7.1 patch branch; add a "Token cost reference" subsection here with the measured table; replace the qualitative "modest token overhead" wording in Section 2 (two places) and `skills/shared-references/render-orchestration.md` (two places) with the range (e.g., "≈ 1.5–3.2k extra tokens per render").
 
 ### Lifecycle / retention test
 

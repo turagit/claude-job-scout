@@ -70,8 +70,8 @@ The user has never set a render preference. Print exactly this prompt to the con
 How should command output be displayed?
 
   always  — Render as a styled HTML report and auto-open in Chrome.
-            Best experience. Higher token cost per command (≈ <measured>
-            extra tokens per render for the visualizer subagent).
+            Best experience. Adds modest token overhead per command
+            (the visualizer subagent inlines templates + assets).
   never   — Show output as styled markdown directly in this window.
             Lower token cost. No browser hop.
   ask     — Decide per-command at the end of each run.
@@ -79,7 +79,7 @@ How should command output be displayed?
 Choice [always]: 
 ```
 
-The `<measured>` placeholder is replaced by the canonical figure from `docs/superpowers/specs/2026-04-29-visual-render-layer-design.md` Section 7's "Token cost reference" subsection (filled by Task 11 of the implementation plan).
+The token-overhead figure is intentionally qualitative in v0.7.0; a precise measured range will be substituted in a follow-up patch once a real-world dispatch has been observed (see the spec's Section 7).
 
 Map the user's response:
 - empty / "always" / "a" → `"always"`
@@ -97,7 +97,7 @@ User has `render: "ask"` set. After the command's core work is done, print:
 
 ```
 Render this report as HTML in Chrome? (y/N)
-  y = styled HTML in Chrome (≈ <measured> extra tokens)
+  y = styled HTML in Chrome (adds modest token overhead)
   N = styled markdown in this window
 ```
 

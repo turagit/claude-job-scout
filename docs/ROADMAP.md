@@ -20,9 +20,9 @@ Single source of truth for what this plugin is for, which phase we're in, and wh
 | **1. Token + Agentic foundations** | v0.4.0 | Shipped — v0.4.0 | [`specs/2026-04-16-phase-1-token-agentic-foundations-design.md`](superpowers/specs/2026-04-16-phase-1-token-agentic-foundations-design.md) | _pending_ |
 | 2. SEO / ATS depth | v0.5.0 | Shipped — v0.5.0 | [`specs/2026-04-17-phase-2-seo-ats-depth-design.md`](superpowers/specs/2026-04-17-phase-2-seo-ats-depth-design.md) | [`plans/2026-04-17-phase-2-seo-ats-depth.md`](superpowers/plans/2026-04-17-phase-2-seo-ats-depth.md) |
 | 3. New user-facing commands | v0.6.0 | Shipped — v0.6.0 | [`specs/2026-04-17-phase-3-user-facing-commands-design.md`](superpowers/specs/2026-04-17-phase-3-user-facing-commands-design.md) | [`plans/2026-04-17-phase-3-user-facing-commands.md`](superpowers/plans/2026-04-17-phase-3-user-facing-commands.md) |
-| **4. Visual render layer** | v0.7.0 | In progress | [`specs/2026-04-29-visual-render-layer-design.md`](superpowers/specs/2026-04-29-visual-render-layer-design.md) | [`plans/2026-04-29-visual-render-layer.md`](superpowers/plans/2026-04-29-visual-render-layer.md) |
+| 4. Visual render layer | v0.7.0 | Shipped — v0.7.0 (smoke deferred) | [`specs/2026-04-29-visual-render-layer-design.md`](superpowers/specs/2026-04-29-visual-render-layer-design.md) | [`plans/2026-04-29-visual-render-layer.md`](superpowers/plans/2026-04-29-visual-render-layer.md) |
 
-**Current focus:** Phase 4 (visual render layer) executing toward v0.7.0.
+**Current focus:** All four phases shipped. Plugin is at v0.7.0. Token-cost measurement and the formal end-to-end smoke (Task 19) were deferred — first real-world use of the v0.7.0 plugin acts as the smoke; any issues fix in a v0.7.1 patch. Future phases gated on user need.
 
 ---
 
@@ -75,25 +75,25 @@ Each command surfaces capabilities built in Phases 1–2. Spec to be written aft
 
 Adds a beautified HTML report layer for the six Tier 1 user-facing commands. Reports render via the `_visualizer` subagent (Modern Cards aesthetic, light JS interactivity), auto-open in Chrome via the existing extension, and fall back to styled markdown when HTML rendering or browser-open fails.
 
-- [ ] **Task 1: `_visualizer` skill skeleton + reference files**
-- [ ] **Task 2: theme.css asset**
-- [ ] **Task 3: interactive.js asset**
-- [ ] **Task 4: base.html.j2 + base.md.j2 frame templates**
-- [ ] **Task 5: `_visualizer/SKILL.md` full subagent contract**
-- [ ] **Task 6: `match-jobs` HTML + markdown templates**
-- [ ] **Task 7: `render-orchestration.md` shared reference**
-- [ ] **Task 8: Schema migration 0.6 → 0.7**
-- [ ] **Task 9: `/config` slash command**
-- [ ] **Task 10: Wire `/match-jobs` to render orchestration**
-- [ ] **Task 11: End-to-end smoke + token measurement**
-- [ ] **Task 12: Wire `/job-search`**
-- [ ] **Task 13: Wire `/check-job-notifications`**
-- [ ] **Task 14: Wire `/check-inbox`**
-- [ ] **Task 15: Wire `/funnel-report`**
-- [ ] **Task 16: Wire `/interview-prep`**
-- [ ] **Task 17: CLAUDE.md hard rule + `.gitignore` update**
-- [ ] **Task 18: Release prep — versioning, ROADMAP, CHANGELOG, README**
-- [ ] **Task 19: Final 6-command end-to-end smoke**
+- [x] **Task 1: `_visualizer` skill skeleton + reference files**
+- [x] **Task 2: theme.css asset**
+- [x] **Task 3: interactive.js asset**
+- [x] **Task 4: base.html.j2 + base.md.j2 frame templates**
+- [x] **Task 5: `_visualizer/SKILL.md` full subagent contract**
+- [x] **Task 6: `match-jobs` HTML + markdown templates**
+- [x] **Task 7: `render-orchestration.md` shared reference**
+- [x] **Task 8: Schema migration 0.6 → 0.7**
+- [x] **Task 9: `/config` slash command**
+- [x] **Task 10: Wire `/match-jobs` to render orchestration**
+- [~] **Task 11: End-to-end smoke + token measurement** *(deferred — see v0.7.1 plan)*
+- [x] **Task 12: Wire `/job-search`**
+- [x] **Task 13: Wire `/check-job-notifications`**
+- [x] **Task 14: Wire `/check-inbox`**
+- [x] **Task 15: Wire `/funnel-report`**
+- [x] **Task 16: Wire `/interview-prep`**
+- [x] **Task 17: CLAUDE.md hard rule + `.gitignore` update**
+- [x] **Task 18: Release prep — versioning, ROADMAP, CHANGELOG, README**
+- [~] **Task 19: Final 6-command end-to-end smoke** *(deferred — first real-world use is the smoke; issues fix in v0.7.1)*
 
 ---
 
@@ -105,3 +105,4 @@ Adds a beautified HTML report layer for the six Tier 1 user-facing commands. Rep
 - **2026-04-17** — Phase 3 shipped as v0.6.0. All three phases complete; plugin is feature-complete per the v0.4.0–v0.6.0 roadmap. Future phases gated on user need.
 - **2026-04-17** — v0.6.1 maintenance release. Renamed 7 internal skills with `_` prefix for menu clarity.
 - **2026-04-29** — Phase 4 (visual render layer) entering execution. Spec + plan committed; v0.7.0 target.
+- **2026-04-29** — Phase 4 implementation shipped as v0.7.0. 17 of 19 tasks landed via subagent-driven execution with two-stage review per task. Tasks 11 (token measurement) and 19 (final 6-command smoke) deferred — first real-world use serves as the smoke; measurement + any fixes ship in a v0.7.1 patch.

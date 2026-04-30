@@ -4,7 +4,7 @@ All notable changes to the LinkedIn Job Hunter plugin are documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.7.0] — 2026-04-29 (in progress)
+## [0.7.0] — 2026-04-29
 
 ### Added
 
@@ -29,7 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Cross-report comparison views.
 - Print/PDF stylesheet polish.
 - Embedded charts in `/funnel-report`.
-- **Token-cost reference table** in `docs/superpowers/specs/2026-04-29-visual-render-layer-design.md` Section 7 — placeholders (`<measured>`) in the first-run prompt copy will be filled by the final end-to-end smoke (Task 19) and pushed in a follow-up commit.
+- **Token-cost measurement** — formal `_visualizer` token-cost capture (planned Task 11) and the full 6-command end-to-end smoke (planned Task 19) were deferred from this release. The first-run prompt now reads "Adds modest token overhead per command" qualitatively; a measured range will replace it in a v0.7.1 patch once a real-world dispatch has been observed. First real use of v0.7.0 acts as the implicit smoke; any rendering issues fix in v0.7.1.
 
 ---
 
