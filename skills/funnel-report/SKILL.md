@@ -11,7 +11,7 @@ No subagent dispatch — synthesis is bounded and inputs are JSON state files.
 
 ## Step 0: Bootstrap workspace
 
-Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists.
+Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists. Then follow `shared-references/render-orchestration.md` Step G (lifecycle cleanup) to archive expired report files and prune old archives — cheap directory scan; runs at the start of every Tier 1 command.
 
 ## Step 1: Load data sources
 
@@ -150,6 +150,24 @@ window: rolling 30/60/90 days
 ```
 
 Confirm to the user with the file path. Suggest re-running weekly.
+
+## Step 9: Render
+
+Construct a `data` payload as in `../shared-references/render-orchestration.md` Step A. View-specific fields:
+
+- `title`: "Pipeline · week of {{date}}".
+- `subtitle`: short health summary, e.g. "12 sent · 3 interviews · 1 offer".
+- `filename`: `funnel-report-<YYYY-MM-DD-HHMM>.html` (time-series — not -latest).
+- `metrics[]`: each is `{ label, value, delta_text, delta_dir }`. `delta_dir` is `"up" | "down" | "flat"`. `delta_text` is the friendly text, e.g. "+3 vs last week".
+- `stages[]`: each is `{ name, count, companies, note }`. `companies` may include inline emoji or short HTML chips for the HTML view (use `| raw` filter).
+
+Then follow `../shared-references/render-orchestration.md` Steps B–F (Step G already ran in Step 0). Summary line:
+
+```
+✓ Pipeline snapshot for week of {{date}} — opened report in Chrome
+```
+
+Fall back to pre-v0.7.0 markdown summary if `Agent` tool is unavailable. Note: filename is time-series, so each invocation writes a new file. Lifecycle Step G (run during Step 0) archives files older than 90 days into `.job-scout/reports/archive/`.
 
 ## State files
 

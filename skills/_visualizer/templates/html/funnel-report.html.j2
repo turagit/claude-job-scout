@@ -1,0 +1,42 @@
+{# schema:
+   required:
+     - data.title
+     - data.subtitle
+     - data.generated_at
+     - data.filename
+     - data.metrics
+     - data.stages
+#}
+<header class="report-header">
+  <div class="icon">📊</div>
+  <div>
+    <h1>{{ data.title }}</h1>
+    <div class="subtitle">{{ data.subtitle }}</div>
+  </div>
+</header>
+
+<div class="metrics-grid">
+{% for m in data.metrics %}
+  <div class="metric-block">
+    <div class="label">{{ m.label }}</div>
+    <div class="value">{{ m.value }}</div>
+    {% if m.delta_text %}<div class="delta {{ m.delta_dir }}">{{ m.delta_text }}</div>{% endif %}
+  </div>
+{% endfor %}
+</div>
+
+<section>
+<h2 style="font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);margin:24px 0 12px;font-weight:600">Pipeline by stage</h2>
+{% for stage in data.stages %}
+  <article class="job-card" data-tier="a">
+    <div class="header">
+      <div class="title">{{ stage.name }}</div>
+      <div class="score-pill tier-a">{{ stage.count }}</div>
+    </div>
+    {% if stage.companies %}
+    <div class="meta">{{ stage.companies | raw }}</div>
+    {% endif %}
+    {% if stage.note %}<div style="font-size:13px;color:var(--text-strong);margin-top:6px">{{ stage.note }}</div>{% endif %}
+  </article>
+{% endfor %}
+</section>

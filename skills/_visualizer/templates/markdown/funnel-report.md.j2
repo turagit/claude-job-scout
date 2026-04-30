@@ -1,0 +1,23 @@
+{# schema:
+   required:
+     - data.title
+     - data.subtitle
+     - data.generated_at
+     - data.metrics
+     - data.stages
+#}
+## 📊 {{ data.title }}
+
+_{{ data.subtitle }}_
+
+### Metrics
+
+| Metric | Value | Delta |
+|--------|------:|-------|
+{% for m in data.metrics %}| {{ m.label }} | **{{ m.value }}** | {% if m.delta_text %}{{ m.delta_text }}{% endif %} |
+{% endfor %}
+
+### Pipeline by stage
+
+{% for stage in data.stages %}- **{{ stage.name }}** — {{ stage.count }}{% if stage.companies %} ({{ stage.companies | raw }}){% endif %}{% if stage.note %}: {{ stage.note }}{% endif %}
+{% endfor %}
