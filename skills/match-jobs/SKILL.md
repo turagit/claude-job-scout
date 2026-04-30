@@ -13,7 +13,7 @@ All browser work in this command uses **the Claude Chrome extension exclusively*
 
 ## Step 0: Bootstrap workspace
 
-Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists.
+Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists. Then follow `shared-references/render-orchestration.md` Step G (lifecycle cleanup) to archive expired report files and prune old archives — cheap directory scan; runs at the start of every Tier 1 command.
 
 ## Step 1: Identify Source
 
@@ -104,7 +104,7 @@ Construct a `data` payload for the render layer. Tier classification uses the ca
       "posted_at": "<YYYY-MM-DD>",
       "score": <integer>,
       "tier": "a | b | c",
-      "url": "<absolute job URL on LinkedIn — required when known>",
+      "url": "<absolute job URL on LinkedIn — optional; include when known>",
       "tags": ["<tag1>", "<tag2>"],
       "rationale": "<one-paragraph rationale for A-tier and top B-tier; empty string otherwise>"
     }
@@ -112,20 +112,21 @@ Construct a `data` payload for the render layer. Tier classification uses the ca
 }
 ```
 
-`tags` should be drawn from the matched skills / signals already computed during scoring. Limit to 5 tags per job. The `url` is the absolute LinkedIn job URL captured during extraction; omit the field for any job whose URL is not known (the templates handle absence gracefully).
+`tags` should be drawn from the matched skills / signals already computed during scoring. Limit to 5 tags per job.
+
+The `url` is an absolute LinkedIn job URL captured during job extraction. It is optional: when present, the templates render a "View posting ↗" link in HTML and a clickable title in markdown; when omitted, the templates fall back to plain title text via `{% if job.url %}` guards.
 
 Merge newly scored jobs into `.job-scout/tracker.json` with status "seen".
 
 ## Step 6: Render
 
-Follow `../shared-references/render-orchestration.md` end-to-end:
+Follow `../shared-references/render-orchestration.md` end-to-end (Step G already ran in Step 0):
 
-1. Step G first — clean up old reports under `.job-scout/reports/`.
-2. Step A — payload built in Step 5 above.
-3. Steps B–F — read render config, dispatch `_visualizer`, open in Chrome (or fall back), handle errors.
-4. Step E — print the `match-jobs` summary line: `✓ {{N}} matches scored — A:{{a}} B:{{b}} C:{{c}} — opened report in Chrome` (or `…rendered as markdown above` when falling back).
+1. Step A — payload built in Step 5 above.
+2. Steps B–F — read render config, dispatch `_visualizer`, open in Chrome (or fall back), handle errors.
+3. Step E — print the `match-jobs` summary line: `✓ {{N}} matches scored — A:{{a}} B:{{b}} C:{{c}} — opened report in Chrome` (or `…rendered as markdown above` when falling back).
 
-If the `Agent` tool is unavailable, fall back to the pre-v0.7.0 markdown table output: ranked markdown table (title, company, score, tier, Easy Apply, posted, applicants). For A-Tier and top B-Tier, provide detailed match cards with score breakdown, matched skills, gaps, and red flags. Keep B/C tiers as compact rows — no paragraph rationales.
+If the `Agent` tool is unavailable, fall back to a terminal-only markdown render: print a sortable table with title, company, location, score, tier, and posted_at; for A-tier and top B-tier jobs additionally print the rationale below the table. Skip URL links in the fallback (the orchestrator's render-orchestration.md isn't invoked, so no _visualizer markdown template is loaded).
 
 ## Next Steps
 
