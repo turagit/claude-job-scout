@@ -39,7 +39,7 @@ Construct a `data` payload for the render layer. Tier classification uses the ca
 ```json
 {
   "title": "Search results for `<query>`",
-  "subtitle": "{{N}} surfaced · A:{{a}} B:{{b}}",
+  "subtitle": "{{N}} surfaced · A:{{a}} B:{{b}} C:{{c}}",
   "generated_at": "<YYYY-MM-DD HH:MM>",
   "filename": "job-search-latest.html",
   "query": "<the original Boolean / keyword query string>",
