@@ -2,5 +2,6 @@
 .idea/
 .vscode/
 .job-scout/
+.superpowers/
 *.swp
 *.swo

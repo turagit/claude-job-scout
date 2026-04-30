@@ -14,6 +14,7 @@ Automate the end-to-end LinkedIn job-seeking pipeline (CV → profile → search
 4. **Every slash command carries `disable-model-invocation: true`.** Commands are user-invoked only — the model must never auto-fire browser automation, applications, or recruiter replies.
 5. **Subagent dispatch follows `skills/shared-references/subagent-protocol.md`.** If you spawn a subagent for any reason, use the I/O contract, token budget, and delta-return rule defined there. No ad-hoc subagent shapes.
 6. **Skills prefixed with `_` are internal.** User-invokable slash commands have no prefix (`analyze-cv`, `cover-letter`, etc.). Skills starting with `_` (`_cv-optimizer`, `_cover-letter-writer`, etc.) are capability engines loaded by orchestrators or subagents dispatched via the `Agent` tool — never invoke them directly as slash commands. When creating new skills, follow this convention: `_` prefix if the skill is loaded by another skill or dispatched via `Agent`; no prefix if the user types it as a slash command.
+7. **Tier 1 user-facing commands render via `_visualizer`, never inline.** Any skill that produces user-facing output for `/job-search`, `/match-jobs`, `/check-job-notifications`, `/funnel-report`, `/check-inbox`, or `/interview-prep` dispatches the `_visualizer` subagent through the `Agent` tool, following `skills/shared-references/render-orchestration.md`. Inline HTML production from these orchestrators is forbidden — the templating, theming, and asset embedding live in one place by design.
 
 ## File layout
 
