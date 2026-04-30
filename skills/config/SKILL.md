@@ -3,7 +3,6 @@ name: config
 description: View or change per-workspace plugin settings under .job-scout/config.json
 allowed-tools: Read, Write, Edit, Bash
 disable-model-invocation: true
-version: 0.1.0
 ---
 
 View or change per-workspace plugin settings stored in `.job-scout/config.json`. v0.7.0 exposes a single user-facing setting via this command: `render` (controls how Tier 1 command output is displayed).
@@ -69,8 +68,8 @@ and exit without modifying the file.
 
 If valid:
 1. Read `.job-scout/config.json` (treat missing as `{}`).
-2. Set `render: "<value>"`.
-3. Write back. Preserve any other keys.
+2. Set `render: "<value>"` on the in-memory object.
+3. Write the entire updated object back via the `Write` tool (not `Edit`), preserving any other keys (e.g., `render_retention_days`, `render_archive_days`).
 4. Confirm:
 
 ```
@@ -79,7 +78,7 @@ Set render = "<value>"
 
 ## Step 5: Validate the file is well-formed JSON after write
 
-Re-read `.job-scout/config.json` and parse. If parsing fails, restore from backup or report the failure path and exit non-zero.
+Re-read `.job-scout/config.json` and parse. If parsing fails, the in-memory object (which we know is well-formed because we just constructed it) is the recovery source: re-write it to disk via `Write` and re-parse. If that still fails, print the failure path and exit non-zero. The user can then inspect `.job-scout/config.json` manually.
 
 ## Reference Materials
 
