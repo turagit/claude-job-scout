@@ -34,7 +34,7 @@
       <div class="title">{{ job.title }}</div>
       <div class="score-pill tier-{{ job.tier }}">{{ job.score }}</div>
     </div>
-    <div class="meta">{{ job.company }} · {{ job.location }}{% if job.salary %} · {{ job.salary }}{% endif %}{% if job.posted_at %} · {{ job.posted_at }}{% endif %}</div>
+    <div class="meta">{{ job.company }} · {{ job.location }}{% if job.salary %} · {{ job.salary }}{% endif %}{% if job.posted_at %} · {{ job.posted_at }}{% endif %}{% if job.url %} · <a href="{{ job.url }}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-from);text-decoration:none;font-weight:600">View posting ↗</a>{% endif %}</div>
     {% if job.tags %}
     <div>
       {% for tag in job.tags %}<span class="tag-chip">{{ tag }}</span>{% endfor %}
