@@ -1,0 +1,23 @@
+{# schema:
+   required:
+     - data.title
+     - data.subtitle
+     - data.generated_at
+     - data.role
+     - data.company
+     - data.sections
+   optional:
+     - data.url
+#}
+## 🎯 {{ data.title }}
+
+_{{ data.subtitle }}_
+
+**Target role:** {% if data.url %}[{{ data.role }}]({{ data.url }}){% else %}{{ data.role }}{% endif %} · {{ data.company }}
+
+{% for section in data.sections %}
+### {{ section.heading }}
+
+{{ section.body | raw }}
+
+{% endfor %}

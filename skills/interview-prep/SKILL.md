@@ -12,7 +12,7 @@ No subagent dispatch — synthesis is bounded and inputs are already loaded.
 
 ## Step 0: Bootstrap workspace
 
-Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists.
+Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists. Then follow `shared-references/render-orchestration.md` Step G (lifecycle cleanup) to archive expired report files and prune old archives — cheap directory scan; runs at the start of every Tier 1 command.
 
 ## Step 1: Resolve the job
 
@@ -130,6 +130,32 @@ generated: <ISO timestamp>
 ```
 
 Confirm to the user with the file path.
+
+## Step 5: Render
+
+Construct a `data` payload as in `../shared-references/render-orchestration.md` Step A. View-specific fields:
+
+- `title`: "Interview prep — {{role}}".
+- `subtitle`: "{{company}} · prepared {{generated_at}}".
+- `role`: full role title.
+- `company`: company name.
+- `url` *(optional)*: absolute LinkedIn job URL of the role being prepped — pulled from `tracker.jobs.<id>.url` when available. When present, the HTML template renders a "View posting ↗" link in the target-role banner; the markdown template wraps the role in a clickable `[role](url)`. Omit when not known.
+- `filename`: `interview-prep-<role-slug>-<YYYY-MM-DD-HHMM>.html` where `<role-slug>` is `<tracker-id>-<4-char-disambiguator>`. The disambiguator is the first 4 hex characters of `sha1(role_title)` — keeps filenames distinct when re-running prep on the same tracker entry.
+- `sections[]`: each is `{ id, heading, body, open_by_default }`. `id` is a short slug (e.g., `company-bg`, `tech-stack`, `hr-screen-questions`). `body` is HTML for the HTML view (use `| raw`) and markdown for the markdown view. `open_by_default` is `true` for the most-relevant section (typically the first); other folds start collapsed.
+
+This is a time-series view — each invocation writes a new file. Lifecycle Step G (run during Step 0) archives interview-prep files older than 90 days into `.job-scout/reports/archive/` and deletes archive files older than 365 days.
+
+Then follow `../shared-references/render-orchestration.md` end-to-end (Step G already ran in Step 0):
+
+1. Step A — payload built above.
+2. Steps B–F — read render config, dispatch `_visualizer`, open in Chrome (or fall back), handle errors.
+3. Step E — print the summary line:
+
+```
+✓ Prep dossier for {{role}} at {{company}} — opened report in Chrome
+```
+
+(Or `…rendered as markdown above` when falling back.) If the `Agent` tool is unavailable, fall back to the pre-v0.7.0 markdown packet written in Step 4.
 
 ## State files
 

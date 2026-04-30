@@ -1,0 +1,44 @@
+{# schema:
+   required:
+     - data.title
+     - data.subtitle
+     - data.generated_at
+     - data.filename
+     - data.role
+     - data.company
+     - data.sections
+   optional:
+     - data.url
+#}
+<header class="report-header">
+  <div class="icon">🎯</div>
+  <div>
+    <h1>{{ data.title }}</h1>
+    <div class="subtitle">{{ data.subtitle }}</div>
+  </div>
+</header>
+
+<div style="background:var(--surface-soft);padding:14px 18px;border-radius:var(--radius-card);margin-bottom:18px">
+  <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:4px">Target role</div>
+  <div style="font-size:16px;font-weight:700;color:var(--text-strong)">{{ data.role }}</div>
+  <div style="font-size:13px;color:var(--text-muted);margin-top:2px">{{ data.company }}{% if data.url %} · <a href="{{ data.url }}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-from);text-decoration:none;font-weight:600">View posting ↗</a>{% endif %}</div>
+</div>
+
+<section>
+{% for section in data.sections %}
+  <div class="fold {% if section.open_by_default %}open{% endif %}">
+    <div class="fold-header">
+      <span>{{ section.heading }}</span>
+      <span class="chevron">›</span>
+    </div>
+    <div class="fold-body">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+        <button class="copy-btn" data-copy-target="prep-{{ section.id }}">Copy</button>
+      </div>
+      <div id="prep-{{ section.id }}">
+        {{ section.body | raw }}
+      </div>
+    </div>
+  </div>
+{% endfor %}
+</section>
