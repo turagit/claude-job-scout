@@ -1,0 +1,25 @@
+{# schema:
+   required:
+     - data.title
+     - data.subtitle
+     - data.generated_at
+     - data.tier_counts
+     - data.results
+     - data.query
+#}
+## 🔍 {{ data.title }}
+
+_{{ data.subtitle }}_
+
+{% if data.query %}**Query:** `{{ data.query }}`{% endif %}
+
+{% if data.results %}
+| Tier | Score | Title | Company | Posted |
+|------|------:|-------|---------|--------|
+{% for job in data.results %}| {% if job.tier == "a" %}🟢{% endif %}{% if job.tier == "b" %}🟡{% endif %}{% if job.tier == "c" %}⚪{% endif %} | **{{ job.score }}** | {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %} | {{ job.company }} | {{ job.posted_at }} |
+{% endfor %}
+
+**Tiers:** A: {{ data.tier_counts.a }} · B: {{ data.tier_counts.b }} · Total: {{ data.tier_counts.total }}
+{% else %}
+🔍 **No jobs found for this query.** Try widening your search terms.
+{% endif %}
