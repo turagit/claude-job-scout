@@ -140,3 +140,72 @@ Every report ends with:
 ```
 
 Templates fill the timestamp from `data.generated_at` (always provided by the dispatcher).
+
+## `.job-card` v1 — dimension breakdown (v0.8.0+)
+
+The job-card primitive now carries an optional `dimensions` table and a `gated-banner` slot. The rendering rule is mutually exclusive: a card either shows the gated banner OR the dimension table.
+
+```html
+<article class="job-card" data-tier="A" data-sort_score="..." data-sort_date="2026-05-26" data-sort_company="Acme">
+  {% if gate_violations %}
+  <div class="gated-banner">🚫 Filtered out — work_arrangement, contract_type</div>
+  {% else %}
+  <div class="header">
+    <div class="title">Director, IT Services</div>
+    <div class="score-pill tier-A">A</div>
+  </div>
+  <div class="meta">Acme · Remote · 2026-05-20 · <a href="...">View posting ↗</a></div>
+  <table class="dim-table">
+    <tr class="dim-row dim-tier-A">
+      <th>Leadership scope</th>
+      <td><span class="tier-badge tier-a">A</span></td>
+      <td class="evidence"><em>"managing a team of 35 engineers across three locations"</em></td>
+    </tr>
+    <tr class="dim-row dim-tier-B">
+      <th>Domain</th>
+      <td><span class="tier-badge tier-b">B</span></td>
+      <td class="evidence"><em>"regulated industries, financial services preferred"</em></td>
+    </tr>
+    <!-- 3 more rows for Function / Track-record / Cultural signals -->
+  </table>
+  {% endif %}
+</article>
+```
+
+Class names:
+
+- `.gated-banner` — left-bordered light surface, `var(--danger)` accent stripe.
+- `.dim-table` — full-width, font-size 13px, no outer border. Compact row padding.
+- `.dim-row.dim-tier-A` / `.dim-tier-B` / `.dim-tier-C` / `.dim-tier-D` — applied to the `<tr>` for optional row tinting.
+- `.tier-badge.tier-a` / `.tier-b` / `.tier-c` / `.tier-d` — pill-shaped badge in the second column.
+- `.evidence` — italic, `var(--text-muted)`, two quotes max per dimension.
+
+The HTML card tier corresponds to the **overall** tier of the job (top right pill, derived from dimension tiers per `_job-matcher/references/dimensions-<segment>.md`).
+
+The score-pill content changed in v0.8.0: it now displays the **tier letter** (A/B/C/D) rather than a numeric score, since the v1 rubric is dimension-tier-based and the aggregate number was removed by design. Templates retain `data-sort_score` for backward-compat sorting; future templates may also support `data-sort_tier`.
+
+## Markdown — dimension table
+
+The corresponding markdown view renders the dimension table as a four-column markdown table per job:
+
+```markdown
+### 🟢 Director, IT Services · Acme (A)
+
+| Dimension | Tier | Evidence |
+|---|:---:|---|
+| Leadership scope | **A** | _"managing a team of 35 engineers"_ |
+| Domain | **B** | _"regulated industries"_ |
+| Function | **A** | _"head of IT services"_ |
+| Track-record | **B** | _"ITIL/ITSM at scale"_ |
+| Cultural signals | **A** | _"long-horizon decision-making"_ |
+```
+
+Gated jobs render as:
+
+```markdown
+### 🚫 Filtered out — Some Job Title · Acme
+
+- **work_arrangement** — JD is fully on-site Boston, you require remote/hybrid
+- **contract_type** — perm-only, you require freelance
+```
+

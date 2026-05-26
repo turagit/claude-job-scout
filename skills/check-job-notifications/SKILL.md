@@ -84,11 +84,16 @@ Set `jd_path: "jds/<job_id>.txt"` on the tracker entry in the same atomic write.
 
 **Corpus enrichment:** after extraction, run the JD keyword extraction procedure from `../shared-references/jd-keyword-extraction.md` on each new job's description. Merges keywords into `.job-scout/cache/jd-keyword-corpus.json`.
 
-## Step 5: Filter
+## Step 5: Gate + score new jobs (v0.8.0+)
 
-Drop jobs that violate default requirements:
-- Non-remote (on-site/hybrid only) — discard. If ambiguous, keep and flag "Remote status unclear".
-- Permanent-only with no contract option — discard. If ambiguous, keep and flag "Contract type unclear".
+Load `_job-matcher` (which transitively loads `_gate-engine`). For every newly extracted job from Step 4:
+
+1. **`_gate-engine` runs first.** It evaluates the job against `user-profile.requirements` (work_arrangement, contract_type, seniority_floor, location, industries_to_avoid, companies_to_avoid, rate/salary floors, and the declared `deal_breakers[]`). If `gate_violations` is non-empty → set `tier: D`, `tier_reason: "gated: <kinds>"`, persist `gate_violations`, skip dimension scoring.
+2. **If not gated** → the segment-aware rubric (per `user-profile.segment`) produces per-dimension tiers + evidence quotes. Persist `tier`, `dimensions`, `tier_reason`, `rubric_version: "v1"` to the tracker entry and the score cache.
+
+Daily-driver display: top section shows A-tier with full dimension breakdown; B-tier with one-line dimension highlights; C/D summary counts collapsed. Gated jobs go to a collapsed "Filtered out" group below, each with a one-line "Gated: <kinds>" banner.
+
+The default-requirements filter from previous versions is removed; the same conditions are now expressed as user-declared `deal_breakers[]` (set at `/analyze-cv` discovery) and enforced uniformly via `_gate-engine`.
 
 ## Step 6: Score and rank (parallel)
 

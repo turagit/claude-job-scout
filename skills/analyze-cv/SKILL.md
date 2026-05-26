@@ -28,6 +28,55 @@ If the user provides a target job description, extract it and use it for keyword
 
 **Do NOT proceed to analysis until the user has responded to the discovery questions.** A generic analysis without context produces generic results.
 
+## Step 3a: Discovery interview — segment, dealbreakers, voice (v0.8.0)
+
+Skip this step if `user-profile.json.discovery_complete == true` AND the user did not pass `--rediscover`.
+
+Otherwise conduct the hybrid discovery interview. Three blocks, asked in sequence:
+
+### Segment declaration
+
+"Is this workspace for permanent director/exec roles, or freelance/contract work?"
+
+- "perm director" → write `segment: "director-perm"` to `user-profile.json`.
+- "freelance" / "contract" → write `segment: "freelance"`.
+
+The matcher (`_job-matcher`) uses this to load the right dimension set.
+
+### Dealbreaker checklist (menu, 7 categories)
+
+Walk this checklist. For each item, ask the user to confirm whether it's a HARD GATE for them. A hard gate auto-rejects any listing that violates it — see `../_gate-engine/SKILL.md`.
+
+| # | Question | If yes, write to |
+|---|---|---|
+| 1 | "Are there work arrangements you absolutely won't consider? (e.g. 'must be remote', 'no fully on-site'.)" | `requirements.work_arrangement` (whitelist) and `requirements.deal_breakers[]` with `kind: work_arrangement` |
+| 2 | "Is contract type a hard rule? (perm-only, freelance-only, or both fine?)" | `requirements.contract_type` (whitelist) and `requirements.deal_breakers[]` with `kind: contract_type` |
+| 3 | "Is there a seniority level below which a listing should be auto-rejected?" | `requirements.seniority_floor` and `requirements.deal_breakers[]` with `kind: seniority_floor` |
+| 4 | "Geographies you won't entertain? (e.g. 'must be EU-based', 'no US-based on-site', 'no relocation required'.)" | `requirements.location_preferences` and `requirements.deal_breakers[]` with `kind: location` |
+| 5 | "Industries you don't want to be approached for? (e.g. gambling, defence, crypto, MLM.)" | `requirements.industries_to_avoid` and `requirements.deal_breakers[]` with `kind: industry` |
+| 6 | "Specific companies to avoid?" | `requirements.companies_to_avoid` and `requirements.deal_breakers[]` with `kind: company` |
+| 7 | "Minimum day rate or salary floor below which a listing should auto-reject?" | `requirements.min_day_rate` / `requirements.salary_floor` and `requirements.deal_breakers[]` with `kind: rate_floor` or `salary_floor` |
+
+For every `deal_breaker` entry, set `source: "elicited"` and `added_at: <now ISO8601>`.
+
+### Open free-text follow-up
+
+"Anything else that should auto-reject a listing for you? Up to three. Free text — I'll evaluate each against new JDs."
+
+For each non-empty answer, append a `deal_breakers[]` entry with `kind: "custom"`, `free_text: "<the answer>"`, `source: "elicited"`. Cap at 3 entries — each `custom` rule is one extra LLM call per scored job.
+
+### Tone confirmation
+
+Read the existing `user-profile.json.tone` block. Echo a one-line summary:
+
+> "Voice on drafts is set to: {{tone.dialect}}, {{tone.register}}, {{tone.warmth}}. Want to change it?"
+
+If yes, walk a brief elicitation (register, dialect, warmth, vocabulary cues, exemplars, avoid). If no, do nothing — keep the current tone.
+
+### Persist + mark discovery complete
+
+After the interview, write all changes to `user-profile.json` via the atomic-write pattern in `../shared-references/state-validators.md` (using `validate_profile`). Set `discovery_complete: true` and `last_updated: <now>`.
+
 ## Step 3: Analyze
 
 Load the **_cv-optimizer** skill. Score all seven dimensions (1–10 each, weighted). Present:

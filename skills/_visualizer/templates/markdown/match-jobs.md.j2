@@ -18,11 +18,20 @@ _{{ data.subtitle }}_
 
 **Tier counts:** A: {{ data.tier_counts.a }} · B: {{ data.tier_counts.b }} · C: {{ data.tier_counts.c }} · Total: {{ data.tier_counts.total }}
 
-{% for job in data.results %}{% if job.rationale %}
-### {% if job.tier == "a" %}🟢{% endif %}{% if job.tier == "b" %}🟡{% endif %}{% if job.tier == "c" %}⚪{% endif %} {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %} · {{ job.company }} ({{ job.score }})
+{% for job in data.results %}{% if job.gate_violations and job.gate_violations|length > 0 %}
+### 🚫 Filtered out — {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %} · {{ job.company }}
 
+{% for v in job.gate_violations %}- **{{ v.kind }}**{% if v.detail %} — {{ v.detail }}{% endif %}
+{% endfor %}{% else %}{% if job.dimensions or job.rationale %}
+### {% if job.tier == "a" %}🟢{% endif %}{% if job.tier == "b" %}🟡{% endif %}{% if job.tier == "c" %}⚪{% endif %} {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %} · {{ job.company }} ({{ job.tier|upper }})
+
+{% if job.dimensions %}| Dimension | Tier | Evidence |
+|---|:---:|---|
+{% for dim_name, dim in job.dimensions.items() %}| {{ dim_name }} | **{{ dim.tier }}** | {% for q in dim.evidence[:2] %}_"{{ q }}"_{% if not loop.last %}<br/>{% endif %}{% endfor %} |
+{% endfor %}
+{% endif %}{% if job.rationale %}
 {{ job.rationale }}
-{% endif %}{% endfor %}
+{% endif %}{% endif %}{% endif %}{% endfor %}
 
 {% else %}
 🌱 **No matching jobs found.** Try refining your search filters or running again later.
