@@ -21,8 +21,9 @@ Single source of truth for what this plugin is for, which phase we're in, and wh
 | 2. SEO / ATS depth | v0.5.0 | Shipped — v0.5.0 | [`specs/2026-04-17-phase-2-seo-ats-depth-design.md`](superpowers/specs/2026-04-17-phase-2-seo-ats-depth-design.md) | [`plans/2026-04-17-phase-2-seo-ats-depth.md`](superpowers/plans/2026-04-17-phase-2-seo-ats-depth.md) |
 | 3. New user-facing commands | v0.6.0 | Shipped — v0.6.0 | [`specs/2026-04-17-phase-3-user-facing-commands-design.md`](superpowers/specs/2026-04-17-phase-3-user-facing-commands-design.md) | [`plans/2026-04-17-phase-3-user-facing-commands.md`](superpowers/plans/2026-04-17-phase-3-user-facing-commands.md) |
 | 4. Visual render layer | v0.7.0 | Shipped — v0.7.0 (smoke deferred) | [`specs/2026-04-29-visual-render-layer-design.md`](superpowers/specs/2026-04-29-visual-render-layer-design.md) | [`plans/2026-04-29-visual-render-layer.md`](superpowers/plans/2026-04-29-visual-render-layer.md) |
+| **5. Foundations + Accuracy core** | v0.8.0 | In flight | [`specs/2026-05-26-phase-0-1-foundations-and-accuracy-design.md`](superpowers/specs/2026-05-26-phase-0-1-foundations-and-accuracy-design.md) | [`plans/2026-05-26-phase-0-1-foundations-and-accuracy.md`](superpowers/plans/2026-05-26-phase-0-1-foundations-and-accuracy.md) |
 
-**Current focus:** All four phases shipped. Plugin is at v0.7.0. Token-cost measurement and the formal end-to-end smoke (Task 19) were deferred — first real-world use of the v0.7.0 plugin acts as the smoke; any issues fix in a v0.7.1 patch. Future phases gated on user need.
+**Current focus:** Phase 5 in flight — locking canonical schemas, migrating live state, rebuilding `_job-matcher` around hard gates + per-segment dimensions, populating the user's voice profile. End-to-end smoke (Task 26) is the last gate before the v0.8.0 tag. Phases 6 (coverage + cadence — Top picks, similar-jobs, recruiter-link parsing, /deep-sweep), 7 (triage feedback UX + reject chips), 8 (recruiter rebuild + tone propagation), 9 (nurture commands) follow.
 
 ---
 
@@ -97,6 +98,41 @@ Adds a beautified HTML report layer for the six Tier 1 user-facing commands. Rep
 
 ---
 
+## Phase 5 — v0.8.0: Foundations + Accuracy core
+
+Closes the spec↔reality gap (statuses, tiers, JD blobs, caches all silently broken in v0.7.0) and replaces the keyword-bingo rubric with a hard-gated, segment-aware, per-dimension matcher.
+
+- [x] **Task 1: Design spec** (`docs/superpowers/specs/2026-05-26-...`)
+- [x] **Task 2: Canonical schemas reference** (`shared-references/canonical-schemas.md`)
+- [x] **Task 3: State validators reference** (`shared-references/state-validators.md`)
+- [x] **Task 4: JD storage reference** (`shared-references/jd-storage.md`)
+- [x] **Task 5: Update `workspace-layout.md`** — jds/, .backup/, v2→v3 migration
+- [x] **Task 6: Old schema docs point at canonical** (`tracker-schema.md`, `_job-matcher/references/user-profile-schema.md`)
+- [x] **Task 7: Voice profile reference** (`shared-references/voice-profile.md`)
+- [x] **Task 8: Live state backup** — both workspaces tarball'd to `.backup/`
+- [x] **Task 9: Migrate `tracker.json`** — both workspaces, in place. CVDIRECTOR 502→500 (2 corrupt dropped); CVFREELANCER 268→268. All entries canonical + `rubric_version: legacy`
+- [x] **Task 10: Migrate `user-profile.json`** — segment, tone, unified requirements
+- [x] **Task 11: Migrate `threads.json`** — CVDIRECTOR normalised (26 threads); CVFREELANCER initialised
+- [x] **Task 12: Wire JD persistence** in `check-job-notifications`, `job-search`, `match-jobs`
+- [x] **Task 13: Score-cache contract** — `rubric_version` added to key
+- [x] **Task 14: CV parse cache contract** strengthened in `cv-loading.md`
+- [x] **Task 15: Archive pass scaffolding** (`shared-references/archive-pass.md`)
+- [x] **Task 16: Tone block populated** — both workspaces from voice spec
+- [x] **Task 17: Plugin version → 0.8.0-dev + CHANGELOG entry**
+- [~] **Task 18: End-to-end Phase 0 verification** *(deferred — merged with Task 26 smoke; state already verified via `jq` validators)*
+- [x] **Task 19: `_gate-engine` skill** (skeleton + `gate-rules.md` reference)
+- [x] **Task 20: `/analyze-cv` discovery interview** — segment + 7-category dealbreaker checklist + free-text + tone confirmation (Step 3a)
+- [x] **Task 21: Director-perm dimensions** reference
+- [x] **Task 22: Freelance dimensions** reference
+- [x] **Task 23: `_job-matcher` v0.2.0 rewrite** — segment-aware, gated, dimension-based
+- [x] **Task 24: Wire `_gate-engine`** into `/match-jobs` and `/check-job-notifications`
+- [x] **Task 25: Visualizer dimension breakdown + gated banner** — SKILL.md schema, component-library, match-jobs HTML + Markdown templates
+- [ ] **Task 26: End-to-end smoke** (interactive — user runs `/match-jobs` on a known false-positive in CVDIRECTOR and a known A-tier in CVFREELANCER)
+- [x] **Task 27: ROADMAP — Phase 5 section added**
+- [ ] **Task 28: Release v0.8.0** — version bump 0.8.0-dev → 0.8.0, date CHANGELOG, ROADMAP ticks, tag
+
+---
+
 ## Log
 
 - **2026-04-16** — Roadmap established. Phase 1 design spec drafted and committed. Meta-decision: phased releases (v0.4.0 → v0.5.0 → v0.6.0), not single-bundle v0.4.0.
@@ -106,3 +142,5 @@ Adds a beautified HTML report layer for the six Tier 1 user-facing commands. Rep
 - **2026-04-17** — v0.6.1 maintenance release. Renamed 7 internal skills with `_` prefix for menu clarity.
 - **2026-04-29** — Phase 4 (visual render layer) entering execution. Spec + plan committed; v0.7.0 target.
 - **2026-04-29** — Phase 4 implementation shipped as v0.7.0. 17 of 19 tasks landed via subagent-driven execution with two-stage review per task. Tasks 11 (token measurement) and 19 (final 6-command smoke) deferred — first real-world use serves as the smoke; measurement + any fixes ship in a v0.7.1 patch.
+- **2026-05-26** — Phase 5 (Foundations + Accuracy core) entering execution. Origin: /grill-me session uncovered massive spec↔reality drift (two different tracker schemas across workspaces, seven non-canonical statuses, eight non-canonical tiers, zero JD blobs persisted, empty score and CV caches, 770 jobs of which ~26% untiered, zero rejections ever logged) and a structurally broken matcher (keyword-bingo Skills, no hard gates, single-number score). Decisions locked: migrate-in-place; canonical schemas with writer-side enum validation; per-segment dimension sets (director-perm + freelance); hard-gate engine; per-dimension breakdown with evidence quotes (no aggregate number); British/sophisticated/charming voice block applied across all user-voiced surfaces.
+- **2026-05-26** — Phase 5 execution: 25 of 28 tasks landed. Both live workspaces migrated to v2 schemas + v3 workspace layout. Tasks 18 and 26 (interactive smoke) merged into a single user-run verification; Task 28 (release) gates on that smoke passing.
