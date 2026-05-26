@@ -99,7 +99,7 @@ The cache is invalidated automatically by any of:
 
 ### Empty-cache reality
 
-Both live workspaces have empty `cache/` directories at v0.8.0 release. The first run post-upgrade populates the cache fresh. There is no batch backfill — costs are paid lazily.
+After v0.8.0 first-install or upgrade, the `cache/` directory is typically empty. The first run populates the cache fresh. There is no batch backfill — costs are paid lazily as jobs are scored.
 
 ### File-size discipline
 

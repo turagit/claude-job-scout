@@ -151,26 +151,28 @@ The job-card primitive now carries an optional `dimensions` table and a `gated-b
   <div class="gated-banner">🚫 Filtered out — work_arrangement, contract_type</div>
   {% else %}
   <div class="header">
-    <div class="title">Director, IT Services</div>
+    <div class="title">{{ job.title }}</div>
     <div class="score-pill tier-A">A</div>
   </div>
-  <div class="meta">Acme · Remote · 2026-05-20 · <a href="...">View posting ↗</a></div>
+  <div class="meta">{{ job.company }} · {{ job.location }} · {{ job.posted_at }} · <a href="...">View posting ↗</a></div>
   <table class="dim-table">
     <tr class="dim-row dim-tier-A">
-      <th>Leadership scope</th>
+      <th>{{ dim_name_1 }}</th>
       <td><span class="tier-badge tier-a">A</span></td>
-      <td class="evidence"><em>"managing a team of 35 engineers across three locations"</em></td>
+      <td class="evidence"><em>"<<evidence quote pulled from the JD>>"</em></td>
     </tr>
     <tr class="dim-row dim-tier-B">
-      <th>Domain</th>
+      <th>{{ dim_name_2 }}</th>
       <td><span class="tier-badge tier-b">B</span></td>
-      <td class="evidence"><em>"regulated industries, financial services preferred"</em></td>
+      <td class="evidence"><em>"<<evidence quote pulled from the JD>>"</em></td>
     </tr>
-    <!-- 3 more rows for Function / Track-record / Cultural signals -->
+    <!-- 3 more rows, one per remaining dimension from user-profile.dimensions[] -->
   </table>
   {% endif %}
 </article>
 ```
+
+The dimension names come from the workspace's `user-profile.json.dimensions[]` array (discovered at `/analyze-cv`) or, when absent, the universal bootstrap in `_job-matcher/references/dimensions-default.md`. The template does not name dimensions itself.
 
 Class names:
 
@@ -180,7 +182,7 @@ Class names:
 - `.tier-badge.tier-a` / `.tier-b` / `.tier-c` / `.tier-d` — pill-shaped badge in the second column.
 - `.evidence` — italic, `var(--text-muted)`, two quotes max per dimension.
 
-The HTML card tier corresponds to the **overall** tier of the job (top right pill, derived from dimension tiers per `_job-matcher/references/dimensions-<segment>.md`).
+The HTML card tier corresponds to the **overall** tier of the job (top right pill, derived from dimension tiers per the rule documented in the workspace's dimension reference).
 
 The score-pill content changed in v0.8.0: it now displays the **tier letter** (A/B/C/D) rather than a numeric score, since the v1 rubric is dimension-tier-based and the aggregate number was removed by design. Templates retain `data-sort_score` for backward-compat sorting; future templates may also support `data-sort_tier`.
 
@@ -189,23 +191,25 @@ The score-pill content changed in v0.8.0: it now displays the **tier letter** (A
 The corresponding markdown view renders the dimension table as a four-column markdown table per job:
 
 ```markdown
-### 🟢 Director, IT Services · Acme (A)
+### 🟢 {{ job.title }} · {{ job.company }} (A)
 
 | Dimension | Tier | Evidence |
 |---|:---:|---|
-| Leadership scope | **A** | _"managing a team of 35 engineers"_ |
-| Domain | **B** | _"regulated industries"_ |
-| Function | **A** | _"head of IT services"_ |
-| Track-record | **B** | _"ITIL/ITSM at scale"_ |
-| Cultural signals | **A** | _"long-horizon decision-making"_ |
+| {{ dim_name_1 }} | **A** | _"<<evidence quote pulled from the JD>>"_ |
+| {{ dim_name_2 }} | **B** | _"<<evidence quote pulled from the JD>>"_ |
+| {{ dim_name_3 }} | **A** | _"<<evidence quote pulled from the JD>>"_ |
+| {{ dim_name_4 }} | **B** | _"<<evidence quote pulled from the JD>>"_ |
+| {{ dim_name_5 }} | **A** | _"<<evidence quote pulled from the JD>>"_ |
 ```
+
+The number of dimension rows and their names come from the workspace's `user-profile.json.dimensions[]` (or the universal default if absent). The template iterates whatever is in the payload.
 
 Gated jobs render as:
 
 ```markdown
-### 🚫 Filtered out — Some Job Title · Acme
+### 🚫 Filtered out — {{ job.title }} · {{ job.company }}
 
-- **work_arrangement** — JD is fully on-site Boston, you require remote/hybrid
-- **contract_type** — perm-only, you require freelance
+- **<<gate_violation kind 1>>** — <<one-line reason>>
+- **<<gate_violation kind 2>>** — <<one-line reason>>
 ```
 

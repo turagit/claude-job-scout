@@ -9,7 +9,7 @@ This file documents read/write access and operational rules. Every workspace has
 1. **Read first, ask second.** Check the profile before asking for info it might contain.
 2. **Merge, don't overwrite.** Update fields without replacing the file. Writes go through `validate_profile` (see `state-validators.md`).
 3. **Create if missing.** On first bootstrap, write a canonical v2 stub via `/analyze-cv`.
-4. **Confirm with user.** "Using saved preferences (remote, freelance, Director). Want to change?"
+4. **Confirm with user.** Echo a one-line summary of the saved profile that mentions the workspace's `segment`, primary `requirements.work_arrangement`, and `requirements.contract_type`. Ask whether to update. Example: "Using your saved profile for this workspace ({{segment}}, {{work_arrangement}}, {{contract_type}}). Want to change?"
 5. **Stale check.** If `last_updated` >30 days, suggest re-running `/analyze-cv`.
 6. **Segment is required.** The matcher uses it to load the right dimension set. `/analyze-cv` declares it at init time and writes it.
 

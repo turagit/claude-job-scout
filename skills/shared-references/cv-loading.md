@@ -62,7 +62,7 @@ Parsing a CV (PDF/DOCX/Markdown → structured `cv_summary`) is expensive. The p
 
 Both `user-profile.json.cv_summary` (a denormalised view) and `cache/cv-<cv_hash>.json` (canonical parse) are updated atomically.
 
-**Empty-cache reality.** At v0.8.0 release, both live workspaces have empty `cache/` dirs. The first `/analyze-cv` run post-upgrade populates the cache.
+**Empty-cache reality.** On first install or post-upgrade, the `cache/` directory is typically empty. The first `/analyze-cv` run populates the cache.
 
 ## Step 4: Master Keyword List
 
