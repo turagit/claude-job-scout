@@ -49,7 +49,7 @@ This step is read-only. Cost is one tracker.json read plus one timestamp diff. N
 
 ## Step 1: Load CV & Profile
 
-Follow `shared-references/cv-loading.md`. If no profile exists, analyze the CV to extract skills, technologies, seniority, target roles, and domain expertise. Save to `.job-scout/user-profile.json` (create or merge) including `cv_path`, `cv_hash`, `cv_summary`, and `requirements` (defaults: `work_arrangement: "remote"`, `contract_type: "freelance"`).
+Follow `shared-references/cv-loading.md`. If no profile exists, the user should be redirected to `/analyze-cv` for the full discovery interview (segment declaration, dealbreakers, voice, dimensions). This command must not fabricate defaults — `_gate-engine` and `_job-matcher` need user-declared `requirements` and `segment` to function correctly.
 
 ## Step 2: Collect candidate job IDs (NO extraction yet)
 

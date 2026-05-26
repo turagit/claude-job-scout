@@ -19,9 +19,11 @@ For each candidate job:
        tier_reason = "gated: <kinds>"
        dimensions = {}
        — write to cache and return.
-  3. Load the dimension set for user-profile.segment:
-       - "director-perm" → references/dimensions-director-perm.md
-       - "freelance"     → references/dimensions-freelance.md
+  3. Load the dimension set:
+       - If user-profile.json carries a non-empty `dimensions[]` array, use it. This is the per-workspace
+         rubric, typically populated by `/analyze-cv` discovery against the user's CV, target_titles,
+         segment description, and requirements.
+       - Otherwise, fall back to the universal bootstrap in `references/dimensions-default.md`.
   4. Score each dimension. Output per dimension: { tier: A|B|C|D, evidence: [quote, ...] }.
   5. Derive overall tier from the dimension tiers using the table in the dimension reference.
   6. Persist to score cache and update the tracker entry: tier, tier_reason, dimensions, gate_violations, rubric_version: "v1".
@@ -115,7 +117,7 @@ Cost is paid lazily as the user opens reports. Most legacy entries are below B-t
 
 ## Inputs and state files
 
-- **`.job-scout/user-profile.json`** — supplies `cv_hash`, `profile_hash`, `segment`, `requirements`, `tone`, `master_keyword_list`.
+- **`.job-scout/user-profile.json`** — supplies `cv_hash`, `profile_hash`, `segment`, `requirements`, `tone`, `master_keyword_list`, and the per-workspace `dimensions[]` rubric (if discovered).
 - **`.job-scout/tracker.json`** — supplies metadata; rubric output is persisted back here via `validate_tracker`.
 - **`.job-scout/jds/<id>.txt`** — supplies the full JD text for evidence-quote extraction. If missing (legacy entry, `jd_path: null`), trigger fresh extraction via the Chrome extension before scoring.
 - **`.job-scout/cache/scores.json`** — the score cache.
@@ -123,8 +125,7 @@ Cost is paid lazily as the user opens reports. Most legacy entries are below B-t
 ## Reference materials
 
 - `../_gate-engine/SKILL.md` — hard-gate evaluator, runs before this skill.
-- `references/dimensions-director-perm.md` — segment-specific dimensions (Leadership scope / Domain / Function / Track-record / Cultural signals).
-- `references/dimensions-freelance.md` — segment-specific dimensions (Skills semantic / Engagement shape / Commercial fit / Stack & methodology / Client signals).
+- `references/dimensions-default.md` — universal 5-dimension bootstrap. Used when a workspace has not declared its own `dimensions[]`. Abstract criteria; no hardcoded industries, tools, or roles. Works for any job-search lane.
 - `references/user-profile-schema.md` — pointer to canonical schemas.
 - `../shared-references/canonical-schemas.md` — locked schemas.
 - `../shared-references/state-validators.md` — pre-write validation.

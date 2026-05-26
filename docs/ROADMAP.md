@@ -110,9 +110,9 @@ Closes the spec↔reality gap (statuses, tiers, JD blobs, caches all silently br
 - [x] **Task 6: Old schema docs point at canonical** (`tracker-schema.md`, `_job-matcher/references/user-profile-schema.md`)
 - [x] **Task 7: Voice profile reference** (`shared-references/voice-profile.md`)
 - [x] **Task 8: Live state backup** — both workspaces tarball'd to `.backup/`
-- [x] **Task 9: Migrate `tracker.json`** — both workspaces, in place. CVDIRECTOR 502→500 (2 corrupt dropped); CVFREELANCER 268→268. All entries canonical + `rubric_version: legacy`
+- [x] **Task 9: Migrate `tracker.json`** — both workspaces, in place. Workspace A 502→500 (2 corrupt dropped); workspace B 268 preserved. All entries canonical + `rubric_version: legacy`
 - [x] **Task 10: Migrate `user-profile.json`** — segment, tone, unified requirements
-- [x] **Task 11: Migrate `threads.json`** — CVDIRECTOR normalised (26 threads); CVFREELANCER initialised
+- [x] **Task 11: Migrate `threads.json`** — one workspace normalised (26 threads); the other initialised
 - [x] **Task 12: Wire JD persistence** in `check-job-notifications`, `job-search`, `match-jobs`
 - [x] **Task 13: Score-cache contract** — `rubric_version` added to key
 - [x] **Task 14: CV parse cache contract** strengthened in `cv-loading.md`
@@ -122,8 +122,8 @@ Closes the spec↔reality gap (statuses, tiers, JD blobs, caches all silently br
 - [~] **Task 18: End-to-end Phase 0 verification** *(deferred — merged with Task 26 smoke; state already verified via `jq` validators)*
 - [x] **Task 19: `_gate-engine` skill** (skeleton + `gate-rules.md` reference)
 - [x] **Task 20: `/analyze-cv` discovery interview** — segment + 7-category dealbreaker checklist + free-text + tone confirmation (Step 3a)
-- [x] **Task 21: Director-perm dimensions** reference
-- [x] **Task 22: Freelance dimensions** reference
+- [x] **Task 21: Universal dimensions reference** (`dimensions-default.md` — abstract A/B/C/D criteria, no hardcoded industries or tools). Replaces the initial draft of director-perm + freelance specific dimensions, which were correctly flagged by the user as plugin-vs-user-data leakage.
+- [x] **Task 22: Per-workspace dimensions discovery** — `/analyze-cv` Step 3c generates the rubric for each workspace from the user's CV + target_titles + segment + requirements; `_job-matcher` reads from `user-profile.json.dimensions[]`.
 - [x] **Task 23: `_job-matcher` v0.2.0 rewrite** — segment-aware, gated, dimension-based
 - [x] **Task 24: Wire `_gate-engine`** into `/match-jobs` and `/check-job-notifications`
 - [x] **Task 25: Visualizer dimension breakdown + gated banner** — SKILL.md schema, component-library, match-jobs HTML + Markdown templates
@@ -142,5 +142,6 @@ Closes the spec↔reality gap (statuses, tiers, JD blobs, caches all silently br
 - **2026-04-17** — v0.6.1 maintenance release. Renamed 7 internal skills with `_` prefix for menu clarity.
 - **2026-04-29** — Phase 4 (visual render layer) entering execution. Spec + plan committed; v0.7.0 target.
 - **2026-04-29** — Phase 4 implementation shipped as v0.7.0. 17 of 19 tasks landed via subagent-driven execution with two-stage review per task. Tasks 11 (token measurement) and 19 (final 6-command smoke) deferred — first real-world use serves as the smoke; measurement + any fixes ship in a v0.7.1 patch.
-- **2026-05-26** — Phase 5 (Foundations + Accuracy core) entering execution. Origin: /grill-me session uncovered massive spec↔reality drift (two different tracker schemas across workspaces, seven non-canonical statuses, eight non-canonical tiers, zero JD blobs persisted, empty score and CV caches, 770 jobs of which ~26% untiered, zero rejections ever logged) and a structurally broken matcher (keyword-bingo Skills, no hard gates, single-number score). Decisions locked: migrate-in-place; canonical schemas with writer-side enum validation; per-segment dimension sets (director-perm + freelance); hard-gate engine; per-dimension breakdown with evidence quotes (no aggregate number); British/sophisticated/charming voice block applied across all user-voiced surfaces.
+- **2026-05-26** — Phase 5 (Foundations + Accuracy core) entering execution. Origin: /grill-me session uncovered massive spec↔reality drift (different tracker schemas across workspaces, seven non-canonical statuses, eight non-canonical tiers, zero JD blobs persisted, empty score and CV caches, ~26% untiered jobs, zero rejections ever logged) and a structurally broken matcher (keyword-bingo Skills, no hard gates, single-number score). Decisions locked: migrate-in-place; canonical schemas with writer-side enum validation; segment-aware dimension sets; hard-gate engine; per-dimension breakdown with evidence quotes (no aggregate number); structured voice block applied across all user-voiced surfaces.
 - **2026-05-26** — Phase 5 execution: 25 of 28 tasks landed. Both live workspaces migrated to v2 schemas + v3 workspace layout. Tasks 18 and 26 (interactive smoke) merged into a single user-run verification; Task 28 (release) gates on that smoke passing.
+- **2026-05-26** — Mid-execution correction. User correctly flagged that the initial dimensions-director-perm.md and dimensions-freelance.md references had encoded user-specific industries (aerospace), tools (Linux/Ansible/Terraform), and a binary segment enum (`director-perm | freelance`) — making the plugin user-shaped rather than user-agnostic. Refactored: dimensions are now per-workspace data (`user-profile.json.dimensions[]`) discovered by `/analyze-cv`; the plugin ships a single universal abstract bootstrap (`dimensions-default.md`); `segment` is free-text; the two segment-specific reference files were removed. Pre-existing user-specific examples were also stripped from state-validators.md, voice-profile.md, and the gate-rules seniority section. Live workspaces will receive default `dimensions[]` arrays in a follow-on live-state step (approval gated).

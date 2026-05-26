@@ -4,7 +4,7 @@
 
 ## Why this exists
 
-Before this phase, `response-templates.md` carried structural instructions ("Thank them, ask qualifying questions") but no voice. Generic templates produce flat copy. The user's stated voice — **British, sophisticated, charming, classy (not over the top), likable, friendly, positive** — is now codified as data in `user-profile.json.tone`, consumed by every skill that drafts text in the user's name.
+Before this phase, `response-templates.md` carried structural instructions ("Thank them, ask qualifying questions") but no voice. Generic templates produce flat copy. Each user has a distinct voice (formality, register, dialect, vocabulary, things they would never say). Codifying that voice as structured data in `user-profile.json.tone` means every skill that drafts text in the user's name reads from one place — recruiter replies, follow-ups, cover letters, profile copy, CV bullet rewrites, interview-prep talking points all share the same voice anchors.
 
 ## Tone block shape
 
@@ -13,7 +13,7 @@ See [`canonical-schemas.md`](canonical-schemas.md) for the JSON shape. Fields:
 | Field | Purpose |
 |---|---|
 | `register` | High-level descriptor of the formality and pacing. "considered, restrained, dry-witted". |
-| `dialect` | `british` for this user — controls spelling (organise, programme), idiom, rhythm. |
+| `dialect` | English variant (`british`, `american`, `australian`, etc.) — controls spelling, idiom, rhythm. |
 | `warmth` | Where on the cold↔effusive axis to sit. "personable but never sycophantic; gracious not effusive". |
 | `vocabulary_cues` | Concrete words and turns of phrase to favour — used as prompt anchors. |
 | `exemplars` | Two to six full-sentence samples in the voice. Used as few-shot anchors at draft time. |
@@ -62,4 +62,4 @@ Draft the reply in this voice.
 
 ## Cross-workspace policy
 
-Both workspaces carry the same tone block by default (the user's voice doesn't change between CVDIRECTOR and CVFREELANCER). Override per workspace is possible — just edit `user-profile.json.tone` in that workspace. The migration in Task 16 writes the same payload to both.
+A user with multiple workspaces typically wants the same voice across all of them — the user's voice doesn't change because they're searching different jobs. By default, a tone block configured in one workspace can be copied into others. Override per workspace is possible — just edit `user-profile.json.tone` in that workspace.

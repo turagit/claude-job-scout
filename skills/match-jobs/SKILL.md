@@ -40,7 +40,7 @@ For each *new* job, extract title, company, location, salary, experience level, 
 **Gate + score (v0.8.0+):** load `_job-matcher` (which transitively loads `_gate-engine`). For each new or legacy-rubric job:
 
 1. Run `_gate-engine` against `user-profile.requirements`. If `gate_violations` is non-empty → set `tier: D`, `tier_reason: "gated: <kinds>"`, persist `gate_violations` on the tracker entry, skip dimension scoring.
-2. Otherwise run the segment-specific rubric (per `user-profile.segment` — `dimensions-director-perm.md` or `dimensions-freelance.md`). Persist `tier`, `dimensions` (per-dimension tier + evidence quotes), `tier_reason`, `rubric_version: "v1"` to the tracker entry and the score cache.
+2. Otherwise run the rubric. The matcher loads `user-profile.json.dimensions[]` if present (the per-workspace rubric discovered at `/analyze-cv` time); otherwise falls back to the universal default at `../_job-matcher/references/dimensions-default.md`. Persist `tier`, `dimensions` (per-dimension tier + evidence quotes), `tier_reason`, `rubric_version: "v1"` to the tracker entry and the score cache.
 3. Display: A-tier first (with full dimension breakdown), then B-tier (with one-line per dimension), then C/D summary counts (collapsed by default in the visual report).
 
 Gated jobs do not appear in the daily top section of the report — they appear in a collapsed "Filtered out" group below, each with a one-line "Gated: <kinds>" banner.
