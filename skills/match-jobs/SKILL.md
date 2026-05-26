@@ -37,6 +37,14 @@ For each *new* job, extract title, company, location, salary, experience level, 
 
 **Corpus enrichment:** after extraction, run the JD keyword extraction procedure from `../shared-references/jd-keyword-extraction.md` on each new job's description text. This merges discovered keywords into `.job-scout/cache/jd-keyword-corpus.json` — building the user's market-specific keyword model over time. No additional LLM call; extraction piggybacks on the JD text already in context.
 
+**Gate + score (v0.8.0+):** load `_job-matcher` (which transitively loads `_gate-engine`). For each new or legacy-rubric job:
+
+1. Run `_gate-engine` against `user-profile.requirements`. If `gate_violations` is non-empty → set `tier: D`, `tier_reason: "gated: <kinds>"`, persist `gate_violations` on the tracker entry, skip dimension scoring.
+2. Otherwise run the segment-specific rubric (per `user-profile.segment` — `dimensions-director-perm.md` or `dimensions-freelance.md`). Persist `tier`, `dimensions` (per-dimension tier + evidence quotes), `tier_reason`, `rubric_version: "v1"` to the tracker entry and the score cache.
+3. Display: A-tier first (with full dimension breakdown), then B-tier (with one-line per dimension), then C/D summary counts (collapsed by default in the visual report).
+
+Gated jobs do not appear in the daily top section of the report — they appear in a collapsed "Filtered out" group below, each with a one-line "Gated: <kinds>" banner.
+
 **Scoring fan-out:** batch the new jobs into groups of 5 (the last batch may be smaller). For each batch, dispatch one subagent per the contract in `../shared-references/subagent-protocol.md`:
 
 ```json
@@ -44,27 +52,31 @@ For each *new* job, extract title, company, location, salary, experience level, 
   "task": "score-job-batch",
   "inputs": {
     "jobs": [ /* extracted job blobs */ ],
-    "user_profile": { "cv_summary": "...", "requirements": "...", "master_keyword_list": "..." },
+    "user_profile": { "segment": "...", "cv_summary": "...", "requirements": "...", "tone": "...", "master_keyword_list": "..." },
     "cv_hash": "...",
-    "profile_hash": "..."
+    "profile_hash": "...",
+    "rubric_version": "v1"
   },
   "budget_lines": 200,
   "allowed_tools": ["Read"]
 }
 ```
 
-The subagent loads the `_job-matcher` skill, scores each job, returns deltas:
+The subagent loads the `_job-matcher` skill (which loads `_gate-engine` first), scores each job, returns deltas:
 
 ```json
 {
   "status": "ok",
   "deltas": [
-    { "job_id": "...", "score": 87, "tier": "A", "breakdown": { /* per-dimension */ } }
+    { "job_id": "...", "tier": "A", "tier_reason": null,
+      "dimensions": { "Leadership scope": {"tier": "A", "evidence": ["…"]}, "…": {"…": "…"} },
+      "gate_violations": [],
+      "rubric_version": "v1" }
   ]
 }
 ```
 
-Main thread collects all deltas, filters out D-Tier, and writes each score into `.job-scout/cache/scores.json` under the `(job_id, cv_hash, profile_hash)` key.
+Main thread collects all deltas and writes each score into `.job-scout/cache/scores.json` under the `(job_id, cv_hash, profile_hash, rubric_version)` key.
 
 **Fallback:** if the `Agent` tool is unavailable in this session, fall back to sequential in-thread scoring using the same _job-matcher framework. Log the fallback.
 
