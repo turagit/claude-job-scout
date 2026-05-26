@@ -31,7 +31,9 @@ Also check `.job-scout/cache/scores.json` for cached `(job_id, cv_hash, profile_
 
 ## Step 4: Extract and score new jobs (parallel)
 
-For each *new* job, extract title, company, location, salary, experience level, required/preferred skills, description, Easy Apply status, posting date, applicant count.
+For each *new* job, extract title, company, location, salary, experience level, required/preferred skills, full description text, Easy Apply status, posting date, applicant count.
+
+**JD persistence (required).** Immediately after extracting a job's full description text, persist it per the hybrid-storage contract in `../shared-references/jd-storage.md` — write to `.job-scout/jds/<job_id>.txt`, set `jd_path` on the tracker entry. The inline `description` field is removed from the canonical v2 tracker schema.
 
 **Corpus enrichment:** after extraction, run the JD keyword extraction procedure from `../shared-references/jd-keyword-extraction.md` on each new job's description text. This merges discovered keywords into `.job-scout/cache/jd-keyword-corpus.json` — building the user's market-specific keyword model over time. No additional LLM call; extraction piggybacks on the JD text already in context.
 
