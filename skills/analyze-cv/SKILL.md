@@ -36,7 +36,7 @@ Otherwise conduct the hybrid discovery interview. Four blocks, asked in sequence
 
 ### Segment declaration
 
-"In one short sentence, describe what kind of role you're hunting for in this workspace. This is just a free-text label so we both remember what this lane is for, and it helps tailor the matching rubric. Examples: 'permanent director roles in enterprise IT', 'freelance backend contracts EU-remote', 'mid-career switch to UX research', 'head pastry chef in Lisbon'."
+"In one short sentence, describe what kind of role you're hunting for in this workspace. This is just a free-text label so we both remember what this lane is for, and it helps tailor the matching rubric. Examples: 'head pastry chef in Lisbon', 'construction site engineer — UK civils', 'mid-career switch to UX research', 'freelance backend contracts EU-remote', 'permanent leadership roles in enterprise IT'."
 
 Write the user's exact response to `user-profile.json.segment`. The matcher uses it both as a prompt anchor and as input to the dimensions discovery (Step 3c below).
 
