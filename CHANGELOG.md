@@ -28,7 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - `_job-matcher` rewritten to v0.2.0: rubric v1 is hard-gated and segment-aware. Replaces the v0.1 keyword-bingo weighted score. Output is per-dimension tiers with evidence quotes — no aggregate number; trust comes from the visible reasoning, not the hidden weight math.
 - State writes now go through `validate_tracker` / `validate_profile` / `validate_threads`. Non-canonical statuses, tiers, lead-tiers, and segments are rejected at write time. Closes the loop that previously let writers invent ad-hoc enum values.
-- Both live workspaces in this user's setup migrated in place to canonical v2 (workspace A: 502 → 500 jobs, 2 corrupt dropped; workspace B: 268 jobs preserved). Non-canonical statuses and tiers mapped to canonical values per the migration tables in the design spec. Every existing entry tagged `rubric_version: legacy` and will lazy-rescore under v1 on first view.
+- Pre-existing workspaces are migrated in place by the one-shot script in `docs/superpowers/plans/2026-05-26-...`. Non-canonical statuses and tiers map to canonical values per the migration tables in the design spec. Every existing entry is tagged `rubric_version: legacy` and will lazy-rescore under v1 on first view. (The two workspaces used to develop this release migrated to: workspace A 502 → 500 jobs, 2 corrupt dropped; workspace B 268 jobs preserved.)
 - `tracker.json` no longer carries inline `description`. Existing entries have `jd_path: null`; downstream commands (`/cover-letter`, `/interview-prep`) backfill lazily via fresh extraction.
 - `_job-matcher` score-cache contract: key shape changes from `(job_id, cv_hash, profile_hash)` to `(job_id, cv_hash, profile_hash, rubric_version)`.
 - `cv-loading.md`: explicit `sha1` CV-hash contract documented, with read/write paths.
@@ -36,7 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Removed
 
-- `_job-matcher/references/dimensions-director-perm.md` and `dimensions-freelance.md` — these were the initial draft of per-segment dimensions but encoded specific industries (aerospace, regulated finance) and tools (Linux, Ansible, Terraform) that made the plugin user-specific rather than user-agnostic. Replaced by the universal `dimensions-default.md` + per-workspace `dimensions[]` discovery at `/analyze-cv` time.
+- Two segment-specific dimension reference files (an initial mid-release draft) that encoded industries and tools from the workspaces used during development, making the plugin user-shaped rather than user-agnostic. Replaced by the universal `dimensions-default.md` + per-workspace `dimensions[]` discovery at `/analyze-cv` time. Any user's job-search lane (baker, construction engineer, sales executive, etc.) is now first-class.
 
 ## [0.7.0] — 2026-04-29
 

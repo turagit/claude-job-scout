@@ -27,7 +27,7 @@ This reference replaces the older inline schemas in `tracker-schema.md` and `_jo
   "linkedin_profile_url": "string|null",
   "profile_hash": "string|null",
   "discovery_complete": "boolean",
-  "segment": "string — free-text descriptor of the workspace's job-search lane (e.g. 'permanent director roles in enterprise IT', 'freelance backend contracts EU-remote', 'mid-career switch to UX', 'head pastry chef in Lisbon')",
+  "segment": "string — free-text descriptor of the workspace's job-search lane (e.g. 'head pastry chef in Lisbon', 'construction site engineer — UK civils', 'mid-career switch to UX research', 'freelance backend contracts EU-remote', 'permanent leadership roles in enterprise IT')",
   "dimensions": [
     {
       "name": "string — dimension label",
