@@ -6,21 +6,28 @@ Every command in this plugin reads and writes state inside a single per-project 
 
 ```
 .job-scout/
-  schema-version        # JSON: { "version": 1, "upgraded_at": "<ISO>" } — bumped by migration runner
-  user-profile.json     # CV-derived facts, requirements, master keyword list, cv_path, cv_hash, discovery_complete
-  tracker.json          # every job ever seen — see tracker-schema.md
-  reports/              # YYYY-MM-DD-*.md run reports (notifications sweeps, match runs, CV analyses)
+  schema-version        # JSON: { "version": 3, "upgraded_at": "<ISO>" } — workspace-level version, bumped by migration runner
+  user-profile.json     # canonical v2 — see canonical-schemas.md (segment, requirements, tone, deal_breakers)
+  tracker.json          # canonical v2 — see canonical-schemas.md (status/tier enums, dimensions, rubric_version)
+  jds/                  # per-job JD blobs — see jd-storage.md
+    <job_id>.txt
+  reports/              # YYYY-MM-DD-*.md and HTML run reports (notifications sweeps, match runs, CV analyses)
   archive/              # tracker-YYYY.json — aged seen-status jobs rotated out of tracker.json
   cache/
     cv-<hash>.json          # parsed CV text + extracted keywords, keyed by file content hash
     cv-analysis-<hash>.json # full _cv-optimizer scoring output, keyed by content hash
-    scores.json             # job scores keyed by (job_id, cv_hash, profile_hash)
+    scores.json             # job scores keyed by (job_id, cv_hash, profile_hash, rubric_version)
     linkedin-profile.json   # last-seen snapshot of the user's LinkedIn profile
     supporting-docs.json    # index of non-CV workspace docs (see supporting-docs.md)
     jd-keyword-corpus.json  # learned keyword model from ingested JDs (see jd-keyword-extraction.md)
   recruiters/
-    threads.json        # per-thread state: last_seen_msg_id, lead_tier, last_drafted_reply
+    threads.json        # canonical v2 — see canonical-schemas.md (lead_tier enum, notes[], last_seen_msg_id)
+  cover-letters/        # per-job generated cover letters
+  .backup/              # atomic-write backups, retained ≥30 days
+    <filename>.<ISO8601>.json
 ```
+
+> **Two version axes.** The `.job-scout/schema-version` file tracks the *workspace* version. Each state file (`user-profile.json`, `tracker.json`, `threads.json`) carries its own per-file `schema_version`. These are orthogonal: the workspace bumps when the *layout* changes (new directories, new files); per-file versions bump when the *file shape* changes. Phase 5 bumps both: workspace v2 → v3 (adds `jds/` and `.backup/`); per-file shapes → 2 (canonical contracts in `canonical-schemas.md`).
 
 The folder is intentionally hidden (`.` prefix) so it doesn't clutter the user's project view, and the name is fixed so commands can find it without configuration.
 
@@ -118,3 +125,23 @@ Applies when the migration runner reads `version: 1` from `.job-scout/schema-ver
    - The runner writes `{ "version": 2, "upgraded_at": "<ISO>" }` to `.job-scout/schema-version` after every per-version migration in the loop completes (per the runner shape above). This step is documented here for completeness; the runner handles the actual write.
 
 This migration is safe to run repeatedly: every per-step write is itself idempotent, and the runner's `current < target` guard prevents re-execution once `version: 2` lands.
+
+### v2 → v3 (foundations + accuracy core; ships with plugin v0.8.0)
+
+Applies when the migration runner reads `version: 2` from `.job-scout/schema-version` and the canonical `SCHEMA_VERSION` is `3`. The data-side migrations are described in detail in `docs/superpowers/plans/2026-05-26-phase-0-1-foundations-and-accuracy.md` Tasks 8–11; this section documents the workspace-level changes.
+
+1. **Add new directories** (idempotent):
+   - Create `.job-scout/jds/` for hybrid JD blob storage. See `jd-storage.md`.
+   - Create `.job-scout/.backup/` for atomic-write backups.
+
+2. **Lock canonical per-file schemas**. The three state files (`user-profile.json`, `tracker.json`, `recruiters/threads.json`) now declare their own `schema_version: 2` at the top. See `canonical-schemas.md`. All writes go through `state-validators.md` enum checks.
+
+3. **Migrate live state**:
+   - `tracker.json` — normalise non-canonical statuses/tiers; backfill `first_seen`; tag every entry `rubric_version: legacy`; remove inline `description` (move to `jds/<id>.txt` lazily on next access).
+   - `user-profile.json` — add `segment`, unify `requirements` shape, add empty `deal_breakers[]`, add `tone` block.
+   - `recruiters/threads.json` — normalise `lead_tier` enum, rename `participant` → `recruiter_name`, add spec fields (`last_seen_msg_id`, `last_drafted_reply`, `notes[]`, `linked_job_ids[]`).
+
+4. **Bump schema version**:
+   - The runner writes `{ "version": 3, "upgraded_at": "<ISO>" }` to `.job-scout/schema-version`.
+
+This migration is performed once per workspace by the one-shot scripts in the v0.8.0 release plan. After it runs, subsequent commands read v3 and proceed normally.
