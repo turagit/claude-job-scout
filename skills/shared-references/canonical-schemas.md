@@ -90,7 +90,8 @@ This reference replaces the older inline schemas in `tracker-schema.md` and `_jo
     "rejected": "number",
     "last_run": "ISO8601|null",
     "last_search": "ISO8601|null",
-    "last_archive_pass": "YYYY-MM-DD|null"
+    "last_archive_pass": "YYYY-MM-DD|null",
+    "last_deep_sweep": "YYYY-MM-DD|null"
   },
   "jobs": {
     "<job_id>": {
@@ -121,6 +122,7 @@ This reference replaces the older inline schemas in `tracker-schema.md` and `_jo
       "first_seen": "YYYY-MM-DD",
       "last_seen": "YYYY-MM-DD",
       "jd_path": "string|null",
+      "linked_thread_ids": ["string"],
       "notes": "string"
     }
   }
@@ -128,6 +130,8 @@ This reference replaces the older inline schemas in `tracker-schema.md` and `_jo
 ```
 
 `jd_path` is a workspace-relative path to the full JD text under `.job-scout/jds/<job_id>.txt`. The inline `description` field used in v1 is removed — full JD text is hybrid-stored. See `jd-storage.md` (created in Task 5) for the contract.
+
+`linked_thread_ids` is the reverse pointer of `threads.<id>.linked_job_ids` — added by `/check-inbox` Step 1b in v0.9.0 when it extracts a job from a recruiter message. Lets the visualiser show "🔗 from recruiter <name>" on a job card, and (in Phase 8) lets the recruiter UI surface every job linked to a thread.
 
 ## `recruiters/threads.json`
 
