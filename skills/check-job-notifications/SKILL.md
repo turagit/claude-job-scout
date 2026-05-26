@@ -57,16 +57,26 @@ Navigate to `https://www.linkedin.com/notifications/?filter=jobs_all`. Scroll 2-
 
 Identify **every unread job alert notification** (highlighted in blue). Do NOT stop after the first one.
 
-For each unread alert: open the alert and collect the **job IDs and URLs** of every individual listing inside it. Tag source as "Job Alert". Do not extract full details yet.
+For each unread alert: open the alert and collect the **job IDs and URLs** of every individual listing inside it. Tag source as `"Job Alert"`. Do not extract full details yet.
+
+## Step 2b: Sweep Top picks (v0.9.0+)
+
+After notifications, navigate to `https://www.linkedin.com/jobs/collections/recommended/`. Scroll 1-2 times to load the first page of recommendations. Collect all visible job IDs and URLs. Tag source as `"Top Picks"`. Do not extract full details yet.
+
+## Step 2c: Sweep Saved jobs (v0.9.0+)
+
+Navigate to `https://www.linkedin.com/my-items/saved-jobs/`. Scroll until all saved entries are loaded (saved-jobs list is typically small — under 50). Collect all job IDs and URLs. Tag source as `"Saved"`. Do not extract full details yet.
 
 ## Step 3: Dedupe against tracker FIRST
+
+Combine the candidate ID lists from Steps 2 (Job Alerts), 2b (Top Picks), and 2c (Saved). Each ID carries the source that surfaced it; if the same ID appears from multiple sources, preserve the source priority `Job Alert > Top Picks > Saved`.
 
 Load `.job-scout/tracker.json` (see `shared-references/tracker-schema.md`). For each candidate job ID:
 
 - **Already in tracker** (seen / approved / applied / rejected) → bump `last_seen`, do NOT re-extract, do NOT re-score. Skip.
-- **New** → keep in the to-process list.
+- **New** → keep in the to-process list with the assigned source.
 
-This is the primary token-saving step. Never extract a job you already know.
+This is the primary token-saving step. Never extract a job you already know — across all three surfaces.
 
 ## Step 4: Extract details for new jobs only
 
@@ -80,7 +90,7 @@ printf '%s\n' "$JD_TEXT" > ".job-scout/jds/$JOB_ID.txt.tmp"
 mv ".job-scout/jds/$JOB_ID.txt.tmp" ".job-scout/jds/$JOB_ID.txt"
 ```
 
-Set `jd_path: "jds/<job_id>.txt"` on the tracker entry in the same atomic write. Skills that need the full JD downstream (`/cover-letter`, `/interview-prep`, `_job-matcher` evidence-quote extraction) read it from this path. The inline `description` field is removed from the canonical v2 tracker schema — do not write it.
+Set `jd_path: "jds/<job_id>.txt"` and `source` (one of `Job Alert | Top Picks | Saved`) on the tracker entry in the same atomic write. Skills that need the full JD downstream (`/cover-letter`, `/interview-prep`, `_job-matcher` evidence-quote extraction) read it from this path. The inline `description` field is removed from the canonical v2 tracker schema — do not write it.
 
 **Corpus enrichment:** after extraction, run the JD keyword extraction procedure from `../shared-references/jd-keyword-extraction.md` on each new job's description. Merges keywords into `.job-scout/cache/jd-keyword-corpus.json`.
 
@@ -94,6 +104,19 @@ Load `_job-matcher` (which transitively loads `_gate-engine`). For every newly e
 Daily-driver display: top section shows A-tier with full dimension breakdown; B-tier with one-line dimension highlights; C/D summary counts collapsed. Gated jobs go to a collapsed "Filtered out" group below, each with a one-line "Gated: <kinds>" banner.
 
 The default-requirements filter from previous versions is removed; the same conditions are now expressed as user-declared `deal_breakers[]` (set at `/analyze-cv` discovery) and enforced uniformly via `_gate-engine`.
+
+## Step 5b: Similar-jobs expansion from A-tier hits (v0.9.0+)
+
+After Step 5 scoring completes, iterate every job in this run that came out at `tier: "A"` (not gated). For each A-tier survivor:
+
+1. The agent is already on (or can return to) that job's listing page. Scroll to the "Similar jobs" rail (LinkedIn typically shows 4-6 below the JD body).
+2. Collect the IDs and URLs from that rail.
+3. Filter against `tracker.json` to drop known IDs.
+4. For each new ID, open the listing and run the full extract → JD persist → `_gate-engine` → score chain. Tag `source: "Similar"`. Also tag `notes` with `"expanded from: <seed_job_id>"` so the lineage is traceable.
+
+Cap: at most 5 new similar-jobs per A-tier seed (LinkedIn's rail length). If a workspace's daily run produces 0 A-tier survivors, this step is a no-op.
+
+The expansion fires gates the same way as primary jobs — a similar-job from a real A-tier hit can still be gated and end up in "Filtered out".
 
 ## Step 6: Score and rank (parallel)
 

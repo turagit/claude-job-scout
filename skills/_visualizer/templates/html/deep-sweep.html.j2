@@ -1,0 +1,88 @@
+{# schema:
+   required:
+     - data.title
+     - data.subtitle
+     - data.generated_at
+     - data.filename
+     - data.tier_counts
+     - data.results
+   optional:
+     - data.queries
+     - data.source_breakdown
+#}
+<header class="report-header">
+  <div class="icon">🔭</div>
+  <div>
+    <h1>{{ data.title }}</h1>
+    <div class="subtitle">{{ data.subtitle }}</div>
+  </div>
+</header>
+
+{% if data.queries or data.source_breakdown %}
+<section class="run-meta" style="margin:12px 0;padding:12px 16px;background:var(--surface-muted,#f5f5f5);border-radius:8px;font-size:13px">
+  {% if data.queries %}
+  <div style="margin-bottom:6px"><strong>Queries:</strong>
+    {% for q in data.queries %}<span class="tag-chip" style="margin-right:4px">{{ q }}</span>{% endfor %}
+  </div>
+  {% endif %}
+  {% if data.source_breakdown %}
+  <div><strong>Sources:</strong>
+    {% for src, n in data.source_breakdown.items() %}<span class="tag-chip" style="margin-right:4px">{{ src }} · {{ n }}</span>{% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if data.results %}
+<div class="toolbar">
+  <button data-sort="date" class="active">Date ↓</button>
+  <button data-sort="company">Company A–Z</button>
+  <span style="flex:1"></span>
+  <button data-filter="all" data-filter-attr="tier" class="active">All ({{ data.tier_counts.total }})</button>
+  <button data-filter="A" data-filter-attr="tier">A-tier ({{ data.tier_counts.a }})</button>
+  <button data-filter="B" data-filter-attr="tier">B-tier ({{ data.tier_counts.b }})</button>
+  <button data-filter="C" data-filter-attr="tier">C-tier ({{ data.tier_counts.c }})</button>
+  <button data-filter="D" data-filter-attr="tier">Filtered ({{ data.tier_counts.d }})</button>
+</div>
+
+<section>
+{% for job in data.results %}
+  <article class="job-card" data-tier="{{ job.tier }}" data-sort_date="{{ job.posted_at }}" data-sort_company="{{ job.company }}">
+    {% if job.gate_violations and job.gate_violations|length > 0 %}
+      <div class="gated-banner" style="background:var(--surface-muted,#f5f5f5);border-left:3px solid var(--danger,#c0392b);padding:8px 12px;border-radius:4px;font-size:13px">
+        🚫 Filtered out — {% for v in job.gate_violations %}<strong>{{ v.kind }}</strong>{% if v.detail %} ({{ v.detail }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+      </div>
+      <div class="meta" style="margin-top:6px;font-size:12px;color:var(--text-muted)">{{ job.title }} · {{ job.company }} · {{ job.location }}{% if job.source %} · <span class="tag-chip">{{ job.source }}</span>{% endif %}</div>
+    {% else %}
+      <div class="header">
+        <div class="title">{{ job.title }}</div>
+        <div class="score-pill tier-{{ job.tier|lower }}">{{ job.tier }}</div>
+      </div>
+      <div class="meta">{{ job.company }} · {{ job.location }}{% if job.salary %} · {{ job.salary }}{% endif %}{% if job.posted_at %} · {{ job.posted_at }}{% endif %}{% if job.source %} · <span class="tag-chip">{{ job.source }}</span>{% endif %}{% if job.matched_query %} · <span style="font-size:11px;color:var(--text-muted)">via "{{ job.matched_query }}"</span>{% endif %}{% if job.url %} · <a href="{{ job.url }}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-from);text-decoration:none;font-weight:600">View posting ↗</a>{% endif %}</div>
+      {% if job.tags %}
+      <div>
+        {% for tag in job.tags %}<span class="tag-chip">{{ tag }}</span>{% endfor %}
+      </div>
+      {% endif %}
+      {% if job.dimensions %}
+      <table class="dim-table" style="width:100%;margin-top:10px;font-size:13px;border-collapse:collapse">
+        {% for dim_name, dim in job.dimensions.items() %}
+        <tr class="dim-row dim-tier-{{ dim.tier }}">
+          <th style="text-align:left;padding:4px 8px;font-weight:600;color:var(--text-strong);white-space:nowrap">{{ dim_name }}</th>
+          <td style="padding:4px 8px;width:32px"><span class="tier-badge tier-{{ dim.tier|lower }}" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700">{{ dim.tier }}</span></td>
+          <td class="evidence" style="padding:4px 8px;color:var(--text-muted);font-style:italic">{% for q in dim.evidence[:2] %}"{{ q }}"{% if not loop.last %}<br/>{% endif %}{% endfor %}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+    {% endif %}
+  </article>
+{% endfor %}
+</section>
+{% else %}
+<div class="empty-state">
+  <div class="icon">🌱</div>
+  <div class="title">No new jobs surfaced.</div>
+  <div class="hint">All queries returned IDs already in your tracker. Try `/deep-sweep` again next week, broaden your `target_titles`, or adjust your `requirements`.</div>
+</div>
+{% endif %}

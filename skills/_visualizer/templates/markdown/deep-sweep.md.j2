@@ -1,0 +1,53 @@
+{# schema:
+   required:
+     - data.title
+     - data.subtitle
+     - data.tier_counts
+     - data.results
+   optional:
+     - data.queries
+     - data.source_breakdown
+#}
+## {{ data.title }}
+
+_{{ data.subtitle }}_
+
+{% if data.queries %}
+**Queries run:** {% for q in data.queries %}`{{ q }}`{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}
+{% if data.source_breakdown %}
+**Sources:** {% for src, n in data.source_breakdown.items() %}{{ src }} ({{ n }}){% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}
+
+{% if data.results %}
+| Tier | Title | Company | Location | Source | Posted |
+|------|-------|---------|----------|--------|--------|
+{% for job in data.results %}{% if job.gate_violations and job.gate_violations|length > 0 %}| 🚫 | ~~{{ job.title }}~~ | {{ job.company }} | {{ job.location }} | {{ job.source // "" }} | {{ job.posted_at // "" }} |
+{% else %}| {% if job.tier == "A" %}🟢 A{% elif job.tier == "B" %}🟡 B{% elif job.tier == "C" %}⚪ C{% else %}{{ job.tier }}{% endif %} | {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %} | {{ job.company }} | {{ job.location }} | {{ job.source // "" }} | {{ job.posted_at // "" }} |
+{% endif %}{% endfor %}
+
+**Tier counts:** A: {{ data.tier_counts.a }} · B: {{ data.tier_counts.b }} · C: {{ data.tier_counts.c }} · D: {{ data.tier_counts.d }} · Total: {{ data.tier_counts.total }}
+
+### Detail — A & B tier with dimensions
+
+{% for job in data.results %}{% if not (job.gate_violations and job.gate_violations|length > 0) %}{% if job.tier == "A" or job.tier == "B" %}
+#### {% if job.tier == "A" %}🟢{% else %}🟡{% endif %} {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %} · {{ job.company }} ({{ job.tier }})
+
+{% if job.source %}_Source: {{ job.source }}{% if job.matched_query %} · via "{{ job.matched_query }}"{% endif %}_
+{% endif %}
+{% if job.dimensions %}| Dimension | Tier | Evidence |
+|---|:---:|---|
+{% for dim_name, dim in job.dimensions.items() %}| {{ dim_name }} | **{{ dim.tier }}** | {% for q in dim.evidence[:2] %}_"{{ q }}"_{% if not loop.last %}<br/>{% endif %}{% endfor %} |
+{% endfor %}
+{% endif %}
+{% endif %}{% endif %}{% endfor %}
+
+### Filtered out (gate violations)
+
+{% for job in data.results %}{% if job.gate_violations and job.gate_violations|length > 0 %}
+- 🚫 **{{ job.title }}** · {{ job.company }} · {{ job.location }} — gated on: {% for v in job.gate_violations %}**{{ v.kind }}**{% if v.detail %} ({{ v.detail }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}{% endfor %}
+
+{% else %}
+🌱 **No new jobs surfaced.** All queries returned IDs already in your tracker. Try `/deep-sweep` again next week, broaden your `target_titles`, or adjust your `requirements`.
+{% endif %}

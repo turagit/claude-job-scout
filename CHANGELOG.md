@@ -4,6 +4,33 @@ All notable changes to the LinkedIn Job Hunter plugin are documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] — 2026-05-26
+
+Phase 6 — deep LinkedIn coverage. The accuracy work in v0.8.0 cleared the false-positive floor; this release expands the surface area the plugin actually sees.
+
+### Added
+
+- **`/deep-sweep` command** — new weekly thorough scan. Adaptive multi-query fanout across all `target_titles[]` + LLM-generated synonyms (when a query is thin), all source surfaces (Search + Top picks + Saved + Similar from A-tier hits), Past Week filter, pages 1-3 per query. Expected runtime 15-20 min. Renders its own dated report (`deep-sweep-<date>.html`).
+- **Adaptive multi-query fanout in `/job-search`** — zero-arg invocation iterates `user-profile.target_titles[]`. Any title yielding fewer than 5 surfaced jobs triggers 2-3 LLM-generated synonym variants. Single-arg behaviour (`/job-search <title>`) unchanged.
+- **Top picks sweep in `/check-job-notifications`** — Step 2b navigates to `/jobs/collections/recommended/` after the notifications page. Closes the gap between the README's claim and the actual daily-driver behaviour.
+- **Saved jobs sweep in `/check-job-notifications`** — Step 2c sweeps `/my-items/saved-jobs/`. Catches roles you bookmarked but the plugin never processed.
+- **Similar-jobs expansion in `/check-job-notifications`** — Step 5b follows LinkedIn's "Similar jobs" rail for every A-tier survivor in the run; up to 5 expansions per seed. Tagged `source: "Similar"` with `notes: "expanded from: <seed_job_id>"`.
+- **Recruiter-link parsing in `/check-inbox`** — Step 1b extracts canonical job IDs from every recruiter-thread message (full URLs, shortlinks, inline cards). New IDs are fed into the tracker with `source: "Inbox"` and run through the full gate + score chain. Bidirectional `thread.linked_job_ids[]` ↔ `tracker.jobs.linked_thread_ids[]` linkage populated.
+- **`tracker.stats.last_deep_sweep`** field — date of the most recent `/deep-sweep` run; used by the command's context line.
+- **`tracker.jobs.linked_thread_ids[]`** field — reverse pointer to recruiter threads (canonical schema already reserved the forward pointer in v0.8.0).
+- Visualizer templates for the deep-sweep view (`skills/_visualizer/templates/html/deep-sweep.html.j2` and `.md.j2`) with per-source tag chips and per-query attribution.
+
+### Changed
+
+- `/check-job-notifications` daily-driver scope expanded from notifications-only to notifications + Top picks + Saved + similar-jobs-from-A-tier-hits, all in one pass with cross-source dedupe.
+- `/job-search` source-payload schema gains `dimensions`, `gate_violations`, `tier_reason`, `rubric_version`, `source`, `matched_query` per result (catching up `/job-search` to the v0.8.0 v1 rubric output already used by `/match-jobs` and `/check-job-notifications`).
+- `_job-matcher` reference list now points at `dimensions-default.md` as the bootstrap (v0.8.0 generalisation work — repeating here so a reader picking up only the v0.9.0 changelog sees the current shape).
+
+### Out of scope / deferred to v0.9.1
+
+- HTML template parity gap: `match-jobs.html.j2`, `job-search.html.j2`, `check-job-notifications.html.j2` still render the pre-v0.8.0 single-score card. Markdown templates have the v0.8.0 dimension breakdown; HTML doesn't yet. Users on `render: markdown` mode see the full v0.8.0/v0.9.0 output already; only the HTML auto-open mode is behind. Will land in v0.9.1.
+- Per-card source chip styling in the existing match-jobs / job-search / check-job-notifications HTML templates (the new `deep-sweep.html.j2` includes it; the others need a sweep).
+
 ## [0.8.0] — 2026-05-26
 
 ### Added
