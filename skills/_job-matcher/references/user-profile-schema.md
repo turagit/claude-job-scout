@@ -1,44 +1,29 @@
-# User Profile Schema
+# User Profile (per-workspace)
 
-All commands share `./user-profile.json` in workspace root to avoid re-asking for information.
+> **Schema definition:** see [`../../shared-references/canonical-schemas.md`](../../shared-references/canonical-schemas.md). The JSON shape lives there and is locked.
 
-```json
-{
-  "cv_path": "path/to/cv.pdf",
-  "cv_summary": {
-    "key_skills": [], "technologies": [], "seniority": "Senior",
-    "years_experience": 10, "target_roles": [], "domain_expertise": [], "industries": []
-  },
-  "requirements": {
-    "work_arrangement": "remote", "contract_type": "freelance",
-    "target_roles": [], "min_day_rate": null, "ideal_day_rate": null,
-    "rate_currency": "GBP", "location_preferences": [],
-    "seniority": "Senior", "deal_breakers": [], "nice_to_haves": [],
-    "companies_to_avoid": [], "companies_to_target": []
-  },
-  "linkedin_profile_url": null,
-  "last_updated": "ISO8601",
-  "created_by": "command-name"
-}
-```
+This file documents read/write access and operational rules. Every workspace has its own `user-profile.json` at the root of `.job-scout/`.
 
 ## Rules
 
-1. **Read first, ask second** — check profile before asking for info it might contain
-2. **Merge, don't overwrite** — update fields without replacing the file
-3. **Create if missing** — with whatever fields are available
-4. **Confirm with user** — "Using saved preferences (remote, freelance). Want to change?"
-5. **Stale check** — if `last_updated` >30 days, suggest re-running `/analyze-cv`
+1. **Read first, ask second.** Check the profile before asking for info it might contain.
+2. **Merge, don't overwrite.** Update fields without replacing the file. Writes go through `validate_profile` (see `state-validators.md`).
+3. **Create if missing.** On first bootstrap, write a canonical v2 stub via `/analyze-cv`.
+4. **Confirm with user.** "Using saved preferences (remote, freelance, Director). Want to change?"
+5. **Stale check.** If `last_updated` >30 days, suggest re-running `/analyze-cv`.
+6. **Segment is required.** The matcher uses it to load the right dimension set. `/analyze-cv` declares it at init time and writes it.
 
-## Command Access
+## Command access
 
 | Command | Reads | Writes |
-|---------|-------|--------|
-| `/analyze-cv` | — | cv_path, cv_summary |
-| `/check-job-notifications` | All | cv_path, cv_summary (if missing) |
-| `/job-search` | requirements, cv_summary | requirements (fills gaps) |
-| `/match-jobs` | requirements, cv_summary | — |
+|---|---|---|
+| `/analyze-cv` | All | cv_path, cv_summary, cv_hash, target_titles, segment, tone, requirements.deal_breakers, discovery_complete |
+| `/check-job-notifications` | All | last_updated (if missing fields filled) |
+| `/job-search` | requirements, target_titles, segment | requirements (fills gaps) |
+| `/match-jobs` | All | — |
 | `/apply` | cv_path, requirements | — |
-| `/check-inbox` | cv_summary, requirements | — |
-| `/optimize-profile` | cv_path, cv_summary | linkedin_profile_url |
-| `/create-alerts` | requirements | — |
+| `/check-inbox` | tone, cv_summary, requirements | — |
+| `/optimize-profile` | cv_path, cv_summary, tone | linkedin_profile_url, profile_hash |
+| `/create-alerts` | requirements, target_titles | — |
+| `/cover-letter` | All (esp. tone, cv_summary) | — |
+| `/interview-prep` | All | — |
