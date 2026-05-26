@@ -21,9 +21,9 @@ Single source of truth for what this plugin is for, which phase we're in, and wh
 | 2. SEO / ATS depth | v0.5.0 | Shipped — v0.5.0 | [`specs/2026-04-17-phase-2-seo-ats-depth-design.md`](superpowers/specs/2026-04-17-phase-2-seo-ats-depth-design.md) | [`plans/2026-04-17-phase-2-seo-ats-depth.md`](superpowers/plans/2026-04-17-phase-2-seo-ats-depth.md) |
 | 3. New user-facing commands | v0.6.0 | Shipped — v0.6.0 | [`specs/2026-04-17-phase-3-user-facing-commands-design.md`](superpowers/specs/2026-04-17-phase-3-user-facing-commands-design.md) | [`plans/2026-04-17-phase-3-user-facing-commands.md`](superpowers/plans/2026-04-17-phase-3-user-facing-commands.md) |
 | 4. Visual render layer | v0.7.0 | Shipped — v0.7.0 (smoke deferred) | [`specs/2026-04-29-visual-render-layer-design.md`](superpowers/specs/2026-04-29-visual-render-layer-design.md) | [`plans/2026-04-29-visual-render-layer.md`](superpowers/plans/2026-04-29-visual-render-layer.md) |
-| **5. Foundations + Accuracy core** | v0.8.0 | In flight | [`specs/2026-05-26-phase-0-1-foundations-and-accuracy-design.md`](superpowers/specs/2026-05-26-phase-0-1-foundations-and-accuracy-design.md) | [`plans/2026-05-26-phase-0-1-foundations-and-accuracy.md`](superpowers/plans/2026-05-26-phase-0-1-foundations-and-accuracy.md) |
+| 5. Foundations + Accuracy core | v0.8.0 | Shipped — v0.8.0 (smoke deferred to real use) | [`specs/2026-05-26-phase-0-1-foundations-and-accuracy-design.md`](superpowers/specs/2026-05-26-phase-0-1-foundations-and-accuracy-design.md) | [`plans/2026-05-26-phase-0-1-foundations-and-accuracy.md`](superpowers/plans/2026-05-26-phase-0-1-foundations-and-accuracy.md) |
 
-**Current focus:** Phase 5 in flight — locking canonical schemas, migrating live state, rebuilding `_job-matcher` around hard gates + per-segment dimensions, populating the user's voice profile. End-to-end smoke (Task 26) is the last gate before the v0.8.0 tag. Phases 6 (coverage + cadence — Top picks, similar-jobs, recruiter-link parsing, /deep-sweep), 7 (triage feedback UX + reject chips), 8 (recruiter rebuild + tone propagation), 9 (nurture commands) follow.
+**Current focus:** All five phases shipped. Plugin at v0.8.0. Real-world use of the rebuilt matcher acts as the smoke; any issues fix in v0.8.1. Phases 6 (coverage + cadence — Top picks, similar-jobs, recruiter-link parsing, /deep-sweep), 7 (triage feedback UX + reject chips), 8 (recruiter rebuild + tone propagation), 9 (nurture commands) follow when the user is ready.
 
 ---
 
@@ -127,9 +127,9 @@ Closes the spec↔reality gap (statuses, tiers, JD blobs, caches all silently br
 - [x] **Task 23: `_job-matcher` v0.2.0 rewrite** — segment-aware, gated, dimension-based
 - [x] **Task 24: Wire `_gate-engine`** into `/match-jobs` and `/check-job-notifications`
 - [x] **Task 25: Visualizer dimension breakdown + gated banner** — SKILL.md schema, component-library, match-jobs HTML + Markdown templates
-- [ ] **Task 26: End-to-end smoke** (interactive — user runs `/match-jobs` on a known false-positive in CVDIRECTOR and a known A-tier in CVFREELANCER)
+- [~] **Task 26: End-to-end smoke** *(deferred — real-world use serves as the smoke; any issues fix in v0.8.1; same pattern as Phase 4's deferred smoke)*
 - [x] **Task 27: ROADMAP — Phase 5 section added**
-- [ ] **Task 28: Release v0.8.0** — version bump 0.8.0-dev → 0.8.0, date CHANGELOG, ROADMAP ticks, tag
+- [x] **Task 28: Release v0.8.0** — version bumped to 0.8.0, CHANGELOG dated 2026-05-26, ROADMAP ticks, tag
 
 ---
 
