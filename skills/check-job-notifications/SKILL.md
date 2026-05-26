@@ -70,7 +70,17 @@ This is the primary token-saving step. Never extract a job you already know.
 
 ## Step 4: Extract details for new jobs only
 
-For each *new* job: open it and extract title, company, location (remote/hybrid/on-site + city), salary/rate, contract type, experience level, required skills, preferred skills, full description, Easy Apply status, posting date, applicant count, job URL.
+For each *new* job: open it and extract title, company, location (remote/hybrid/on-site + city), salary/rate, contract type, experience level, required skills, preferred skills, full description text, Easy Apply status, posting date, applicant count, job URL.
+
+**JD persistence (required).** Immediately after extracting a job's full description text, persist it via the hybrid-storage contract in `../shared-references/jd-storage.md`:
+
+```bash
+mkdir -p .job-scout/jds
+printf '%s\n' "$JD_TEXT" > ".job-scout/jds/$JOB_ID.txt.tmp"
+mv ".job-scout/jds/$JOB_ID.txt.tmp" ".job-scout/jds/$JOB_ID.txt"
+```
+
+Set `jd_path: "jds/<job_id>.txt"` on the tracker entry in the same atomic write. Skills that need the full JD downstream (`/cover-letter`, `/interview-prep`, `_job-matcher` evidence-quote extraction) read it from this path. The inline `description` field is removed from the canonical v2 tracker schema — do not write it.
 
 **Corpus enrichment:** after extraction, run the JD keyword extraction procedure from `../shared-references/jd-keyword-extraction.md` on each new job's description. Merges keywords into `.job-scout/cache/jd-keyword-corpus.json`.
 

@@ -62,13 +62,53 @@ When user's profile indicates freelance/contract work, apply adjustments from `.
 
 ## Score Caching Contract
 
-Job scores are cached in `.job-scout/cache/scores.json` keyed by `(job_id, cv_hash, profile_hash)`. Before scoring any job:
+Job scores are cached in `.job-scout/cache/scores.json` keyed by `(job_id, cv_hash, profile_hash, rubric_version)`. The fourth key element — `rubric_version` — was added in v0.8.0 so that rubric upgrades invalidate stale entries without an explicit migration.
 
-1. Compute the cache key from the job's `id`, the current `cv_hash`, and the current `profile_hash` (both read from `.job-scout/user-profile.json`).
-2. If a cached score exists for this triple, **reuse it** — do not re-score. Neither the CV nor the LinkedIn profile has changed, so the score won't change.
-3. If no cached score exists, run the framework above and write the result back to `scores.json`.
+### Read path
 
-This is the primary token-saving mechanism for re-runs of `/match-jobs` and the daily notifications sweep. A re-score happens when either `cv_hash` or `profile_hash` bumps — i.e., the user re-ran `/analyze-cv` on a modified CV, or `/optimize-profile` changed the LinkedIn profile enough to shift the master keyword list.
+```
+1. Load .job-scout/user-profile.json — read cv_hash, profile_hash, segment.
+2. Determine current rubric_version (today: "v1" — the gated, segment-aware rubric in this skill).
+3. Compute cache key = "<job_id>:<cv_hash>:<profile_hash>:v1".
+4. If cache/scores.json has this key → reuse the cached score, tier, dimensions, gate_violations. Skip LLM call.
+5. Otherwise → run the rubric (per the Matching framework below), write the result to the cache, then return it.
+```
+
+### Write path
+
+After computing a score, append/replace the entry in `cache/scores.json`:
+
+```json
+{
+  "<key>": {
+    "score": <number>,
+    "tier": "A|B|C|D",
+    "dimensions": { "<dim>": {"tier": "A|B|C|D", "evidence": [...] } },
+    "gate_violations": [...],
+    "rubric_version": "v1",
+    "scored_at": "ISO8601"
+  }
+}
+```
+
+Writes go through the atomic-rename pattern in `../shared-references/state-validators.md`.
+
+### Invalidation
+
+The cache is invalidated automatically by any of:
+
+- `cv_hash` change (CV file modified) → entries for the old hash are stale and ignored.
+- `profile_hash` change (LinkedIn profile re-optimised) → same.
+- `rubric_version` bump → entries for older rubric versions are stale.
+- `requirements.deal_breakers` change → bumps `profile_hash` via `/analyze-cv`, which cascades into key invalidation. No separate dealbreakers-hash element required.
+
+### Empty-cache reality
+
+Both live workspaces have empty `cache/` directories at v0.8.0 release. The first run post-upgrade populates the cache fresh. There is no batch backfill — costs are paid lazily.
+
+### File-size discipline
+
+`scores.json` can grow large. After 5000 entries, prune entries older than 90 days OR with stale `cv_hash`/`profile_hash`/`rubric_version`. Today (770 jobs) we are far from this limit.
 
 ## State files
 

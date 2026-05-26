@@ -29,6 +29,41 @@ If `.job-scout/cache/cv-<hash>.json` exists for the current CV's hash, load it d
 
 If no cache exists, parse the CV once, write the cache, then proceed.
 
+### CV parse cache (mandatory)
+
+Parsing a CV (PDF/DOCX/Markdown → structured `cv_summary`) is expensive. The parse result is cached in `.job-scout/cache/cv-<cv_hash>.json` and reused.
+
+**cv_hash computation.** `cv_hash = sha1(file-bytes-of-cv-on-disk)`. The hash is computed by `/analyze-cv` and stored on `user-profile.json.cv_hash`. Every other skill reads the hash from there — never re-computes.
+
+**Read path:**
+
+```
+1. /analyze-cv (or any skill that needs parsed CV facts) reads `user-profile.json.cv_hash`.
+2. If null OR if the CV file on disk has changed (re-hash and compare) → bust the cache, re-parse.
+3. Otherwise → load `cache/cv-<cv_hash>.json` and use it.
+```
+
+**Write path:** after parsing, write:
+
+```json
+{
+  "cv_hash": "<sha1>",
+  "parsed_text": "<raw text>",
+  "key_skills": [...],
+  "technologies": [...],
+  "seniority": "...",
+  "years_experience": 10,
+  "target_roles": [...],
+  "domain_expertise": [...],
+  "industries": [...],
+  "parsed_at": "ISO8601"
+}
+```
+
+Both `user-profile.json.cv_summary` (a denormalised view) and `cache/cv-<cv_hash>.json` (canonical parse) are updated atomically.
+
+**Empty-cache reality.** At v0.8.0 release, both live workspaces have empty `cache/` dirs. The first `/analyze-cv` run post-upgrade populates the cache.
+
 ## Step 4: Master Keyword List
 
 Reuse `master_keyword_list` from `user-profile.json` (populated by `_cv-optimizer`). Do not re-extract keywords unless the CV's hash has changed.

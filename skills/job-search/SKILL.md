@@ -22,7 +22,9 @@ Follow `shared-references/cv-loading.md`. If argument provided ($1), use as prim
 
 ## Step 3: Search LinkedIn
 
-Navigate to `https://www.linkedin.com/jobs/`. Enter target title, set location and filters (Experience Level, Remote, Date Posted — prioritize "Past Week"). Collect job IDs first and dedupe against `.job-scout/tracker.json` (see `shared-references/tracker-schema.md`) before opening any listing. Only extract details for new jobs: title, company, location, salary, requirements, description, Easy Apply status.
+Navigate to `https://www.linkedin.com/jobs/`. Enter target title, set location and filters (Experience Level, Remote, Date Posted — prioritize "Past Week"). Collect job IDs first and dedupe against `.job-scout/tracker.json` (see `shared-references/tracker-schema.md`) before opening any listing. Only extract details for new jobs: title, company, location, salary, requirements, full description text, Easy Apply status.
+
+**JD persistence (required).** Immediately after extracting a job's full description text, persist it per the hybrid-storage contract in `../shared-references/jd-storage.md` — write to `.job-scout/jds/<job_id>.txt`, set `jd_path` on the tracker entry. Skip inline `description` writes; the field is removed from the canonical v2 schema.
 
 **Corpus enrichment:** after extraction, run the JD keyword extraction procedure from `../shared-references/jd-keyword-extraction.md` on each new job's description. Merges keywords into `.job-scout/cache/jd-keyword-corpus.json`.
 
