@@ -1,64 +1,57 @@
 ---
 name: _job-matcher
 description: >
-  [Internal — loaded by /match-jobs and /check-job-notifications] This skill should be used when the user asks to "match jobs to my CV", "score these jobs",
-  "rank job listings", "find best matches", "analyze job alerts", "which jobs should I apply to",
-  "compare jobs against my profile", or needs to evaluate job listings against their
-  CV and stated requirements. Also triggers during job alert analysis workflows.
-version: 0.1.0
+  [Internal — loaded by /match-jobs and /check-job-notifications] This skill should be used when the user asks to "match jobs to my CV", "score these jobs", "rank job listings", "find best matches", "analyze job alerts", "which jobs should I apply to", "compare jobs against my profile", or needs to evaluate job listings against their CV and stated requirements.
+version: 0.2.0
 ---
 
-# Job Matcher
+# Job Matcher (rubric v1)
 
-Score, rank, and filter job listings against a user's CV and stated requirements to surface the best opportunities.
+Score, rank, and filter job listings against a user's CV and stated requirements. The v1 rubric (this file) replaces the v0.1 keyword-bingo weighted score with a hard-gated, segment-aware, per-dimension tiering whose output is auditable.
 
-## Matching Framework
+## Rubric flow
 
-Evaluate each job listing across these dimensions:
+```
+For each candidate job:
+  1. Load score cache; if hit (key includes rubric_version: v1) → return cached.
+  2. Run _gate-engine. If gate_violations is non-empty:
+       tier = D
+       tier_reason = "gated: <kinds>"
+       dimensions = {}
+       — write to cache and return.
+  3. Load the dimension set for user-profile.segment:
+       - "director-perm" → references/dimensions-director-perm.md
+       - "freelance"     → references/dimensions-freelance.md
+  4. Score each dimension. Output per dimension: { tier: A|B|C|D, evidence: [quote, ...] }.
+  5. Derive overall tier from the dimension tiers using the table in the dimension reference.
+  6. Persist to score cache and update the tracker entry: tier, tier_reason, dimensions, gate_violations, rubric_version: "v1".
+```
 
-### 1. Skills Match (Weight: 30%)
-- Count required/preferred skills from listing that appear in CV
-- Identify transferable skills (e.g., "React" satisfies "frontend framework")
-- Flag critical missing skills that would be dealbreakers
-- Calculate: `(matched_required / total_required) * 100`
+## Output (per job)
 
-### 2. Experience Alignment (Weight: 25%)
-- Years of experience match (within +/-2 years acceptable)
-- Industry and domain knowledge overlap
-- Seniority level alignment
-- Management/IC track alignment
+```json
+{
+  "job_id": "string",
+  "tier": "A | B | C | D",
+  "tier_reason": "string|null",
+  "dimensions": {
+    "<dim_name>": {"tier": "A|B|C|D", "evidence": ["quote 1", "quote 2"]}
+  },
+  "gate_violations": [{"kind": "...", "detail": "..."}],
+  "rubric_version": "v1"
+}
+```
 
-### 3. Requirements Fit (Weight: 25%)
-- Location match (remote, hybrid, on-site)
-- Salary/rate alignment (if disclosed)
-- Contract type match (permanent, contract, freelance)
-- Work authorization / visa requirements
+The visualiser (`_visualizer`) renders the dimensions section in the report card; the user sees WHY a job got the tier it got, not just a number.
 
-### 4. Growth & Culture (Weight: 10%)
-- Career progression opportunity
-- Technology stack alignment with career goals
-- Company size/sector preference match
+## Batch flow
 
-### 5. Practical Factors (Weight: 10%)
-- Easy Apply preferred
-- Posting freshness (>30 days = stale)
-- Number of applicants (lower = better odds)
+When scoring N jobs in one /match-jobs or /check-job-notifications run:
 
-## Scoring System
-
-- **Match Score: X/100** — weighted aggregate
-- **A-Tier (85-100):** Strong match — apply immediately
-- **B-Tier (70-84):** Good match — worth applying
-- **C-Tier (55-69):** Partial match — apply if interested
-- **D-Tier (below 55):** Weak match — skip
-
-## Batch Analysis
-
-When analyzing multiple listings: quick-filter D-Tier and deal-breaker violations first, deep-score the rest, rank by score within tiers, provide detailed analysis for A-Tier and top B-Tier.
-
-## Freelance / Contract Adjustments
-
-When user's profile indicates freelance/contract work, apply adjustments from `../shared-references/freelance-context.md`.
+1. Compute cache keys for all N. Partition into HIT and MISS.
+2. HIT: return cached.
+3. MISS: process in batches of ≤5 per LLM call where possible (batch by similarity — same company, same broad title pattern). For each MISS, run `_gate-engine` first, then the rubric.
+4. Write all MISSes to the cache in one atomic update at the end.
 
 ## Score Caching Contract
 
@@ -68,10 +61,10 @@ Job scores are cached in `.job-scout/cache/scores.json` keyed by `(job_id, cv_ha
 
 ```
 1. Load .job-scout/user-profile.json — read cv_hash, profile_hash, segment.
-2. Determine current rubric_version (today: "v1" — the gated, segment-aware rubric in this skill).
+2. Determine current rubric_version (today: "v1").
 3. Compute cache key = "<job_id>:<cv_hash>:<profile_hash>:v1".
 4. If cache/scores.json has this key → reuse the cached score, tier, dimensions, gate_violations. Skip LLM call.
-5. Otherwise → run the rubric (per the Matching framework below), write the result to the cache, then return it.
+5. Otherwise → run the rubric flow above, write the result to the cache, then return it.
 ```
 
 ### Write path
@@ -110,16 +103,30 @@ Both live workspaces have empty `cache/` directories at v0.8.0 release. The firs
 
 `scores.json` can grow large. After 5000 entries, prune entries older than 90 days OR with stale `cv_hash`/`profile_hash`/`rubric_version`. Today (770 jobs) we are far from this limit.
 
-## State files
+## Lazy rescore of legacy entries
 
-- **`.job-scout/tracker.json`** — every job ever seen (see `../shared-references/tracker-schema.md`). Always dedupe against this *before* extracting any job details.
-- **`.job-scout/cache/scores.json`** — cached scores per the contract above.
-- **`.job-scout/user-profile.json`** — supplies `cv_hash`, `profile_hash`, and `master_keyword_list`.
+Existing tracker entries from before v0.8.0 carry `rubric_version: "legacy"` (set by the Phase 5 migration). When the visualiser is about to display such an entry:
 
-## Reference Materials
+1. Check `rubric_version`. If `legacy` → trigger this skill's rubric flow to rescore.
+2. Persist the new `tier`, `dimensions`, `tier_reason`, `gate_violations`, and bump `rubric_version` to `"v1"`.
+3. Then render.
 
-- **`references/matching-weights.md`** — Weight customization by industry and career stage
-- **`references/user-profile-schema.md`** — Shared user profile schema
-- **`../shared-references/freelance-context.md`** — Freelance scoring, rate normalization, IR35 rules
-- **`../shared-references/workspace-layout.md`** — `.job-scout/` folder layout and bootstrap
-- **`../shared-references/tracker-schema.md`** — `tracker.json` schema and read/write rules
+Cost is paid lazily as the user opens reports. Most legacy entries are below B-tier under v0 and don't appear in the daily top sections, so rescoring is bounded to what the user actually views.
+
+## Inputs and state files
+
+- **`.job-scout/user-profile.json`** — supplies `cv_hash`, `profile_hash`, `segment`, `requirements`, `tone`, `master_keyword_list`.
+- **`.job-scout/tracker.json`** — supplies metadata; rubric output is persisted back here via `validate_tracker`.
+- **`.job-scout/jds/<id>.txt`** — supplies the full JD text for evidence-quote extraction. If missing (legacy entry, `jd_path: null`), trigger fresh extraction via the Chrome extension before scoring.
+- **`.job-scout/cache/scores.json`** — the score cache.
+
+## Reference materials
+
+- `../_gate-engine/SKILL.md` — hard-gate evaluator, runs before this skill.
+- `references/dimensions-director-perm.md` — segment-specific dimensions (Leadership scope / Domain / Function / Track-record / Cultural signals).
+- `references/dimensions-freelance.md` — segment-specific dimensions (Skills semantic / Engagement shape / Commercial fit / Stack & methodology / Client signals).
+- `references/user-profile-schema.md` — pointer to canonical schemas.
+- `../shared-references/canonical-schemas.md` — locked schemas.
+- `../shared-references/state-validators.md` — pre-write validation.
+- `../shared-references/jd-storage.md` — JD blob storage contract.
+- `../shared-references/freelance-context.md` — freelance rate normalisation, IR35 conventions (used by the freelance dimension set).
