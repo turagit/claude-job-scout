@@ -26,6 +26,23 @@ Navigate to `https://www.linkedin.com/messaging/`. Scan recent messages (unread 
 
 **Dedupe via thread state:** load `.job-scout/recruiters/threads.json`. For each thread, check `last_seen_msg_id`. If the latest message is the same as the stored value, skip the thread — nothing new to read. Only deep-read threads with new activity. After processing, update `last_seen_msg_id` and `lead_tier` per thread.
 
+## Step 1b: Parse embedded job links (v0.9.0+)
+
+While reading each thread with new activity, scan every message body for embedded job-posting URLs. LinkedIn surfaces three shapes:
+
+1. Full canonical URLs: `https://www.linkedin.com/jobs/view/<id>/` or `https://www.linkedin.com/jobs/view/<id>?...`
+2. Shortlinks: `linkedin.com/jobs/view/<id>` (no scheme) or wrapped tracking-redirect URLs (`lnkd.in/...` — follow once to resolve to the canonical form).
+3. Inline job cards: LinkedIn injects rich cards when a recruiter shares a role. The card carries the job ID as a data attribute on the rendered element.
+
+For each unique job ID extracted from a thread:
+
+1. Filter against `.job-scout/tracker.json`. If known, just record the linkage (see step 3 below) and skip extraction.
+2. If new: open the listing, extract details, persist JD to `.job-scout/jds/<id>.txt`, set `jd_path` on the tracker entry, set `source: "Inbox"`, and tag `notes` with `"from recruiter thread: <thread_id>"`.
+3. Run `_gate-engine` and `_job-matcher` on the new job (same chain as `/check-job-notifications` Step 5).
+4. **Record bidirectional linkage:** add the job ID to `thread.linked_job_ids[]` on the recruiter thread, and add the thread ID to `tracker.jobs[<id>].linked_thread_ids[]` (canonical schema reserves both fields). This wiring lights up cross-navigation in Phase 8's recruiter UX.
+
+After this step, the inbox scan has populated the tracker with recruiter-sourced jobs the rest of the plugin would otherwise never see.
+
 ## Step 2: Categorize
 
 Load the **_recruiter-engagement** skill. Classify each message: Hot Lead (specific role, relevant, details shared), Warm Lead (generic but relevant company), Cold Lead (mass outreach, irrelevant), Red Flag (suspicious/scam signals).
