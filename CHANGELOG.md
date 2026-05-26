@@ -4,6 +4,35 @@ All notable changes to the LinkedIn Job Hunter plugin are documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] — TBD
+
+### Added
+
+- `skills/shared-references/canonical-schemas.md` — locked v2 schemas for `user-profile.json`, `tracker.json`, and `recruiters/threads.json`. One source of truth across all state writes.
+- `skills/shared-references/state-validators.md` — pre-write enum + status-transition validators (`validate_tracker`, `validate_profile`, `validate_threads`) with the atomic-rename pattern.
+- `skills/shared-references/jd-storage.md` — hybrid JD-blob storage contract. Full JD text lives at `.job-scout/jds/<job_id>.txt`; the tracker entry carries `jd_path` only.
+- `skills/shared-references/voice-profile.md` — tone-block consumer contract. Every user-voiced surface (recruiter replies, cover letters, profile copy, CV bullet rewrites, interview-prep) reads the structured `tone` block from `user-profile.json`.
+- `skills/shared-references/archive-pass.md` — daily-gated 60-day rotation procedure with full bash implementation.
+- `user-profile.json.segment` field (`director-perm | freelance`); workspace declares its segment at init.
+- `user-profile.json.tone` block populated with the user's voice spec (British, sophisticated, charming, classy, likable, friendly, positive). Both workspaces.
+- `tracker.json.dimensions`, `gate_violations`, `rubric_version`, `reject_reason`, `rejected_at`, `approved_at`, `filtered_reason`, `tier_reason`, `jd_path` fields.
+- Workspace schema-version bumped v1 → v3 (added `jds/` and `.backup/` directories; per-file `schema_version: 2` on the three state files).
+- Score cache key now includes `rubric_version` — rubric upgrades invalidate stale entries automatically.
+
+### Changed
+
+- Both live workspace `tracker.json` files migrated in place to canonical v2. CVDIRECTOR 502 → 500 jobs (2 corrupt dropped); CVFREELANCER 268 → 268 (no corrupt). Non-canonical statuses (`seen_filtered_out`, `seen_noted`, `seen_duplicate`, `new`, `filtered_out`) and tiers (`A_upgraded`, `DEFERRED`, `FILTERED`) mapped to canonical values per the migration tables in the design spec.
+- `user-profile.json` migrated in place. Legacy free-text `cv_summary` (CVDIRECTOR) preserved as `cv_summary_text`. `requirements` shape unified across workspaces.
+- `recruiters/threads.json` migrated (CVDIRECTOR — 26 threads; `lead_tier` enum normalised) or initialised as empty canonical shell (CVFREELANCER).
+- `tracker.json` no longer carries inline `description`. Existing entries have `jd_path: null`; downstream commands (`/cover-letter`, `/interview-prep`) backfill lazily via fresh extraction.
+- `_job-matcher` score-cache contract: key shape changes from `(job_id, cv_hash, profile_hash)` to `(job_id, cv_hash, profile_hash, rubric_version)`.
+- `cv-loading.md`: explicit `sha1` CV-hash contract documented, with read/write paths.
+- `check-job-notifications`, `job-search`, `match-jobs`: JD extraction now writes `.job-scout/jds/<id>.txt` and sets `jd_path` on the tracker entry per the hybrid-storage contract.
+
+### To follow in Phase 5 (Accuracy core, in this same release)
+
+- `_gate-engine` skill, hybrid-elicited dealbreakers in `/analyze-cv`, per-segment rubric dimensions, evidence-quote breakdown in `_visualizer`, lazy-rescore for legacy entries.
+
 ## [0.7.0] — 2026-04-29
 
 ### Added
