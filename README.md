@@ -20,9 +20,10 @@ All commands are user-invoked slash commands. The model will **not** auto-trigge
 
 | Command | Description |
 |---------|-------------|
-| `/check-job-notifications` | **Daily driver** — check notifications, score new listings, save a ranked report |
-| `/analyze-cv` | Analyze and optimize your CV for ATS and recruiters |
-| `/job-search` | Search LinkedIn for jobs matching your CV and requirements |
+| `/check-job-notifications` | **Daily driver** — check notifications + Top picks + Saved jobs, expand similar-jobs from A-tier hits, score new listings, save a ranked report |
+| `/deep-sweep` | **Weekly thorough scan** — adaptive multi-query fanout across all `target_titles[]` + synonyms, all source surfaces, Past Week, pages 1-3, similar-jobs expansion. Run once a week |
+| `/analyze-cv` | Analyze and optimize your CV for ATS and recruiters; discover per-workspace dealbreakers, voice, and scoring dimensions |
+| `/job-search` | Zero-arg: adaptive fanout across `target_titles[]` with synonym expansion on thin queries. Single-arg: search that title only |
 | `/create-alerts` | Create LinkedIn job alerts matching your search criteria |
 | `/match-jobs` | Score and rank job listings against your CV and requirements |
 | `/apply` | Apply to approved jobs via LinkedIn Easy Apply |
@@ -40,7 +41,8 @@ These are model-auto-loaded playbooks used by the commands above. You don't invo
 | Skill | Purpose |
 |-------|---------|
 | `_cv-optimizer` | ATS analysis, keyword optimization, SPAR-method rewrites |
-| `_job-matcher` | Job scoring framework, requirement matching, batch ranking |
+| `_job-matcher` | Hard-gated, segment-aware, per-dimension scoring with evidence quotes |
+| `_gate-engine` | Hard-gate evaluator — runs before scoring; auto-D-tiers any job that violates a declared dealbreaker |
 | `_profile-optimizer` | LinkedIn SEO, headline formulas, section-by-section optimization |
 | `_recruiter-engagement` | Lead qualification, response drafting, conversation management |
 
