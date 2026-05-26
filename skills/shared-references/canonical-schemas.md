@@ -27,7 +27,19 @@ This reference replaces the older inline schemas in `tracker-schema.md` and `_jo
   "linkedin_profile_url": "string|null",
   "profile_hash": "string|null",
   "discovery_complete": "boolean",
-  "segment": "director-perm | freelance",
+  "segment": "string — free-text descriptor of the workspace's job-search lane (e.g. 'permanent director roles in enterprise IT', 'freelance backend contracts EU-remote', 'mid-career switch to UX', 'head pastry chef in Lisbon')",
+  "dimensions": [
+    {
+      "name": "string — dimension label",
+      "criteria": {
+        "A": "string — A-tier criterion",
+        "B": "string — B-tier criterion",
+        "C": "string — C-tier criterion",
+        "D": "string — D-tier criterion"
+      },
+      "weight": "number — optional, defaults to 1.0; load-bearing dimensions can be tagged for the overall-tier derivation rule"
+    }
+  ],
   "requirements": {
     "work_arrangement": ["remote", "hybrid", "on-site"],
     "contract_type": ["permanent", "freelance"],
@@ -162,7 +174,7 @@ This reference replaces the older inline schemas in `tracker-schema.md` and `_jo
 | `tracker.jobs.*.source` | `Job Alert`, `Top Picks`, `Search`, `Inbox`, `Saved`, `Similar` |
 | `threads.*.lead_tier` | `hot`, `warm`, `cold`, `non-lead` |
 | `user-profile.requirements.deal_breakers[].kind` | `work_arrangement`, `contract_type`, `seniority_floor`, `location`, `industry`, `company`, `rate_floor`, `salary_floor`, `custom` |
-| `user-profile.segment` | `director-perm`, `freelance` |
+| `user-profile.segment` | free-text string (any descriptor the user chooses at `/analyze-cv` discovery) |
 
 ## Status transition rules
 

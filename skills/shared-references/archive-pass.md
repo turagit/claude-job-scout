@@ -90,7 +90,7 @@ The pass is idempotent and same-day-gated, so calling it from many commands is s
 ## Verification
 
 ```bash
-D="/Users/tura/Library/Mobile Documents/com~apple~CloudDocs/CoWork/CVDIRECTOR/.job-scout"
+D="$(pwd)/.job-scout"   # run from the workspace root
 jq '{last_archive_pass: .stats.last_archive_pass, hot_seen: ([.jobs[] | select(.status == "seen")] | length)}' "$D/tracker.json"
 ls "$D/archive/" 2>/dev/null
 ```

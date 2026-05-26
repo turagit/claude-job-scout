@@ -38,7 +38,7 @@ See `references/gate-rules.md` for the full rules table. Evaluate in this order 
 2. **work_arrangement** — fail if `job.work_arrangement` is not in `requirements.work_arrangement`.
 3. **contract_type** — fail if `job.contract_type` not in `requirements.contract_type`.
 4. **location** — fail if `job.location` is not covered by `requirements.location_preferences` (preference may be country, region, or "worldwide remote").
-5. **seniority_floor** — fail if `job.seniority` < `requirements.seniority_floor`. Seniority ordering: Junior < Mid < Senior < Lead < Manager < Senior Manager < Director < Senior Director < VP < SVP < C-level. For director-perm segment, default floor is `Director`. For freelance, the floor is whatever the user declared (often "Senior" or "Lead").
+5. **seniority_floor** — fail if `job.seniority` is below `requirements.seniority_floor`. The floor is whatever the user declared at `/analyze-cv` discovery (e.g. "Director", "Senior", "Lead Chef", "Master Plumber"). See `references/gate-rules.md` for the ordinal comparison used with industry-standard tech/management levels, and the LLM-based fallback used when seniority is signalled by domain-specific labels.
 6. **industry** — fail if `job.industry` (parsed from JD) is in `requirements.industries_to_avoid`.
 7. **rate_floor / salary_floor** — fail if `job.day_rate < requirements.min_day_rate` (with currency check) OR `job.salary < requirements.salary_floor`. If the listing doesn't disclose, do NOT gate (flag for follow-up in the report card instead).
 8. **custom deal_breakers** — for each `deal_breaker` of kind `custom`, evaluate the `free_text` rule via an LLM call against the JD text. Costly; runs last.

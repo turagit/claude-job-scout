@@ -32,16 +32,13 @@ If the user provides a target job description, extract it and use it for keyword
 
 Skip this step if `user-profile.json.discovery_complete == true` AND the user did not pass `--rediscover`.
 
-Otherwise conduct the hybrid discovery interview. Three blocks, asked in sequence:
+Otherwise conduct the hybrid discovery interview. Four blocks, asked in sequence:
 
 ### Segment declaration
 
-"Is this workspace for permanent director/exec roles, or freelance/contract work?"
+"In one short sentence, describe what kind of role you're hunting for in this workspace. This is just a free-text label so we both remember what this lane is for, and it helps tailor the matching rubric. Examples: 'permanent director roles in enterprise IT', 'freelance backend contracts EU-remote', 'mid-career switch to UX research', 'head pastry chef in Lisbon'."
 
-- "perm director" → write `segment: "director-perm"` to `user-profile.json`.
-- "freelance" / "contract" → write `segment: "freelance"`.
-
-The matcher (`_job-matcher`) uses this to load the right dimension set.
+Write the user's exact response to `user-profile.json.segment`. The matcher uses it both as a prompt anchor and as input to the dimensions discovery (Step 3c below).
 
 ### Dealbreaker checklist (menu, 7 categories)
 
@@ -71,7 +68,22 @@ Read the existing `user-profile.json.tone` block. Echo a one-line summary:
 
 > "Voice on drafts is set to: {{tone.dialect}}, {{tone.register}}, {{tone.warmth}}. Want to change it?"
 
-If yes, walk a brief elicitation (register, dialect, warmth, vocabulary cues, exemplars, avoid). If no, do nothing — keep the current tone.
+If yes, walk a brief elicitation (register, dialect, warmth, vocabulary cues, exemplars, avoid). If no, do nothing — keep the current tone. If the tone block is empty (new workspace), run a fresh elicitation.
+
+### Step 3c: Dimensions discovery
+
+Generate the 5-dimension rubric this workspace will use for job scoring. Read the universal bootstrap at `../_job-matcher/references/dimensions-default.md` and ADAPT it to this workspace by:
+
+1. Considering `cv_summary.key_skills`, `cv_summary.target_roles` or `target_titles`, `cv_summary.industries`, `segment` (the free-text description from Step 3a above), and `requirements`.
+2. For each of the 5 universal dimensions (Skills & technical fit / Role shape match / Domain & context / Engagement fit / Trajectory fit), rewrite the A/B/C/D criteria so they reference what would actually appear in JDs for THIS user's lane. Example transformations:
+   - For a pastry chef workspace, "Skills & technical fit" criterion-A might be rephrased to: "Every named technique (lamination, sugar work, plated desserts, etc.) the JD requires is demonstrably evidenced on the CV; CV shows multi-year depth in the chosen specialism."
+   - For a construction-engineer workspace, "Domain & context" criterion-A might be rephrased to: "Sector matches candidate's track record (civils, residential, commercial, infrastructure); regulatory regime (UK Building Regs, Eurocodes, AS/NZS) aligns."
+3. Present the proposed 5 dimensions to the user as a structured block. Ask: "Does this look right, or do you want to edit any of the dimensions or their criteria?"
+4. On approval, write the array to `user-profile.json.dimensions[]` per the shape in `../shared-references/canonical-schemas.md`. On revision, update accordingly.
+
+The matcher reads `user-profile.json.dimensions[]` at scoring time. If the array is empty or absent, the matcher falls back to the universal default — never blocks scoring.
+
+A user can re-run dimensions discovery later by editing `dimensions[]` directly, or by re-running `/analyze-cv --rediscover`.
 
 ### Persist + mark discovery complete
 

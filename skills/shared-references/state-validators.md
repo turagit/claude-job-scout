@@ -4,7 +4,7 @@
 
 ## Why
 
-Live state has historically drifted from spec because writes happened without enforcement. Director's tracker carries `tier: A_upgraded`, `tier: DEFERRED`, `tier: FILTERED`; Freelancer's tracker carries `status: seen_noted`, `status: seen_duplicate`. None of these are spec values; downstream consumers (`_visualizer`, `_job-matcher`) silently mis-handle them. Validators close that loop.
+Without enforcement, state writes drift from spec over time — skills invent ad-hoc status/tier/lead-tier values, downstream consumers (`_visualizer`, `_job-matcher`) silently mis-handle them, and the schema as documented stops matching the schema as written. Validators close that loop by rejecting any write that would introduce a non-canonical value.
 
 ## Validation routine (every state write)
 
@@ -71,13 +71,12 @@ validate_tracker() {
 validate_profile() {
   local f="$1"
 
-  # segment must be one of two
+  # segment must be a non-empty string (free-text descriptor)
   local seg
   seg=$(jq -r '.segment // "missing"' "$f")
-  case "$seg" in
-    director-perm|freelance) : ;;
-    *) echo "SCHEMA_VIOLATION: segment is $seg" >&2; return 2 ;;
-  esac
+  if [ -z "$seg" ] || [ "$seg" = "missing" ] || [ "$seg" = "null" ]; then
+    echo "SCHEMA_VIOLATION: segment is missing or empty" >&2; return 2
+  fi
 
   # deal_breakers[].kind must be valid
   local bad_dk
