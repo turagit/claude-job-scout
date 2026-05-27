@@ -46,3 +46,17 @@ No automated test suite exists. Validation is manual: spot-checks via shell (`jq
 - `.claude-plugin/plugin.json` carries the canonical plugin version. Bump on every user-visible release (SemVer minor for feature releases, patch for fixes).
 - Per-skill `version:` frontmatter is informational. Bump it when that skill's contract or output shape changes — not on every edit.
 - `CHANGELOG.md` gets one section per plugin version, following Keep a Changelog.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
