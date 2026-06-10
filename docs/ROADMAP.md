@@ -23,8 +23,9 @@ Single source of truth for what this plugin is for, which phase we're in, and wh
 | 4. Visual render layer | v0.7.0 | Shipped — v0.7.0 (smoke deferred) | [`specs/2026-04-29-visual-render-layer-design.md`](superpowers/specs/2026-04-29-visual-render-layer-design.md) | [`plans/2026-04-29-visual-render-layer.md`](superpowers/plans/2026-04-29-visual-render-layer.md) |
 | 5. Foundations + Accuracy core | v0.8.0 | Shipped — v0.8.0 (smoke deferred to real use) | [`specs/2026-05-26-phase-0-1-foundations-and-accuracy-design.md`](superpowers/specs/2026-05-26-phase-0-1-foundations-and-accuracy-design.md) | [`plans/2026-05-26-phase-0-1-foundations-and-accuracy.md`](superpowers/plans/2026-05-26-phase-0-1-foundations-and-accuracy.md) |
 | **6. Deep LinkedIn coverage** | v0.9.0 | Shipped — v0.9.0 | [`specs/2026-05-26-phase-6-deep-coverage-design.md`](superpowers/specs/2026-05-26-phase-6-deep-coverage-design.md) | _inline (no separate plan file — work fit in one branch)_ |
+| **7. Discovery & search engine** | v0.10.0 | Shipped — v0.10.0 | [`specs/2026-06-10-phase-7-discovery-search-engine-design.md`](superpowers/specs/2026-06-10-phase-7-discovery-search-engine-design.md) | _inline (executed task-by-task on `phase-7-9/build`)_ |
 
-**Current focus:** All six phases shipped. Plugin at v0.9.0. Phase 7 (triage feedback UX + reject chips), 8 (recruiter rebuild + tone propagation), 9 (nurture commands) follow when ready. HTML-template parity for the v0.8.0 dimension breakdown across non-deep-sweep templates is queued as v0.9.1.
+**Current focus:** Seven phases shipped. Plugin at v0.10.0 — discovery is now Boolean, filter-addressed, skill-aware, and self-improving; templates have full dimension parity; user-facing voice is British English by default. The previously-queued phases renumber: Phase 8 (triage feedback UX + reject chips), 9 (recruiter rebuild + tone elicitation `/config tone`), 10 (nurture commands) follow when ready. Note: tone-block *propagation* into all drafting contracts already landed in v0.10.0; what remains of the old "Phase 8" is the recruiter lifecycle rebuild and the `/config tone` elicitation surface.
 
 ---
 
@@ -134,6 +135,23 @@ Closes the spec↔reality gap (statuses, tiers, JD blobs, caches all silently br
 
 ---
 
+## Phase 7 — v0.10.0: Discovery & search engine
+
+User-directed priority: *"focus on job discovery on LinkedIn, improved search on LinkedIn — these are the paths to increase the probability of finding jobs."* Plus a standing side requirement: British tone, no Americanisms.
+
+- [x] **`shared-references/linkedin-search.md`** — URL grammar, Boolean craft, query plan v2, query-stats, repost dedupe, freshness.
+- [x] **`/job-search` rewrite** — title-cluster + skill + geo + synonym plan, filter-addressed URLs, stats writes.
+- [x] **`/deep-sweep` adoption** — same plan at deep settings (Past Week, pages 1-3).
+- [x] **`/analyze-cv` Step 3d** — query-cluster discovery; `query_clusters[]` added to canonical schema (optional, additive).
+- [x] **Query learning loop** — `.job-scout/cache/query-stats.json`; ordering, retirement, promotion.
+- [x] **Repost fingerprint dedupe** — all sweep commands.
+- [x] **Freshness flag** — tier-then-recency ordering + "⚡ apply early" chip in all sweep views.
+- [x] **`/create-alerts` auto-derivation** — zero-arg proposes alerts from the plan; `manual` keeps the old flow.
+- [x] **Contract repairs** — Default-Requirements block removed; legacy score contract folded into v1 fan-out; aggregate-score ghosts retired (payloads, render-orchestration, `_job-matcher` cache); `jd_path` reads in `/cover-letter` + `/interview-prep`; canonical `lead_tier`; tone block replaces `tone_preference`; funnel-report scored-stage fix; orphaned `matching-weights.md` removed.
+- [x] **Template parity (v0.9.1 debt)** — dimension tables + gated groups + source chips in match-jobs / job-search / check-job-notifications HTML + markdown; Jinja2-verified (16/16 render combinations); fixed latent `//` coalesce crash in `deep-sweep.md.j2`.
+- [x] **British-English pass** — CLAUDE.md hard rule, voice-profile avoid-list, full prose sweep, response-templates voice preamble.
+- [x] **Release v0.10.0** — version bump, CHANGELOG, README, this section.
+
 ## Log
 
 - **2026-04-16** — Roadmap established. Phase 1 design spec drafted and committed. Meta-decision: phased releases (v0.4.0 → v0.5.0 → v0.6.0), not single-bundle v0.4.0.
@@ -147,3 +165,4 @@ Closes the spec↔reality gap (statuses, tiers, JD blobs, caches all silently br
 - **2026-05-26** — Phase 5 execution: 25 of 28 tasks landed. Both live workspaces migrated to v2 schemas + v3 workspace layout. Tasks 18 and 26 (interactive smoke) merged into a single user-run verification; Task 28 (release) gates on that smoke passing.
 - **2026-05-26** — Mid-execution correction. User correctly flagged that two initial segment-specific dimension reference files had encoded industries and tools from the workspaces used during development, and a binary segment enum — making the plugin user-shaped rather than user-agnostic. Refactored: dimensions are now per-workspace data (`user-profile.json.dimensions[]`) discovered by `/analyze-cv`; the plugin ships a single universal abstract bootstrap (`dimensions-default.md`); `segment` is free-text; the two segment-specific reference files were removed. Pre-existing user-specific examples were also stripped from `state-validators.md`, `voice-profile.md`, the gate-rules seniority section, and the `_visualizer` component-library samples. Any job-search lane is now first-class — baker, construction engineer, sales executive, anyone.
 - **2026-05-26** — Phase 6 shipped as v0.9.0. Adaptive multi-query fanout in `/job-search` (zero-arg iterates target_titles[] + synonym expansion on thin queries), four new source surfaces in `/check-job-notifications` (Top picks, Saved jobs, Similar-jobs from A-tier hits, recruiter-message links via `/check-inbox` Step 1b), and a new `/deep-sweep` weekly command. Inline execution; no separate implementation plan committed — work fit in one branch. HTML-template parity for the v0.8.0 dimension breakdown across non-deep-sweep templates is the only deferred item, queued as v0.9.1.
+- **2026-06-10** — Phase 7 shipped as v0.10.0. Full autonomous review of all 22 skills, then a user-directed pivot to discovery: every LinkedIn search is now a crafted Boolean, filter-addressed, learning query (`linkedin-search.md`); skill-combination queries catch retitled roles from the JD-keyword corpus; reposts dedupe by fingerprint; alerts derive from the plan. Contract drift repaired (aggregate-score ghosts, dead `description` reads, non-canonical `lead_tier`, `tone_preference` → `tone` block). v0.9.1 template-parity debt cleared with Jinja2-verified renders (which caught a latent `//` coalesce crash in `deep-sweep.md.j2`). British English is now the default register everywhere user-facing (CLAUDE.md hard rule). Old Phases 7-9 renumber to 8-10: triage feedback UX, recruiter lifecycle rebuild + `/config tone`, nurture commands.
