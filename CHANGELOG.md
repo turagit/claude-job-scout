@@ -4,6 +4,44 @@ All notable changes to the LinkedIn Job Hunter plugin are documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] — 2026-06-10
+
+Phase 7 — the discovery and search engine. Coverage (v0.9.0) told the plugin *where* to look; this release transforms *how* it searches: crafted Boolean queries, filter-addressed URLs, skill-based discovery of retitled roles, and a learning loop that improves the plan every run. Plus the v0.9.1 template-parity debt, a set of contract repairs, and a full British-English pass.
+
+### Added
+
+- **`shared-references/linkedin-search.md`** — the single source of truth for LinkedIn searching: filter-addressed URL grammar (`f_WT`, `f_TPR`, `f_JT`, `f_E`, `sortBy=DD`, …), Boolean keyword craft, query plan v2, query-stats contract, repost dedupe, freshness rules.
+- **Boolean title-cluster queries** — `/analyze-cv` Step 3d groups `target_titles[]` into synonym clusters with optional `NOT` tails, stored as `user-profile.json.query_clusters[]` (optional, additive). One cluster query covers what used to take three searches. Per-title fallback when absent.
+- **Skill-combination queries** — `/job-search` and `/deep-sweep` build 2–3 queries from the JD-keyword corpus (top co-occurring A/B-tier skills ∩ CV skills, with a context anchor) once the corpus has ≥10 source jobs. Finds well-matched roles whose titles match nothing in `target_titles[]` — the largest discovery gap.
+- **Geo iteration** — every query runs once per market in `location_preferences[]` via the `location=` URL parameter.
+- **Query learning loop** — `.job-scout/cache/query-stats.json` records each query's yield and tier outcomes. Proven queries run first; queries with three consecutive empty runs retire; synonym variants with ≥3 A/B-tier hits are promoted into their cluster (with user confirmation).
+- **Repost fingerprint dedupe** — `company|title|location` fingerprint check in every sweep's dedupe step. Re-listed jobs under fresh IDs are recognised, logged on the original entry, and skipped — no extraction, no scoring, no duplicate card.
+- **Freshness surfacing** — same-tier results order by posting date; A/B-tier jobs posted within 48 hours carry an "⚡ apply early" chip in every sweep view.
+- **`/create-alerts` auto-derivation** — zero-arg proposes 3–5 alerts from the query clusters (plus the best-performing skill query), filters matched to `requirements`; the old interactive flow lives at `/create-alerts manual`.
+- **British-English default** — new CLAUDE.md hard rule; `voice-profile.md` carries the avoid-list. All user-facing copy and generated drafts default to British English unless `tone.dialect` says otherwise.
+- `score-pill tier-d` style in `theme.css` (muted) for completeness.
+
+### Changed
+
+- **All searches navigate to constructed filter URLs** instead of clicking the LinkedIn filter UI — deterministic, reproducible, fewer browser steps. UI filters remain the documented fallback on parameter drift.
+- **Template parity (the v0.9.1 debt):** `match-jobs`, `job-search`, and `check-job-notifications` HTML + markdown templates now match the deep-sweep pattern — uppercase tier pills, per-dimension evidence tables, collapsed "Filtered out" gated group, source chips.
+- **Aggregate score fully retired from contracts:** `match-jobs` payloads, `render-orchestration.md`, and `_job-matcher`'s cache-write shape carry `tier` + `dimensions` only (the 85/70/55 threshold prose is gone); tiers are uppercase everywhere; `deep-sweep` added to the render-orchestration view tables.
+- `/check-job-notifications`: the hard-coded "Default Requirements (Always Active)" block is removed (filtering belongs to user-declared dealbreakers via `_gate-engine`); the legacy pre-v0.8.0 scoring step is folded into the v1 rubric fan-out; compensation disclosure is now an ordering preference, not a filter.
+- `/cover-letter` and `/interview-prep` read JDs via `jd_path` (`.job-scout/jds/<id>.txt`) with fetch-and-persist on miss — the inline `description` field they referenced was removed from the schema in v0.8.0.
+- `/check-inbox` uses the canonical `lead_tier` enum (`hot | warm | cold | non-lead`); red-flag signals live in `lead_tier_detail`; thread payloads surface `linked_jobs` with tiers.
+- The structured `tone` block replaces the retired `tone_preference` enum in every drafting contract (`/cover-letter`, `_cover-letter-writer`, `_cv-section-rewriter`, `_cv-optimizer` dispatch); `response-templates.md` gains a voice-first preamble.
+- `funnel-report` computes the "scored" stage from tier presence (works on v1 entries, which carry no `score`), and recommends the freshest A-tier first.
+- British-English spelling sweep across all prose (identifiers, command names, JSON keys, and file paths unchanged; historical changelog entries untouched).
+
+### Fixed
+
+- `deep-sweep.md.j2` crashed on render: jq-style `{{ x // "" }}` coalesce is invalid Jinja (integer division) — replaced with `{{ x or "" }}`. All 16 view/format/payload render combinations now verified with Jinja2.
+- Removed the orphaned v0.1 `matching-weights.md` (keyword-bingo weights contradicting the v1 rubric).
+
+### Deferred
+
+- The previously-queued triage-feedback UX, recruiter rebuild + `/config tone`, and nurture commands renumber to Phases 8–10 — discovery took priority by user direction.
+
 ## [0.9.0] — 2026-05-26
 
 Phase 6 — deep LinkedIn coverage. The accuracy work in v0.8.0 cleared the false-positive floor; this release expands the surface area the plugin actually sees.

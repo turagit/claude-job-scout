@@ -24,7 +24,7 @@ Universal fields (every view):
 
 Per-view extensions (only when the view's schema requires them):
 
-- `tier_counts: { a, b, c, total }` — for views that bucket scored items: `match-jobs`, `job-search`, `check-job-notifications`. Populate all four keys (use `0` when none) so toolbar buttons render `(0)` rather than blank.
+- `tier_counts: { a, b, c, d, total }` — for views that bucket scored items: `match-jobs`, `job-search`, `check-job-notifications`, `deep-sweep`. Populate every key (use `0` when none) so toolbar buttons render `(0)` rather than blank; `d` is the gated/filtered count.
 - `unread_count` — for `check-job-notifications` and `check-inbox`.
 - `thread_count` — for `check-inbox`.
 - `metrics`, `stages` — for `funnel-report`.
@@ -41,17 +41,13 @@ Per-view extensions (only when the view's schema requires them):
 | `check-inbox` | `check-inbox-latest.html` |
 | `funnel-report` | `funnel-report-<YYYY-MM-DD-HHMM>.html` |
 | `interview-prep` | `interview-prep-<role-slug>-<YYYY-MM-DD-HHMM>.html` |
+| `deep-sweep` | `deep-sweep-<YYYY-MM-DD>.html` |
 
 For `interview-prep`: `<role-slug>` is `<tracker-id>-<4-char-disambiguator>`. The disambiguator is the first 4 characters of the SHA-1 hash of the input role title — keeps filenames distinct even when re-running prep on the same tracker entry.
 
 ### Tier classification (used by views with scored items)
 
-The dispatcher uses the canonical scoring tiers from `_job-matcher` and passes the tier value directly to `_visualizer`:
-- `score >= 85` → `"a"`
-- `70 <= score < 85` → `"b"`
-- `55 <= score < 70` → `"c"`
-
-D-tier jobs (`score < 55`) are pre-filtered by `match-jobs` and `check-job-notifications` before reaching the renderer (per `_job-matcher`'s scoring framework); the visualizer never sees them. Templates render only `tier-a` / `tier-b` / `tier-c` pill variants.
+Tiers come straight from the `_job-matcher` v1 rubric — uppercase `A | B | C | D` with per-dimension `{tier, evidence[]}` breakdowns. There is no aggregate score and no threshold mapping. D-tier (gated) jobs DO reach the renderer, carrying `gate_violations[]` — templates render them in a collapsed "Filtered out" group with a gated banner, never among the live results. Templates render `tier-a` / `tier-b` / `tier-c` pill variants for live cards (apply `|lower` to the tier when building the CSS class).
 
 ## Step B: Read the render config
 
@@ -156,6 +152,7 @@ A 2–3 line summary printed even when HTML rendering succeeds. Format depends o
 | `funnel-report` | `✓ Pipeline snapshot for week of {{date}} — opened report in Chrome` |
 | `check-inbox` | `✓ {{N}} threads — {{unread}} unread — opened report in Chrome` |
 | `interview-prep` | `✓ Prep dossier for {{role}} at {{company}} — opened report in Chrome` |
+| `deep-sweep` | `✓ Deep sweep — {{N_queries}} queries · {{N_new}} new jobs — A:{{a}} B:{{b}} · Filtered:{{gated}} — opened report in Chrome` |
 
 When falling back to markdown, replace the trailing clause with `— rendered above`.
 

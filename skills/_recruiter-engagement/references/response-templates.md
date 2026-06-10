@@ -1,5 +1,7 @@
 # Recruiter Response Templates
 
+> **Voice first.** Every draft built from these templates MUST apply the user's `tone` block per `../../shared-references/voice-profile.md` — register, dialect (British English by default: spelling, idiom, `D Month YYYY` dates), warmth, vocabulary cues, exemplars, and avoid-list. The templates below are structural skeletons, not copy to paste. Never open with "I'm excited to…" or "I hope this finds you well"; lead with substance, stay gracious without being effusive.
+
 ## Initial Responses
 
 **Hot Lead — Express Interest + Qualify:**

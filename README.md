@@ -1,18 +1,19 @@
 # LinkedIn Job Hunter
 
-An all-in-one LinkedIn job search automation plugin for Claude Code / Cowork. Analyzes your CV, searches for matching jobs, optimizes your LinkedIn profile, manages recruiter conversations, and applies to jobs — all from one place.
+An all-in-one LinkedIn job search automation plugin for Claude Code / Cowork. Analyses your CV, runs crafted Boolean discovery sweeps for matching jobs, optimises your LinkedIn profile, manages recruiter conversations, and applies to jobs — all from one place.
 
 ## What It Does
 
-This plugin turns Claude into your personal job search assistant on LinkedIn. It handles the pipeline from CV optimization to application submission, so you can focus on preparing for interviews instead of scrolling job boards.
+This plugin turns Claude into your personal job search assistant on LinkedIn. It handles the pipeline from CV optimisation to application submission, so you can focus on preparing for interviews instead of scrolling job boards.
 
 - **CV Analysis & Improvement** — ATS compatibility scoring, keyword gap analysis, persuasion-psychology-aware rewrites.
-- **Smart Job Search** — searches LinkedIn, scores every listing against your CV and stated requirements, ranks by fit.
-- **Job Alerts** — creates LinkedIn job alerts so nothing slips through.
+- **Deep Job Discovery** — Boolean title-cluster and skill-combination queries, filter-addressed search URLs, geo iteration, and a learning loop that remembers which queries actually produce good jobs. Catches roles whose titles don't match your list.
+- **Smart Matching** — hard gates on your declared dealbreakers, then per-dimension scoring with evidence quotes from the JD, ranked by tier and freshness.
+- **Job Alerts** — derives LinkedIn alerts from your query plan so nothing slips through while you're away.
 - **Daily Notification Sweep** — scans your unread job-alert notifications, scores new listings, and writes a ranked report.
 - **Easy Apply** — handles LinkedIn Easy Apply for jobs you approve. Hands off external applications to you.
 - **Inbox Monitoring** — scans recruiter messages, qualifies leads (hot/warm/cold), drafts replies for your approval.
-- **Profile Optimization** — rewrites your headline, summary, experience, and skills for recruiter and ATS visibility.
+- **Profile Optimisation** — rewrites your headline, summary, experience, and skills for recruiter and ATS visibility.
 
 ## Commands
 
@@ -21,14 +22,14 @@ All commands are user-invoked slash commands. The model will **not** auto-trigge
 | Command | Description |
 |---------|-------------|
 | `/check-job-notifications` | **Daily driver** — check notifications + Top picks + Saved jobs, expand similar-jobs from A-tier hits, score new listings, save a ranked report |
-| `/deep-sweep` | **Weekly thorough scan** — adaptive multi-query fanout across all `target_titles[]` + synonyms, all source surfaces, Past Week, pages 1-3, similar-jobs expansion. Run once a week |
-| `/analyze-cv` | Analyze and optimize your CV for ATS and recruiters; discover per-workspace dealbreakers, voice, and scoring dimensions |
-| `/job-search` | Zero-arg: adaptive fanout across `target_titles[]` with synonym expansion on thin queries. Single-arg: search that title only |
-| `/create-alerts` | Create LinkedIn job alerts matching your search criteria |
+| `/deep-sweep` | **Weekly thorough scan** — full Boolean query plan (title clusters + skill queries + synonyms), all source surfaces, Past Week, pages 1-3, similar-jobs expansion. Run once a week |
+| `/analyze-cv` | Analyse and optimise your CV for ATS and recruiters; discover per-workspace dealbreakers, voice, scoring dimensions, and Boolean query clusters |
+| `/job-search` | Zero-arg: the full query plan — Boolean title clusters, skill-combination queries, geo iteration, synonym rescue, repost dedupe. Single-arg: search that title only |
+| `/create-alerts` | Zero-arg: derive 3-5 LinkedIn alerts from your query plan. `manual`: dictate criteria yourself |
 | `/match-jobs` | Score and rank job listings against your CV and requirements |
 | `/apply` | Apply to approved jobs via LinkedIn Easy Apply |
 | `/check-inbox` | Monitor LinkedIn inbox for recruiter messages and leads |
-| `/optimize-profile` | Analyze and improve your LinkedIn profile |
+| `/optimize-profile` | Analyse and improve your LinkedIn profile |
 | `/cover-letter` | Generate a tailored cover letter (3 angle options) for a specific job |
 | `/interview-prep` | Generate an interview-prep packet (SPAR narratives, predicted questions, questions to ask) for a specific job |
 | `/funnel-report` | Pipeline analytics: 30/60/90-day funnel, drop-offs, trending keywords, suggested next actions |
@@ -40,13 +41,24 @@ These are model-auto-loaded playbooks used by the commands above. You don't invo
 
 | Skill | Purpose |
 |-------|---------|
-| `_cv-optimizer` | ATS analysis, keyword optimization, SPAR-method rewrites |
+| `_cv-optimizer` | ATS analysis, keyword optimisation, SPAR-method rewrites |
 | `_job-matcher` | Hard-gated, segment-aware, per-dimension scoring with evidence quotes |
 | `_gate-engine` | Hard-gate evaluator — runs before scoring; auto-D-tiers any job that violates a declared dealbreaker |
-| `_profile-optimizer` | LinkedIn SEO, headline formulas, section-by-section optimization |
+| `_profile-optimizer` | LinkedIn SEO, headline formulas, section-by-section optimisation |
 | `_recruiter-engagement` | Lead qualification, response drafting, conversation management |
 
 ---
+
+### The discovery engine (v0.10.0+)
+
+Every LinkedIn search the plugin runs follows `skills/shared-references/linkedin-search.md`:
+
+- **Filter-addressed URLs** — workplace type, contract type, recency, and sort order are set in the URL itself, not clicked through the filter UI. Deterministic, reproducible, faster.
+- **Boolean title clusters** — `/analyze-cv` groups your target titles into synonym clusters; one query like `("Head of Platform" OR "Platform Engineering Manager") NOT (intern OR graduate)` covers what used to take three searches.
+- **Skill-combination queries** — built from the keyword corpus your sweeps accumulate, these find well-matched roles whose titles you'd never have guessed.
+- **A learning loop** — every query's yield is recorded in `query-stats.json`. Proven queries run first, dead queries retire after three empty runs, and synonym variants that keep producing A/B-tier jobs get promoted into your clusters.
+- **Repost dedupe** — re-listed jobs (same company, title, and location under a fresh ID) are recognised and skipped instead of being re-extracted and re-scored.
+- **Freshness flags** — A/B-tier jobs posted within 48 hours carry an "⚡ apply early" chip; applying early is the cheapest way to raise your response rate.
 
 ### Visual reports (v0.7.0+)
 
@@ -84,7 +96,8 @@ If you run the plugin from `~/projects/freelance-search/` and from `~/projects/p
   cache/
     cv-<hash>.json            # parsed CV text + extracted keywords, keyed by CV content hash
     cv-analysis-<hash>.json   # full CV scoring output, keyed by content hash
-    scores.json               # job scores keyed by (job_id, cv_hash)
+    scores.json               # job results keyed by (job_id, cv_hash, profile_hash, rubric_version)
+    query-stats.json          # per-query yield memory — powers the learning loop
     linkedin-profile.json     # last-seen snapshot of your LinkedIn profile (for diffing)
   recruiters/
     threads.json            # per-thread state: last_seen_msg_id, lead_tier, last_drafted_reply
@@ -106,7 +119,7 @@ Without persistent state, every command would re-parse your CV, re-score every j
 
 - Your CV is parsed **once per content hash** — edit your CV and it re-parses; otherwise it's instant.
 - Jobs you've already been shown are **never re-extracted** (the tracker is consulted *before* opening any listing).
-- Job scores are cached per `(job_id, cv_hash)` — unchanged jobs against an unchanged CV are never re-scored.
+- Job results are cached per `(job_id, cv_hash, profile_hash, rubric_version)` — unchanged jobs against an unchanged CV and profile are never re-scored, and reposts of known jobs are recognised by fingerprint and skipped entirely.
 - LinkedIn profile snapshots are cached for 7 days so re-runs don't re-read every section from scratch.
 - Recruiter threads with no new messages are skipped on subsequent `/check-inbox` runs.
 
@@ -118,7 +131,7 @@ The first time you run any command in a new project, the plugin will ask:
 
 > "I don't see a `.job-scout/` folder in this project yet. This is where I'll keep your CV profile, the list of jobs I've already shown you, cached scores, and run reports — all scoped to *this* project so different job searches stay separate. Want me to create it now?"
 
-**Say yes.** The plugin will create the folder, write a stub `user-profile.json` and an empty `tracker.json`, and proceed. If you decline, the plugin will fall back to legacy behavior (writing loose files at your workspace root) for that session only, and will not nag you again in the same session.
+**Say yes.** The plugin will create the folder, write a stub `user-profile.json` and an empty `tracker.json`, and proceed. If you decline, the plugin will fall back to legacy behaviour (writing loose files at your workspace root) for that session only, and will not nag you again in the same session.
 
 ---
 
@@ -130,7 +143,7 @@ Clone this repo and install as a plugin:
 git clone https://github.com/turagit/claude-job-scout.git
 ```
 
-In Claude Desktop / Claude Code, go to Settings → Plugins → "Install from folder" and select the cloned directory. Claude detects `.claude-plugin/plugin.json` and installs all 8 slash commands and 4 skills automatically.
+In Claude Desktop / Claude Code, go to Settings → Plugins → "Install from folder" and select the cloned directory. Claude detects `.claude-plugin/plugin.json` and installs all the slash commands and internal skills automatically.
 
 ## Requirements
 

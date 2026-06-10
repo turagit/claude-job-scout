@@ -23,12 +23,12 @@ The `★` icon is rendered with the violet→pink gradient. Templates may swap t
 Three names for the same card primitive — semantic differentiation only. All three share the visual treatment.
 
 ```html
-<article class="job-card" data-tier="a" data-sort_score="87" data-sort_date="2026-04-29">
+<article class="job-card" data-tier="A" data-sort_date="2026-06-09" data-sort_company="Stripe">
   <div class="header">
-    <div class="title">Senior Backend Engineer</div>
-    <div class="score-pill tier-a">87</div>
+    <div class="title">Senior Backend Engineer <span class="tag-chip" style="background:var(--accent-from);color:#fff">⚡ apply early</span></div>
+    <div class="score-pill tier-a">A</div>
   </div>
-  <div class="meta">Stripe · Remote · €180–220k</div>
+  <div class="meta">Stripe · Remote · €180–220k · 2026-06-09 · 12 applicants</div>
   <div>
     <span class="tag-chip">Go</span>
     <span class="tag-chip">Payments</span>
@@ -37,11 +37,11 @@ Three names for the same card primitive — semantic differentiation only. All t
 </article>
 ```
 
-`data-tier` and `data-sort_*` attributes are read by `interactive.js` for filter/sort. The dispatcher emits them; templates iterate.
+`data-tier` carries the uppercase rubric tier (`A|B|C|D`); `data-sort_*` attributes are read by `interactive.js` for filter/sort. The dispatcher emits them; templates iterate. The "⚡ apply early" chip renders when the payload entry has `fresh: true` (A/B-tier, posted within 48 hours — see `shared-references/linkedin-search.md` §6).
 
 ## `.score-pill`
 
-Three-variant pill: `tier-a` (gradient), `tier-b` (amber), `tier-c` (gray). Always wraps a numeric score.
+Four-variant pill: `tier-a` (gradient), `tier-b` (amber), `tier-c` (grey), `tier-d` (muted). Wraps the **tier letter** — the CSS class takes the lowercased tier (`tier-{{ job.tier|lower }}`).
 
 ## `.tag-chip` / `.tag-chip.accent`
 
@@ -108,15 +108,17 @@ Horizontal row of sort/filter buttons. Always sits immediately above a list of `
 
 ```html
 <div class="toolbar">
-  <button data-sort="score" class="active">Score ↓</button>
-  <button data-sort="date">Date ↓</button>
+  <button data-sort="date" class="active">Date ↓</button>
   <button data-sort="company">Company A–Z</button>
   <span style="flex:1"></span>
-  <button data-filter="all" class="active">All</button>
-  <button data-filter="a">A-tier</button>
-  <button data-filter="b">B-tier</button>
+  <button data-filter="all" data-filter-attr="tier" class="active">All</button>
+  <button data-filter="A" data-filter-attr="tier">A-tier</button>
+  <button data-filter="B" data-filter-attr="tier">B-tier</button>
+  <button data-filter="D" data-filter-attr="tier">Filtered</button>
 </div>
 ```
+
+Filter values match the card's `data-tier` casing exactly (uppercase tiers).
 
 ## `.copy-btn`
 
@@ -146,7 +148,7 @@ Templates fill the timestamp from `data.generated_at` (always provided by the di
 The job-card primitive now carries an optional `dimensions` table and a `gated-banner` slot. The rendering rule is mutually exclusive: a card either shows the gated banner OR the dimension table.
 
 ```html
-<article class="job-card" data-tier="A" data-sort_score="..." data-sort_date="2026-05-26" data-sort_company="Acme">
+<article class="job-card" data-tier="A" data-sort_date="2026-05-26" data-sort_company="Acme">
   {% if gate_violations %}
   <div class="gated-banner">🚫 Filtered out — work_arrangement, contract_type</div>
   {% else %}
@@ -184,7 +186,7 @@ Class names:
 
 The HTML card tier corresponds to the **overall** tier of the job (top right pill, derived from dimension tiers per the rule documented in the workspace's dimension reference).
 
-The score-pill content changed in v0.8.0: it now displays the **tier letter** (A/B/C/D) rather than a numeric score, since the v1 rubric is dimension-tier-based and the aggregate number was removed by design. Templates retain `data-sort_score` for backward-compat sorting; future templates may also support `data-sort_tier`.
+The score-pill content changed in v0.8.0: it displays the **tier letter** (A/B/C/D) rather than a numeric score, since the v1 rubric is dimension-tier-based and the aggregate number was removed by design. As of v0.10.0 templates no longer emit `data-sort_score` — sorting uses `data-sort_date` and `data-sort_company`.
 
 ## Markdown — dimension table
 

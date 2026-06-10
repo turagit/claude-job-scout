@@ -2,8 +2,8 @@
 name: _cv-section-rewriter
 description: >
   [Internal subagent — dispatched only by _cv-optimizer, not user-invocable] Internal subagent skill. Dispatched by _cv-optimizer during Phase 3
-  (Optimized Rewrite), one instance per role block. Returns SPAR-method
-  optimized bullets as a structured delta. Not user-invocable.
+  (Optimised Rewrite), one instance per role block. Returns SPAR-method
+  optimised bullets as a structured delta. Not user-invocable.
 version: 0.1.0
 ---
 
@@ -29,7 +29,7 @@ Rewrite a single CV role block's bullets using the SPAR method, the user's tone 
     "user_profile": {
       "cv_summary": { "...": "..." },
       "target_roles": [ "..." ],
-      "tone_preference": "Professional-modern"
+      "tone": { "register": "...", "dialect": "british", "warmth": "...", "vocabulary_cues": [], "exemplars": [], "avoid": [] }
     },
     "target_keywords": [ "..." ],
     "role_weight": "current | previous | older"
@@ -69,7 +69,7 @@ Rewrite a single CV role block's bullets using the SPAR method, the user's tone 
 - Each bullet names the persuasion technique used (for auditability) and the keywords it placed.
 - No bullet fabricates facts. If the `original_bullets` don't support a stronger claim, the rewrite stays conservative.
 - No duplicate verbs within the role.
-- Respect `tone_preference` from the user profile.
+- Respect the `tone` block from the user profile per `../shared-references/voice-profile.md` — `dialect` governs spelling (British English when unset); `avoid` entries are hard negatives.
 
 ## Rewrite rules
 
@@ -77,7 +77,7 @@ Apply the rules in `../_cv-optimizer/references/phase-3-optimized-rewrite.md` (S
 
 ## Budget
 
-`budget_lines: 80`. If the subagent can't fit within budget (many original bullets to compress or expand), return `status: "partial"` with the highest-impact bullets optimized and a continuation cursor for the rest.
+`budget_lines: 80`. If the subagent can't fit within budget (many original bullets to compress or expand), return `status: "partial"` with the highest-impact bullets optimised and a continuation cursor for the rest.
 
 ## Not user-invocable
 

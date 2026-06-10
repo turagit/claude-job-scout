@@ -1,7 +1,7 @@
 {
   "name": "linkedin-job-hunter",
-  "version": "0.9.0",
-  "description": "All-in-one LinkedIn job search automation: daily job alert checking, CV optimization, job matching, profile enhancement, recruiter engagement, and Easy Apply — powered by browser automation",
+  "version": "0.10.0",
+  "description": "All-in-one LinkedIn job search automation: Boolean discovery sweeps, daily job alert checking, CV optimisation, job matching, profile enhancement, recruiter engagement, and Easy Apply — powered by browser automation",
   "author": {
     "name": "BSF"
   },

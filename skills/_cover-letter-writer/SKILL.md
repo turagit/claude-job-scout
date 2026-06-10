@@ -28,7 +28,7 @@ Draft three cover-letter angle options for a single job. Each draft is ~250-350 
     "user_profile": {
       "cv_summary": { "key_skills": [], "technologies": [], "top_achievements": [], "..." : "..." },
       "target_roles": ["..."],
-      "tone_preference": "Formal-corporate | Professional-modern | Technical-dense | Let me decide"
+      "tone": { "register": "...", "dialect": "british", "warmth": "...", "vocabulary_cues": [], "exemplars": [], "avoid": [] }
     },
     "supporting_docs_index": {
       "paths": ["certs/aws-sa-pro.pdf", "case-studies/migration-2024.pdf", "..."],
@@ -106,7 +106,7 @@ Draft three cover-letter angle options for a single job. Each draft is ~250-350 
 - **Structure:** hook (2-3 sentences) → 2-3 evidence paragraphs → close with a specific ask (interview, call, time slot).
 - **Evidence paragraphs cite supporting docs.** When a claim maps to a doc in `supporting_docs_index`, cite the path inline: "(documented in `case-studies/migration-2024.pdf`)" or "(verifiable: `certs/aws-sa-pro.pdf`)". Track citations in the `supporting_docs_cited` array of the delta.
 - **Keyword placement.** Place 3-5 target keywords from `target_keywords` naturally — not as a list. Track placements in the `keywords_placed` array.
-- **Tone respects `tone_preference`.** Default to Professional-modern if unset.
+- **Voice respects the `tone` block** per `../shared-references/voice-profile.md` — apply its read pattern: `register`, `dialect` (controls spelling and idiom; British English when unset), `warmth`, `vocabulary_cues` as anchors, `exemplars` as few-shot samples, `avoid` as explicit negatives. If the block is absent, default to a considered, professional British register and warn the orchestrator.
 - **Voice continuity.** The `linkedin_voice_sample` shows the user's About-section voice — match that register so the cover letter doesn't read as written by a different person.
 - **No fabrication.** Every claim must be supportable from the CV summary or supporting docs. If a JD asks for a skill the user doesn't have, do not claim it.
 - **No generic openers.** "I am writing to apply for..." is forbidden. Lead with substance.

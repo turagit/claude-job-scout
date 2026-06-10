@@ -32,9 +32,27 @@ See [`canonical-schemas.md`](canonical-schemas.md) for the JSON shape. Fields:
 
 ```
 1. Load .job-scout/user-profile.json.
-2. Extract the `tone` block. If absent, fall back to a hard-coded neutral profile and warn.
+2. Extract the `tone` block. If absent, fall back to the British default below and warn.
 3. Pass the tone block into the LLM prompt as a system-level constraint, with `vocabulary_cues` and `exemplars` as few-shot anchors and `avoid` as explicit negatives.
 ```
+
+## British English is the plugin default
+
+Unless `tone.dialect` explicitly says otherwise, **every user-voiced draft and every piece of user-facing plugin copy is British English** — spelling, idiom, rhythm, and date format (`10 June 2026`, never `06/10/2026`). This applies to recruiter replies, follow-ups, cover letters, profile copy, CV bullets, interview narratives, report copy, and conversational summaries.
+
+**Americanisms to avoid (non-exhaustive):**
+
+| Avoid | Prefer |
+|---|---|
+| -ize/-yze/-or spellings (optimize, analyze, color, behavior) | -ise/-yse/-our (optimise, analyse, colour, behaviour) |
+| resume / résumé (in prose) | CV |
+| reach out / touch base / circle back | get in touch / follow up / come back to |
+| gotten | got |
+| "I'm excited to..." as a reflex opener | "I'd be glad to…", "I'd welcome…" — enthusiasm shown through specificity, not exclamation |
+| MM/DD dates, US-default `$` | `D Month YYYY`; currency from `requirements.rate_currency` / `salary_currency` |
+| normalcy, oftentimes, off of | normality, often, off |
+
+Identifiers are exempt: command names (`/analyze-cv`, `/optimize-profile`), directory and file names, JSON keys, CSS classes, and code stay exactly as they are — they are API surface, not prose.
 
 ## Write pattern
 

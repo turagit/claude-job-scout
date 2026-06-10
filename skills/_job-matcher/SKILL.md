@@ -1,7 +1,7 @@
 ---
 name: _job-matcher
 description: >
-  [Internal — loaded by /match-jobs and /check-job-notifications] This skill should be used when the user asks to "match jobs to my CV", "score these jobs", "rank job listings", "find best matches", "analyze job alerts", "which jobs should I apply to", "compare jobs against my profile", or needs to evaluate job listings against their CV and stated requirements.
+  [Internal — loaded by /match-jobs and /check-job-notifications] This skill should be used when the user asks to "match jobs to my CV", "score these jobs", "rank job listings", "find best matches", "analyse job alerts", "which jobs should I apply to", "compare jobs against my profile", or needs to evaluate job listings against their CV and stated requirements.
 version: 0.2.0
 ---
 
@@ -65,7 +65,7 @@ Job scores are cached in `.job-scout/cache/scores.json` keyed by `(job_id, cv_ha
 1. Load .job-scout/user-profile.json — read cv_hash, profile_hash, segment.
 2. Determine current rubric_version (today: "v1").
 3. Compute cache key = "<job_id>:<cv_hash>:<profile_hash>:v1".
-4. If cache/scores.json has this key → reuse the cached score, tier, dimensions, gate_violations. Skip LLM call.
+4. If cache/scores.json has this key → reuse the cached tier, dimensions, gate_violations. Skip LLM call.
 5. Otherwise → run the rubric flow above, write the result to the cache, then return it.
 ```
 
@@ -76,8 +76,8 @@ After computing a score, append/replace the entry in `cache/scores.json`:
 ```json
 {
   "<key>": {
-    "score": <number>,
     "tier": "A|B|C|D",
+    "tier_reason": "string|null",
     "dimensions": { "<dim>": {"tier": "A|B|C|D", "evidence": [...] } },
     "gate_violations": [...],
     "rubric_version": "v1",
@@ -85,6 +85,8 @@ After computing a score, append/replace the entry in `cache/scores.json`:
   }
 }
 ```
+
+(A `score` field may appear in entries written before v0.10.0 — tolerated on read, never written by the v1 rubric.)
 
 Writes go through the atomic-rename pattern in `../shared-references/state-validators.md`.
 
