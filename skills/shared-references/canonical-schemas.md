@@ -23,6 +23,13 @@ This reference replaces the older inline schemas in `tracker-schema.md` and `_jo
     "industries": ["string"]
   },
   "target_titles": ["string"],
+  "query_clusters": [
+    {
+      "label": "string — short kebab-case cluster label",
+      "titles": ["string — true-synonym titles searched as one Boolean OR-group"],
+      "not_terms": ["string — terms appended as a NOT tail"]
+    }
+  ],
   "preferred_length_pages": "number|null",
   "linkedin_profile_url": "string|null",
   "profile_hash": "string|null",

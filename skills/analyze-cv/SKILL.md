@@ -85,6 +85,18 @@ The matcher reads `user-profile.json.dimensions[]` at scoring time. If the array
 
 A user can re-run dimensions discovery later by editing `dimensions[]` directly, or by re-running `/analyze-cv --rediscover`.
 
+### Step 3d: Query-cluster discovery (v0.10.0)
+
+Generate the Boolean search clusters that `/job-search` and `/deep-sweep` will run, per `../shared-references/linkedin-search.md` §3a:
+
+1. Group `target_titles[]` into clusters of true synonyms — titles a recruiter would use interchangeably for the same role. Titles that represent genuinely different roles get their own cluster.
+2. For each cluster, propose 1–2 additional synonym titles the user didn't list but the market uses (drawn from the segment and `cv_summary`).
+3. Ask one follow-up: "Any words that should always be excluded from search results? (e.g. intern, graduate, unpaid — I'll add them as NOT terms.)" A declared `seniority_floor` above entry level pre-fills `["intern", "graduate"]` for confirmation.
+4. Present the proposed clusters — label, titles, NOT terms — and ask the user to approve or edit.
+5. On approval, write `query_clusters[]` to `user-profile.json` per the shape in `../shared-references/canonical-schemas.md`.
+
+Workspaces without `query_clusters[]` are never blocked — the search commands fall back to one plain query per title.
+
 ### Persist + mark discovery complete
 
 After the interview, write all changes to `user-profile.json` via the atomic-write pattern in `../shared-references/state-validators.md` (using `validate_profile`). Set `discovery_complete: true` and `last_updated: <now>`.

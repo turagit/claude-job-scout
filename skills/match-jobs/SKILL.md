@@ -27,7 +27,9 @@ Follow `shared-references/cv-loading.md`. Load the **_job-matcher** skill.
 
 Navigate to the source page. Collect job IDs/URLs for every visible listing. Load `.job-scout/tracker.json` (see `shared-references/tracker-schema.md`). Drop any ID already in the tracker — bump `last_seen`, do not re-extract.
 
-Also check `.job-scout/cache/scores.json` for cached `(job_id, cv_hash, profile_hash)` scores. Reuse cached scores; don't re-score unchanged jobs against an unchanged CV and profile.
+Also apply the repost-fingerprint check from `../shared-references/linkedin-search.md` §5 — `lower(company)|lower(title)|lower(location)` against non-rejected tracker entries; matches bump `last_seen`, log `repost id: <new_id> (<date>)` in notes, and drop out of processing.
+
+Then check `.job-scout/cache/scores.json` for cached `(job_id, cv_hash, profile_hash, rubric_version)` results. Reuse cached results; don't re-score unchanged jobs against an unchanged CV and profile.
 
 ## Step 4: Extract and score new jobs (parallel)
 
@@ -82,7 +84,7 @@ Main thread collects all deltas and writes each score into `.job-scout/cache/sco
 
 ## Step 4b: Reverse-Boolean discoverability check (A-tier only)
 
-For each job scoring A-tier (85-100):
+For each job the rubric tiers at A:
 1. Extract from the JD: role title, top 3 required skills, location preference.
 2. Construct the likely recruiter Boolean query using templates from `../_profile-optimizer/references/recruiter-search-patterns.md`: `"<role>" AND ("<skill1>" OR "<skill2>") AND "<skill3>"`.
 3. Load the user's cached LinkedIn profile from `.job-scout/cache/linkedin-profile.json`. Check for each Boolean term in: headline, current job title, skills list, about section, experience descriptions.
@@ -100,15 +102,15 @@ Skip B/C-tier jobs — the user may not apply, so the discoverability check is n
 
 ## Step 5: Build results payload
 
-Construct a `data` payload for the render layer. Tier classification uses the canonical `_job-matcher` thresholds: `score >= 85` → `"a"`, `70 <= score < 85` → `"b"`, `55 <= score < 70` → `"c"`. Jobs with `score < 55` are D-tier and must be pre-filtered before reaching the renderer (existing `match-jobs` behaviour).
+Construct a `data` payload for the render layer. Tiers come straight from the `_job-matcher` v1 rubric — uppercase `A | B | C | D`, no aggregate score. Gated (D-tier) jobs appear only in the collapsed "Filtered out" group.
 
 ```json
 {
   "title": "{{N}} matches today",
-  "subtitle": "Top score: {{top_score}} · A-tier: {{a_count}} · B-tier: {{b_count}}",
+  "subtitle": "A-tier: {{a_count}} · B-tier: {{b_count}} · Filtered: {{gated}}",
   "generated_at": "<YYYY-MM-DD HH:MM>",
   "filename": "match-jobs-latest.html",
-  "tier_counts": { "a": <a_count>, "b": <b_count>, "c": <c_count>, "total": <total> },
+  "tier_counts": { "a": <a_count>, "b": <b_count>, "c": <c_count>, "d": <gated_count>, "total": <total> },
   "results": [
     {
       "title": "<job title>",
@@ -116,8 +118,13 @@ Construct a `data` payload for the render layer. Tier classification uses the ca
       "location": "<location>",
       "salary": "<salary or empty string>",
       "posted_at": "<YYYY-MM-DD>",
-      "score": <integer>,
-      "tier": "a | b | c",
+      "applicants": "<applicant count or empty string>",
+      "fresh": true,
+      "tier": "A | B | C | D",
+      "tier_reason": "string|null",
+      "dimensions": { "<dim_name>": {"tier": "A|B|C|D", "evidence": ["...", "..."]} },
+      "gate_violations": [{"kind": "...", "detail": "..."}],
+      "rubric_version": "v1",
       "url": "<absolute job URL on LinkedIn — optional; include when known>",
       "tags": ["<tag1>", "<tag2>"],
       "rationale": "<one-paragraph rationale for A-tier and top B-tier; empty string otherwise>"
@@ -126,7 +133,7 @@ Construct a `data` payload for the render layer. Tier classification uses the ca
 }
 ```
 
-`tags` should be drawn from the matched skills / signals already computed during scoring. Limit to 5 tags per job.
+Within each tier, order results by `posted_at` descending and set `fresh: true` per `../shared-references/linkedin-search.md` §6 — templates render the "⚡ apply early" chip. `tags` should be drawn from the matched skills / signals already computed during scoring. Limit to 5 tags per job.
 
 The `url` is an absolute LinkedIn job URL captured during job extraction. It is optional: when present, the templates render a "View posting ↗" link in HTML and a clickable title in markdown; when omitted, the templates fall back to plain title text via `{% if job.url %}` guards.
 
@@ -140,7 +147,7 @@ Follow `../shared-references/render-orchestration.md` end-to-end (Step G already
 2. Steps B–F — read render config, dispatch `_visualizer`, open in Chrome (or fall back), handle errors.
 3. Step E — print the `match-jobs` summary line: `✓ {{N}} matches scored — A:{{a}} B:{{b}} C:{{c}} — opened report in Chrome` (or `…rendered as markdown above` when falling back).
 
-If the `Agent` tool is unavailable, fall back to a terminal-only markdown render: print a sortable table with title, company, location, score, tier, and posted_at; for A-tier and top B-tier jobs additionally print the rationale below the table. Skip URL links in the fallback (the orchestrator's render-orchestration.md isn't invoked, so no _visualizer markdown template is loaded).
+If the `Agent` tool is unavailable, fall back to a terminal-only markdown render: print a table with tier, title, company, location, and posted_at; for A-tier jobs additionally print the dimension breakdown and rationale below the table. Skip URL links in the fallback (the orchestrator's render-orchestration.md isn't invoked, so no _visualizer markdown template is loaded).
 
 ## Next Steps
 

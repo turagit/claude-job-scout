@@ -35,7 +35,7 @@ seen → scored → A-tier → approved → applied → recruiter replied → in
 Computation:
 
 - **seen:** count of all tracker entries (hot + current-year archive) where `status` is non-null.
-- **scored:** count where `score` is non-null.
+- **scored:** count where `tier` is set to a value other than `untiered` (v1 rubric entries carry `tier` + `dimensions`; `legacy` entries count if they carry any tier). Do not test the deprecated `score` field — v1 entries don't have one.
 - **A-tier:** count where `tier == "A"`.
 - **approved:** count where `status == "approved"`.
 - **applied:** count where `status == "applied"`.
@@ -105,7 +105,7 @@ Suggested next action rules:
 
 Synthesise from the analysis:
 
-1. **Top job to apply to:** highest-scored A-tier job with `status: "approved"` not yet `"applied"`. Or, if no approved-not-applied: highest-scored A-tier with `status: "seen"` (suggest user reviews + approves).
+1. **Top job to apply to:** most recently seen A-tier job with `status: "approved"` not yet `"applied"`. Or, if no approved-not-applied: most recently seen A-tier with `status: "seen"` (suggest the user reviews + approves). Freshness first — early applications convert best.
 2. **Top recruiter to follow up:** hottest lead with stalest contact — ranked by `(lead_tier_score) × (days_since_last_contact)`, where `lead_tier_score` is `3` for hot, `2` for warm, `1` for cold, `0` otherwise.
 3. **Top profile improvement:** drawn from the top drop-off's recommendation. If no drop-off, suggest the top trending keyword from Step 5 ("Add `Rust` to your Skills section — it's heating up in your market").
 

@@ -20,6 +20,7 @@ Every command in this plugin reads and writes state inside a single per-project 
     linkedin-profile.json   # last-seen snapshot of the user's LinkedIn profile
     supporting-docs.json    # index of non-CV workspace docs (see supporting-docs.md)
     jd-keyword-corpus.json  # learned keyword model from ingested JDs (see jd-keyword-extraction.md)
+    query-stats.json        # per-query yield memory for the search plan (see linkedin-search.md §4)
   recruiters/
     threads.json        # canonical v2 — see canonical-schemas.md (lead_tier enum, notes[], last_seen_msg_id)
   cover-letters/        # per-job generated cover letters

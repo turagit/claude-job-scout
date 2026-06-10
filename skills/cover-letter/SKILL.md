@@ -22,9 +22,9 @@ Three invocation forms — handle each:
 
 | Form | Behaviour |
 |------|-----------|
-| `/cover-letter <tracker-id>` | Load the tracker entry. Use the cached JD blob (`tracker.jobs.<id>.description` if present; otherwise fetch via Chrome extension and cache). |
-| `/cover-letter <linkedin-url>` | Strip tracking params from the URL to get the canonical `/jobs/view/<id>/` form. If the ID exists in tracker, treat as form 1. Otherwise navigate via Chrome extension and extract title, company, JD blob. |
-| `/cover-letter` (no arg) | Load `tracker.json`, present the user's recent A-tier jobs (last 10 sorted by score, status in `seen` or `approved`). User picks an ID, then proceed as form 1. |
+| `/cover-letter <tracker-id>` | Load the tracker entry. Read the full JD from `jd_path` (`.job-scout/jds/<id>.txt` per `../shared-references/jd-storage.md`). If `jd_path` is null or the file is missing, fetch via the Chrome extension and persist it per the same contract first. |
+| `/cover-letter <linkedin-url>` | Strip tracking params from the URL to get the canonical `/jobs/view/<id>/` form. If the ID exists in tracker, treat as form 1. Otherwise navigate via Chrome extension, extract title, company, and full JD text, and persist per `jd-storage.md`. |
+| `/cover-letter` (no arg) | Load `tracker.json`, present the user's recent A-tier jobs (last 10, status in `seen` or `approved`, ordered by tier then `last_seen` descending). User picks an ID, then proceed as form 1. |
 
 If no A-tier jobs exist (the user hasn't run a sweep yet), error and suggest `/check-job-notifications` first.
 
@@ -33,7 +33,7 @@ If no A-tier jobs exist (the user hasn't run a sweep yet), error and suggest `/c
 Gather the materials the writer needs:
 
 - The job (title, company, JD blob, source).
-- The user profile from `.job-scout/user-profile.json` — `cv_summary`, `target_roles`, `tone_preference`.
+- The user profile from `.job-scout/user-profile.json` — `cv_summary`, `target_roles`, and the structured `tone` block (see `../shared-references/voice-profile.md`).
 - The supporting-docs index from `.job-scout/cache/supporting-docs.json` — full doc list with paths and types.
 - The master keyword list from `user-profile.json.master_keyword_list`.
 - JD-specific keywords extracted from the JD blob (use `shared-references/jd-keyword-extraction.md` procedure for the extraction step only — the merge into the corpus is optional here since this command isn't a corpus consumer).
@@ -48,7 +48,7 @@ Per `shared-references/subagent-protocol.md`, dispatch `_cover-letter-writer` on
   "task": "draft-cover-letter",
   "inputs": {
     "job": { "title": "...", "company": "...", "jd_blob": "...", "source": "tracker | url" },
-    "user_profile": { "cv_summary": {}, "target_roles": [], "tone_preference": "Professional-modern" },
+    "user_profile": { "cv_summary": {}, "target_roles": [], "tone": { "register": "...", "dialect": "british", "warmth": "...", "vocabulary_cues": [], "exemplars": [], "avoid": [] } },
     "supporting_docs_index": { "paths": [], "types": [] },
     "target_keywords": [],
     "linkedin_voice_sample": "<first 500 chars of About>"

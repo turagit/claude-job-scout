@@ -5,17 +5,13 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 disable-model-invocation: true
 ---
 
-Check LinkedIn job alert notifications, analyze each opportunity against the user's CV and requirements, and produce a prioritized report of best matches — saved for future `/apply` use.
+Check LinkedIn job alert notifications, analyse each opportunity against the user's CV and requirements, and produce a prioritised report of the best matches — saved for future `/apply` use.
+
+All filtering comes from the user's declared `requirements` and `deal_breakers[]` (set at `/analyze-cv` discovery) and is enforced uniformly by `_gate-engine`. This command carries no built-in defaults of its own.
 
 ## Browser policy (read first)
 
 All browser work in this command uses **the Claude Chrome extension exclusively**. Never request computer use. Never suggest Playwright, Selenium, or any other automation framework. See `shared-references/browser-policy.md` for the full policy. If the Chrome extension is not available in the current session, stop and report it — do not escalate to any other mechanism.
-
-## Default Requirements (Always Active)
-
-- **Work arrangement:** Fully remote only
-- **Contract type:** Freelance / Contract
-- **Salary transparency:** Prioritize listings that disclose salary or day rate; flag others with "Does not mention rate"
 
 ## Step 0: Bootstrap workspace
 
@@ -74,9 +70,10 @@ Combine the candidate ID lists from Steps 2 (Job Alerts), 2b (Top Picks), and 2c
 Load `.job-scout/tracker.json` (see `shared-references/tracker-schema.md`). For each candidate job ID:
 
 - **Already in tracker** (seen / approved / applied / rejected) → bump `last_seen`, do NOT re-extract, do NOT re-score. Skip.
-- **New** → keep in the to-process list with the assigned source.
+- **New ID** → check the **repost fingerprint** per `../shared-references/linkedin-search.md` §5: `lower(company)|lower(title)|lower(location)` against non-rejected tracker entries (company/title/location are visible on the listing card — no extraction needed). On a match, treat as a repost: bump the existing entry's `last_seen`, append `repost id: <new_id> (<date>)` to its notes, and drop the candidate.
+- **Genuinely new** → keep in the to-process list with the assigned source.
 
-This is the primary token-saving step. Never extract a job you already know — across all three surfaces.
+This is the primary token-saving step. Never extract a job you already know — across all three surfaces, by ID or by fingerprint.
 
 ## Step 4: Extract details for new jobs only
 
@@ -118,35 +115,48 @@ Cap: at most 5 new similar-jobs per A-tier seed (LinkedIn's rail length). If a w
 
 The expansion fires gates the same way as primary jobs — a similar-job from a real A-tier hit can still be gated and end up in "Filtered out".
 
-## Step 6: Score and rank (parallel)
+## Step 6: Parallel scoring fan-out
 
-Apply the _job-matcher scoring framework with freelance adjustments if applicable. Jobs that disclose compensation sort above same-tier jobs that don't.
-
-**Scoring fan-out:** batch the new jobs into groups of 5 and dispatch one subagent per batch per the contract in `../shared-references/subagent-protocol.md`:
+When Step 5 has more than ~5 new jobs to score, batch them into groups of 5 (the last batch may be smaller) and dispatch one subagent per batch per the contract in `../shared-references/subagent-protocol.md`:
 
 ```json
 {
   "task": "score-job-batch",
   "inputs": {
     "jobs": [ /* extracted job blobs */ ],
-    "user_profile": { "cv_summary": "...", "requirements": "...", "master_keyword_list": "..." },
+    "user_profile": { "segment": "...", "cv_summary": "...", "requirements": "...", "dimensions": [], "master_keyword_list": "..." },
     "cv_hash": "...",
-    "profile_hash": "..."
+    "profile_hash": "...",
+    "rubric_version": "v1"
   },
   "budget_lines": 200,
   "allowed_tools": ["Read"]
 }
 ```
 
-Each subagent loads the `_job-matcher` skill, returns `deltas: [{ job_id, score, tier, breakdown }, ...]`. Main thread merges all deltas into `.job-scout/cache/scores.json` keyed by `(job_id, cv_hash, profile_hash)`.
+Each subagent loads `_job-matcher` (which loads `_gate-engine` first) and returns v1 deltas:
 
-Tiers: **A (85-100)** apply immediately, **B (70-84)** worth applying, **C (55-69)** consider, **D (<55)** discard.
+```json
+{
+  "status": "ok",
+  "deltas": [
+    { "job_id": "...", "tier": "A", "tier_reason": null,
+      "dimensions": { "<dim_name>": {"tier": "A", "evidence": ["…"]} },
+      "gate_violations": [],
+      "rubric_version": "v1" }
+  ]
+}
+```
+
+The main thread merges all deltas into `.job-scout/cache/scores.json` keyed by `(job_id, cv_hash, profile_hash, rubric_version)` and persists each result to the tracker entry.
+
+**Ordering preference:** within the same tier, jobs that disclose compensation sort above those that don't (flag the latter "Does not mention rate"); then by `posted_at` descending, with the freshness flag per `../shared-references/linkedin-search.md` §6.
 
 **Fallback:** if the `Agent` tool is unavailable in this session, fall back to sequential in-thread scoring. Log the fallback.
 
 ## Step 6b: Reverse-Boolean discoverability check (A-tier only)
 
-For each job scoring A-tier (85-100):
+For each job the rubric tiers at A:
 1. Extract from the JD: role title, top 3 required skills, location preference.
 2. Construct the likely recruiter Boolean query using templates from `../_profile-optimizer/references/recruiter-search-patterns.md`: `"<role>" AND ("<skill1>" OR "<skill2>") AND "<skill3>"`.
 3. Load the user's cached LinkedIn profile from `.job-scout/cache/linkedin-profile.json`. Check for each Boolean term in: headline, current job title, skills list, about section, experience descriptions.
@@ -155,7 +165,7 @@ For each job scoring A-tier (85-100):
 
 ## Step 7: Present results
 
-Markdown summary grouped by tier (A, B, C — omit D). Per job: title, company, rate (or "Does not mention rate"), location, contract type, posting date, score, top 3 skill matches, notable gaps, job URL. A-tier gets 2-3 sentences explaining the match. B/C tiers get a compact one-line table — do not write paragraph rationales for them.
+Markdown summary grouped by tier (A, B, C — gated jobs in a collapsed "Filtered out" group). Per job: title, company, rate (or "Does not mention rate"), location, contract type, posting date, tier, top 3 skill matches, notable gaps, job URL. A-tier gets the full dimension breakdown with evidence quotes. B-tier gets one line per dimension. C-tier gets a compact one-line table — no paragraph rationales.
 
 Include a summary line: candidates collected, already known (skipped), newly extracted, after filters, matches per tier.
 
@@ -215,13 +225,14 @@ If accepted:
 
 ## Step 11: Build results payload
 
-Construct a `data` payload for the render layer. Tier classification uses the canonical `_job-matcher` thresholds: `score >= 85` → `"a"`, `70 <= score < 85` → `"b"`, `55 <= score < 70` → `"c"`. Notifications with `score < 55` are D-tier and must be pre-filtered before reaching the renderer. View-specific fields:
+Construct a `data` payload for the render layer. Tiers come straight from the `_job-matcher` v1 rubric — uppercase `A | B | C | D`, no aggregate score. Gated (D-tier) jobs appear only in the collapsed "Filtered out" group. View-specific fields:
 
 - `title`: "Today's notifications".
-- `subtitle`: "{{N}} new · {{unread}} unread · A:{{a}} B:{{b}} C:{{c}}".
+- `subtitle`: "{{N}} new · {{unread}} unread · A:{{a}} B:{{b}} C:{{c}} · Filtered:{{gated}}".
 - `filename`: "check-job-notifications-latest.html".
 - `unread_count`: integer count of `seen: false` items.
-- `results[]`: each item is `{ id, title, company, received_at, source, score, tier, seen, preview, url }`. The `preview` is the first 140 chars of the notification body. The `url` is an absolute LinkedIn job URL captured during extraction — optional: when present, the templates render a "View posting ↗" link in HTML and a clickable title in markdown; when omitted, the templates fall back to plain title text via `{% if note.url %}` guards.
+- `tier_counts`: `{ a, b, c, d, total }`.
+- `results[]`: each item is `{ id, title, company, location, received_at, posted_at, source, tier, tier_reason, dimensions, gate_violations, fresh, seen, preview, url }`. `dimensions` is the per-dimension `{tier, evidence[]}` map from the rubric. `fresh` per `../shared-references/linkedin-search.md` §6. The `preview` is the first 140 chars of the notification body. The `url` is an absolute LinkedIn job URL captured during extraction — optional: when present, the templates render a "View posting ↗" link in HTML and a clickable title in markdown; when omitted, the templates fall back to plain title text via `{% if note.url %}` guards.
 
 ## Step 12: Render
 

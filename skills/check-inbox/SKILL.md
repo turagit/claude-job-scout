@@ -45,7 +45,7 @@ After this step, the inbox scan has populated the tracker with recruiter-sourced
 
 ## Step 2: Categorize
 
-Load the **_recruiter-engagement** skill. Classify each message: Hot Lead (specific role, relevant, details shared), Warm Lead (generic but relevant company), Cold Lead (mass outreach, irrelevant), Red Flag (suspicious/scam signals).
+Load the **_recruiter-engagement** skill. Classify each thread into the canonical `lead_tier` enum (`../shared-references/canonical-schemas.md`): `hot` (specific role, relevant, details shared), `warm` (generic but relevant company/industry), `cold` (mass outreach, irrelevant), `non-lead` (connection requests, promotions). Scam or red-flag signals (no company disclosed, requests for personal data, pay-to-apply, pressure tactics) are not a tier — record them in `lead_tier_detail` (e.g. `"red flag: pay-to-apply scheme"`) and surface them prominently in the summary.
 
 ## Step 3: Present Summary
 
@@ -64,7 +64,7 @@ Construct a `data` payload as in `../shared-references/render-orchestration.md` 
 - `filename`: "check-inbox-latest.html".
 - `thread_count`: integer.
 - `unread_count`: integer count of `unread: true` threads.
-- `results[]`: each item is `{ id, recruiter_name, company, message_count, last_message_at, last_message_from, unread, lead_tier, url, messages[] }`. `messages[]` is `[{ sent_at, from, body }]` chronological. `lead_tier` per `_recruiter-engagement` taxonomy (warm/cold/lukewarm). `url` is the absolute LinkedIn conversation URL or — when the thread is about a specific role — the job posting URL; it is optional. When present, the templates render a "View on LinkedIn ↗" link in HTML and a clickable thread heading in markdown; when omitted, the templates fall back to plain text via `{% if thread.url %}` guards.
+- `results[]`: each item is `{ id, recruiter_name, company, message_count, last_message_at, last_message_from, unread, lead_tier, lead_tier_detail, linked_jobs, url, messages[] }`. `messages[]` is `[{ sent_at, from, body }]` chronological. `lead_tier` per the canonical enum (`hot | warm | cold | non-lead`); `lead_tier_detail` carries red-flag notes when present. `linked_jobs` is `[{ id, title, tier }]` resolved from `thread.linked_job_ids[]` against the tracker — lets the report show which scored jobs came from this thread. `url` is the absolute LinkedIn conversation URL or — when the thread is about a specific role — the job posting URL; it is optional. When present, the templates render a "View on LinkedIn ↗" link in HTML and a clickable thread heading in markdown; when omitted, the templates fall back to plain text via `{% if thread.url %}` guards.
 
 ## Step 6: Render
 

@@ -54,7 +54,7 @@ For each role block in the CV:
 1. Classify role weight: `current` (most recent), `previous` (2nd through N-1), `older` (earliest 1-2 roles).
 2. Dispatch `_cv-section-rewriter` with:
    - `task: "rewrite-cv-role"`
-   - `inputs`: the role block, the user profile (cv_summary, target_roles, tone_preference), target keywords from the master keyword list, and the role weight
+   - `inputs`: the role block, the user profile (cv_summary, target_roles, and the structured `tone` block per `../shared-references/voice-profile.md`), target keywords from the master keyword list, and the role weight
    - `budget_lines: 80`, `allowed_tools: ["Read"]`
 3. Each subagent loads `references/phase-3-optimized-rewrite.md`, applies SPAR rules, and returns `deltas: [{ role_id, bullets_optimized }]`.
 4. Main thread collects all deltas and assembles the final CV document.

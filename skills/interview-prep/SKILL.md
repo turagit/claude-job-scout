@@ -20,11 +20,11 @@ Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists. T
 
 If the ID is not in the tracker, error: "No tracker entry for `<id>`. Run `/check-job-notifications` or `/match-jobs` first to ingest the job."
 
-If the ID exists but `tracker.jobs.<id>.description` is missing or stub-only (the original sweep didn't fully extract the JD), prompt the user to provide the JD URL so the orchestrator can fetch it via the Chrome extension.
+Read the full JD from `tracker.jobs.<id>.jd_path` (`.job-scout/jds/<id>.txt` per `../shared-references/jd-storage.md`). If `jd_path` is null or the file is missing (legacy entry), fetch the JD via the Chrome extension from `tracker.jobs.<id>.url` (or prompt for the URL if absent) and persist it per the same contract before proceeding.
 
 ## Step 2: Load inputs
 
-- **The job:** `tracker.jobs.<id>` — title, company, full JD blob.
+- **The job:** `tracker.jobs.<id>` — title, company, plus the full JD text read from `jd_path` in Step 1.
 - **User profile:** `.job-scout/user-profile.json` — `cv_summary`, all roles (from cache: `.job-scout/cache/cv-<hash>.json`), `target_roles`, `requirements`.
 - **Supporting docs index:** `.job-scout/cache/supporting-docs.json` — for evidence citations in SPAR narratives.
 - **Master keyword list:** `user-profile.json.master_keyword_list`.

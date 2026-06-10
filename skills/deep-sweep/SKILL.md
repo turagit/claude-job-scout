@@ -5,7 +5,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 disable-model-invocation: true
 ---
 
-A weekly thorough sweep of LinkedIn for new opportunities. Where `/check-job-notifications` is the daily fast catch (notifications + Top picks + Saved, page 1, ~5 min), `/deep-sweep` is the weekly thorough scan — adaptive multi-query fanout across all `target_titles[]` plus synonyms, all source surfaces, Past Week filter, pages 1-3 per query, similar-jobs expansion from every A-tier hit. Expected runtime: 15-20 min. Run it once a week to catch listings the daily sweep misses.
+A weekly thorough sweep of LinkedIn for new opportunities. Where `/check-job-notifications` is the daily fast catch (notifications + Top picks + Saved, page 1, ~5 min), `/deep-sweep` is the weekly thorough scan — the full query plan v2 from `../shared-references/linkedin-search.md` (Boolean title-cluster queries, skill-combination queries, geo iteration, synonym rescue), all source surfaces, Past Week filter, pages 1-3 per query, similar-jobs expansion from every A-tier hit. Expected runtime: 15-20 min. Run it once a week to catch listings the daily sweep misses.
 
 ## Browser policy (read first)
 
@@ -33,20 +33,20 @@ Read `.job-scout/tracker.json` and present a one-line status:
 
 Follow `shared-references/cv-loading.md`. Read `user-profile.json` for `target_titles[]`, `segment`, `requirements`, `cv_summary`, `dimensions[]`. If `target_titles` is empty, fall through to `cv_summary.target_roles`. If both are empty, stop and ask the user to run `/analyze-cv` first — `/deep-sweep` needs declared targets.
 
-## Step 2: Multi-query fanout planning
+## Step 2: Query plan v2
 
-Build the query plan as in `../job-search/SKILL.md` Step 2 (zero-arg branch) — one entry per `target_titles[]` element with `source: "primary"`. Synonym expansion happens reactively in Step 3 when a query is thin.
+Build the plan per `../shared-references/linkedin-search.md` §3, exactly as `../job-search/SKILL.md` Step 2 (zero-arg branch): Boolean title-cluster queries from `query_clusters[]` (per-title fallback), 2–3 skill-combination queries when the keyword corpus has ≥10 source jobs, geo iteration across `location_preferences[]`, ordering from `.job-scout/cache/query-stats.json` (proven first, retired excluded). Synonym rescue happens reactively in Step 3 when a query is thin.
 
-## Step 3: Run all primary queries (Past Week, pages 1-3)
+## Step 3: Run all planned queries (Past Week, pages 1-3)
 
 For each entry in the query plan:
 
-1. Navigate to `https://www.linkedin.com/jobs/`. Enter the title. Set filters from `requirements`: location, work_arrangement, contract_type, seniority. Date Posted: "Past Week".
+1. **Construct the filter-addressed URL** per `linkedin-search.md` §1: encoded Boolean `keywords`, `location` for the entry's market, `f_WT` from `work_arrangement`, `f_JT` from `contract_type`, `f_TPR=r604800` (Past Week), `sortBy=DD`. Navigate straight to it. On the run's first query, confirm the filter chips took; on drift, fall back to the UI for that filter and note it in the summary.
 2. Page 1: scroll, collect all job IDs.
 3. Page 2: click pagination, scroll, collect.
 4. Page 3: click pagination, scroll, collect. Stop here even if more pages exist — `/deep-sweep` is bounded.
-5. Dedupe collected IDs against `tracker.json`. Count NEW (post-dedupe) IDs for this query.
-6. **Adaptive synonym expansion:** if `count < 5` AND the entry is `source: "primary"`, generate 2-3 synonym variants via the LLM prompt in `../job-search/SKILL.md` Step 3b, append them to the query plan with `source: "synonym"`, and process them the same way (max 3 synonyms per primary; do not synonym-expand a synonym).
+5. Dedupe collected IDs against `tracker.json` — by ID, then by repost fingerprint per `linkedin-search.md` §5 (matches bump `last_seen`, log `repost id: <new_id> (<date>)` in notes, and are dropped). Count NEW (post-dedupe) IDs for this query and record query stats per §4.
+6. **Adaptive synonym rescue:** if `count < 5` AND the entry is `family: "title"`, generate 2-3 synonym variants via the LLM prompt in `../job-search/SKILL.md` Step 3b, append them to the plan with `family: "synonym"`, and process them the same way (max 3 per thin query; never expand a synonym; skip retired variants, fold promoted ones into their cluster).
 
 ## Step 4: Sweep Top picks
 
@@ -74,6 +74,8 @@ Load `_job-matcher` (which transitively loads `_gate-engine`). For each new job:
 1. `_gate-engine` runs first. If gated → `tier: D`, persist `gate_violations`, skip dimension scoring.
 2. Otherwise → segment-aware rubric using `user-profile.dimensions[]` (or default if absent). Persist `tier`, `dimensions`, `tier_reason`, `rubric_version: "v1"`.
 
+After scoring, complete the query-stats writes per `linkedin-search.md` §4: add each new job's tier to its originating query's `new_tier_counts`, update `consecutive_zero_new`, apply retirement (3 consecutive zero-new runs) and synonym promotion (≥3 A/B-tier hits → propose adding to the cluster, on user confirmation).
+
 ## Step 8: Similar-jobs expansion from A-tier hits
 
 After Step 7, iterate every job in this run that came out at `tier: "A"` (not gated):
@@ -98,9 +100,11 @@ Construct a `data` payload for the render layer with these view-specific fields:
   "queries": ["<title1>", "<title1 synonym>", "..."],
   "source_breakdown": { "Search": <n>, "Top Picks": <n>, "Saved": <n>, "Similar": <n> },
   "tier_counts": { "a": <a_count>, "b": <b_count>, "c": <c_count>, "d": <d_count>, "total": <total> },
-  "results": [ /* same shape as job-search.results[] including dimensions, gate_violations, source, matched_query */ ]
+  "results": [ /* same shape as job-search.results[] including dimensions, gate_violations, source, matched_query, fresh */ ]
 }
 ```
+
+Within each tier, order results by `posted_at` descending and set `fresh: true` per `linkedin-search.md` §6 — A/B-tier jobs posted within 48 hours (with low applicant counts when known) get the "⚡ apply early" chip.
 
 Filename uses the run date — `/deep-sweep` is a time-series view, not a snapshot. Each run produces its own file; older files are archived per `render-orchestration.md` Step G's 90-day policy.
 
@@ -123,10 +127,12 @@ Summary line on completion: `✓ Deep sweep — {{N_queries}} queries ({{N_synon
 - **`.job-scout/tracker.json`** — every new ID persisted with source attribution.
 - **`.job-scout/jds/<id>.txt`** — full JD per `jd-storage.md`.
 - **`.job-scout/cache/scores.json`** — score-cache writes per `_job-matcher` contract.
+- **`.job-scout/cache/query-stats.json`** — per-query yield memory per `linkedin-search.md` §4.
 - **`.job-scout/reports/deep-sweep-<date>.html`** — the report.
 
 ## Reference materials
 
+- `../shared-references/linkedin-search.md` — URL grammar, Boolean queries, query plan v2, query stats, repost dedupe, freshness.
 - `../job-search/SKILL.md` — single-query mechanics + synonym expansion prompt.
 - `../check-job-notifications/SKILL.md` — daily-driver sweep, source attribution, dedupe.
 - `../_gate-engine/SKILL.md` — hard-gate evaluation.

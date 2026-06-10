@@ -29,7 +29,7 @@ Rewrite a single CV role block's bullets using the SPAR method, the user's tone 
     "user_profile": {
       "cv_summary": { "...": "..." },
       "target_roles": [ "..." ],
-      "tone_preference": "Professional-modern"
+      "tone": { "register": "...", "dialect": "british", "warmth": "...", "vocabulary_cues": [], "exemplars": [], "avoid": [] }
     },
     "target_keywords": [ "..." ],
     "role_weight": "current | previous | older"
@@ -69,7 +69,7 @@ Rewrite a single CV role block's bullets using the SPAR method, the user's tone 
 - Each bullet names the persuasion technique used (for auditability) and the keywords it placed.
 - No bullet fabricates facts. If the `original_bullets` don't support a stronger claim, the rewrite stays conservative.
 - No duplicate verbs within the role.
-- Respect `tone_preference` from the user profile.
+- Respect the `tone` block from the user profile per `../shared-references/voice-profile.md` — `dialect` governs spelling (British English when unset); `avoid` entries are hard negatives.
 
 ## Rewrite rules
 
