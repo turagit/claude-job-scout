@@ -22,8 +22,8 @@ _{{ data.subtitle }}_
 {% if data.results %}
 | Tier | Title | Company | Location | Source | Posted |
 |------|-------|---------|----------|--------|--------|
-{% for job in data.results %}{% if job.gate_violations and job.gate_violations|length > 0 %}| 🚫 | ~~{{ job.title }}~~ | {{ job.company }} | {{ job.location }} | {{ job.source // "" }} | {{ job.posted_at // "" }} |
-{% else %}| {% if job.tier == "A" %}🟢 A{% elif job.tier == "B" %}🟡 B{% elif job.tier == "C" %}⚪ C{% else %}{{ job.tier }}{% endif %} | {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %} | {{ job.company }} | {{ job.location }} | {{ job.source // "" }} | {{ job.posted_at // "" }} |
+{% for job in data.results %}{% if job.gate_violations and job.gate_violations|length > 0 %}| 🚫 | ~~{{ job.title }}~~ | {{ job.company }} | {{ job.location }} | {{ job.source or "" }} | {{ job.posted_at or "" }} |
+{% else %}| {% if job.tier == "A" %}🟢 A{% elif job.tier == "B" %}🟡 B{% elif job.tier == "C" %}⚪ C{% else %}{{ job.tier }}{% endif %} | {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %}{% if job.fresh %} ⚡{% endif %} | {{ job.company }} | {{ job.location }} | {{ job.source or "" }} | {{ job.posted_at or "" }} |
 {% endif %}{% endfor %}
 
 **Tier counts:** A: {{ data.tier_counts.a }} · B: {{ data.tier_counts.b }} · C: {{ data.tier_counts.c }} · D: {{ data.tier_counts.d }} · Total: {{ data.tier_counts.total }}

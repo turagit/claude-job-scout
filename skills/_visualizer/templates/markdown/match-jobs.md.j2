@@ -11,19 +11,19 @@
 _{{ data.subtitle }}_
 
 {% if data.results %}
-| Tier | Score | Title | Company | Location | Salary |
-|------|------:|-------|---------|----------|--------|
-{% for job in data.results %}| {% if job.tier %}{% if job.tier == "a" %}🟢 A{% endif %}{% if job.tier == "b" %}🟡 B{% endif %}{% if job.tier == "c" %}⚪ C{% endif %}{% endif %} | **{{ job.score }}** | {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %} | {{ job.company }} | {{ job.location }} | {% if job.salary %}{{ job.salary }}{% endif %} |
-{% endfor %}
+| Tier | Title | Company | Location | Salary | Posted |
+|------|-------|---------|----------|--------|--------|
+{% for job in data.results %}{% if job.gate_violations and job.gate_violations|length > 0 %}| 🚫 | ~~{{ job.title }}~~ | {{ job.company }} | {{ job.location }} | | |
+{% else %}| {% if job.tier == "A" %}🟢 A{% elif job.tier == "B" %}🟡 B{% elif job.tier == "C" %}⚪ C{% else %}{{ job.tier }}{% endif %} | {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %}{% if job.fresh %} ⚡{% endif %} | {{ job.company }} | {{ job.location }} | {% if job.salary %}{{ job.salary }}{% endif %} | {{ job.posted_at }} |
+{% endif %}{% endfor %}
 
-**Tier counts:** A: {{ data.tier_counts.a }} · B: {{ data.tier_counts.b }} · C: {{ data.tier_counts.c }} · Total: {{ data.tier_counts.total }}
+**Tier counts:** A: {{ data.tier_counts.a }} · B: {{ data.tier_counts.b }} · C: {{ data.tier_counts.c }} · Filtered: {{ data.tier_counts.d }} · Total: {{ data.tier_counts.total }}
+_⚡ = posted within 48 hours — apply early._
 
-{% for job in data.results %}{% if job.gate_violations and job.gate_violations|length > 0 %}
-### 🚫 Filtered out — {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %} · {{ job.company }}
+### Detail — A & B tier with dimensions
 
-{% for v in job.gate_violations %}- **{{ v.kind }}**{% if v.detail %} — {{ v.detail }}{% endif %}
-{% endfor %}{% else %}{% if job.dimensions or job.rationale %}
-### {% if job.tier == "a" %}🟢{% endif %}{% if job.tier == "b" %}🟡{% endif %}{% if job.tier == "c" %}⚪{% endif %} {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %} · {{ job.company }} ({{ job.tier|upper }})
+{% for job in data.results %}{% if not (job.gate_violations and job.gate_violations|length > 0) %}{% if job.tier == "A" or job.tier == "B" %}
+#### {% if job.tier == "A" %}🟢{% else %}🟡{% endif %} {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %} · {{ job.company }} ({{ job.tier }})
 
 {% if job.dimensions %}| Dimension | Tier | Evidence |
 |---|:---:|---|
@@ -31,7 +31,14 @@ _{{ data.subtitle }}_
 {% endfor %}
 {% endif %}{% if job.rationale %}
 {{ job.rationale }}
-{% endif %}{% endif %}{% endif %}{% endfor %}
+{% endif %}
+{% endif %}{% endif %}{% endfor %}
+
+### Filtered out (gate violations)
+
+{% for job in data.results %}{% if job.gate_violations and job.gate_violations|length > 0 %}
+- 🚫 **{{ job.title }}** · {{ job.company }} · {{ job.location }} — gated on: {% for v in job.gate_violations %}**{{ v.kind }}**{% if v.detail %} ({{ v.detail }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}{% endfor %}
 
 {% else %}
 🌱 **No matching jobs found.** Try refining your search filters or running again later.

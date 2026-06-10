@@ -5,21 +5,46 @@
      - data.generated_at
      - data.tier_counts
      - data.results
-     - data.query
+   optional:
+     - data.queries
 #}
 ## 🔍 {{ data.title }}
 
 _{{ data.subtitle }}_
 
-{% if data.query %}**Query:** `{{ data.query }}`{% endif %}
+{% if data.queries %}**Queries run:** {% for q in data.queries %}`{{ q }}`{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}
 
 {% if data.results %}
-| Tier | Score | Title | Company | Posted |
-|------|------:|-------|---------|--------|
-{% for job in data.results %}| {% if job.tier %}{% if job.tier == "a" %}🟢 A{% endif %}{% if job.tier == "b" %}🟡 B{% endif %}{% if job.tier == "c" %}⚪ C{% endif %}{% endif %} | **{{ job.score }}** | {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %} | {{ job.company }} | {{ job.posted_at }} |
-{% endfor %}
+| Tier | Title | Company | Location | Posted |
+|------|-------|---------|----------|--------|
+{% for job in data.results %}{% if job.gate_violations and job.gate_violations|length > 0 %}| 🚫 | ~~{{ job.title }}~~ | {{ job.company }} | {{ job.location }} | |
+{% else %}| {% if job.tier == "A" %}🟢 A{% elif job.tier == "B" %}🟡 B{% elif job.tier == "C" %}⚪ C{% else %}{{ job.tier }}{% endif %} | {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %}{% if job.fresh %} ⚡{% endif %} | {{ job.company }} | {{ job.location }} | {{ job.posted_at }} |
+{% endif %}{% endfor %}
 
-**Tiers:** A: {{ data.tier_counts.a }} · B: {{ data.tier_counts.b }} · Total: {{ data.tier_counts.total }}
+**Tier counts:** A: {{ data.tier_counts.a }} · B: {{ data.tier_counts.b }} · C: {{ data.tier_counts.c }} · Filtered: {{ data.tier_counts.d }} · Total: {{ data.tier_counts.total }}
+_⚡ = posted within 48 hours — apply early._
+
+### Detail — A & B tier with dimensions
+
+{% for job in data.results %}{% if not (job.gate_violations and job.gate_violations|length > 0) %}{% if job.tier == "A" or job.tier == "B" %}
+#### {% if job.tier == "A" %}🟢{% else %}🟡{% endif %} {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %} · {{ job.company }} ({{ job.tier }})
+
+{% if job.matched_query %}_Via query: `{{ job.matched_query }}`_
+{% endif %}
+{% if job.dimensions %}| Dimension | Tier | Evidence |
+|---|:---:|---|
+{% for dim_name, dim in job.dimensions.items() %}| {{ dim_name }} | **{{ dim.tier }}** | {% for q in dim.evidence[:2] %}_"{{ q }}"_{% if not loop.last %}<br/>{% endif %}{% endfor %} |
+{% endfor %}
+{% endif %}
+{% endif %}{% endif %}{% endfor %}
+
+### Filtered out (gate violations)
+
+{% for job in data.results %}{% if job.gate_violations and job.gate_violations|length > 0 %}
+- 🚫 **{{ job.title }}** · {{ job.company }} · {{ job.location }} — gated on: {% for v in job.gate_violations %}**{{ v.kind }}**{% if v.detail %} ({{ v.detail }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}{% endfor %}
+
 {% else %}
-🔍 **No jobs found for this query.** Try widening your search terms.
+🔍 **No new jobs surfaced.** All queries returned IDs already in your tracker. Try broadening your `target_titles`, editing your query clusters, or running `/deep-sweep` for the multi-page pass.
 {% endif %}

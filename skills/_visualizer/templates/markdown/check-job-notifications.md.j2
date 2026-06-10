@@ -14,10 +14,32 @@ _{{ data.subtitle }}_
 **Unread:** {{ data.unread_count }} of {{ data.tier_counts.total }}
 
 {% if data.results %}
-| Status | Tier | Score | Title | Company | Received |
-|:------:|:----:|------:|-------|---------|----------|
-{% for note in data.results %}| {% if note.seen %}✓{% else %}●{% endif %} | {% if note.tier %}{% if note.tier == "a" %}🟢 A{% endif %}{% if note.tier == "b" %}🟡 B{% endif %}{% if note.tier == "c" %}⚪ C{% endif %}{% endif %} | **{{ note.score }}** | {% if note.url %}[{{ note.title }}]({{ note.url }}){% else %}{{ note.title }}{% endif %} | {{ note.company }} | {{ note.received_at }} |
+| Status | Tier | Title | Company | Source | Received |
+|:------:|:----:|-------|---------|--------|----------|
+{% for note in data.results %}{% if note.gate_violations and note.gate_violations|length > 0 %}| {% if note.seen %}✓{% else %}●{% endif %} | 🚫 | ~~{{ note.title }}~~ | {{ note.company }} | {{ note.source }} | {{ note.received_at }} |
+{% else %}| {% if note.seen %}✓{% else %}●{% endif %} | {% if note.tier == "A" %}🟢 A{% elif note.tier == "B" %}🟡 B{% elif note.tier == "C" %}⚪ C{% else %}{{ note.tier }}{% endif %} | {% if note.url %}[{{ note.title }}]({{ note.url }}){% else %}{{ note.title }}{% endif %}{% if note.fresh %} ⚡{% endif %} | {{ note.company }} | {{ note.source }} | {{ note.received_at }} |
+{% endif %}{% endfor %}
+
+_⚡ = posted within 48 hours — apply early._
+
+### Detail — A & B tier with dimensions
+
+{% for note in data.results %}{% if not (note.gate_violations and note.gate_violations|length > 0) %}{% if note.tier == "A" or note.tier == "B" %}
+#### {% if note.tier == "A" %}🟢{% else %}🟡{% endif %} {% if note.url %}[{{ note.title }}]({{ note.url }}){% else %}{{ note.title }}{% endif %} · {{ note.company }} ({{ note.tier }})
+
+{% if note.dimensions %}| Dimension | Tier | Evidence |
+|---|:---:|---|
+{% for dim_name, dim in note.dimensions.items() %}| {{ dim_name }} | **{{ dim.tier }}** | {% for q in dim.evidence[:2] %}_"{{ q }}"_{% if not loop.last %}<br/>{% endif %}{% endfor %} |
 {% endfor %}
+{% endif %}
+{% endif %}{% endif %}{% endfor %}
+
+### Filtered out (gate violations)
+
+{% for note in data.results %}{% if note.gate_violations and note.gate_violations|length > 0 %}
+- 🚫 **{{ note.title }}** · {{ note.company }} — gated on: {% for v in note.gate_violations %}**{{ v.kind }}**{% if v.detail %} ({{ v.detail }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}{% endfor %}
+
 {% else %}
-🔕 **No notifications today.** Make sure your LinkedIn alerts are still active.
+🔕 **No notifications today.** Make sure your LinkedIn alerts are still active — `/create-alerts` can derive a fresh set from your query plan.
 {% endif %}
