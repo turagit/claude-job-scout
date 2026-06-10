@@ -1,4 +1,4 @@
-# Phase 3 — Optimized Rewrite
+# Phase 3 — Optimised Rewrite
 
 Loaded on demand by `_cv-optimizer/SKILL.md` when the user asks for a rewrite. Contains SPAR rules, the bullet formula, and the professional summary template. For per-role parallel rewrite, see `_cv-section-rewriter/SKILL.md`.
 
@@ -24,7 +24,7 @@ Loaded on demand by `_cv-optimizer/SKILL.md` when the user asks for a rewrite. C
 **Better:** "Led 8 developers through platform migration, delivering 3 months early and reducing infrastructure costs 40%"
 **Best (SPAR):** "Inherited a stalled platform migration blocked by cross-team dependencies (S); restructured the delivery plan and directly led 8 engineers through weekly sprint cycles (PA); delivered 3 months ahead of deadline, reducing infrastructure costs by 40% and eliminating £180k/year in legacy licensing (R)"
 
-> For bullet brevity, the compressed form (Better) is usually right for CV bullets. The full SPAR narrative is useful for cover letters and interview prep — offer both when generating the optimized version.
+> For bullet brevity, the compressed form (Better) is usually right for CV bullets. The full SPAR narrative is useful for cover letters and interview prep — offer both when generating the optimised version.
 
 ### Professional Summary Template
 

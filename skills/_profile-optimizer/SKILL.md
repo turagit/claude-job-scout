@@ -1,7 +1,7 @@
 ---
 name: _profile-optimizer
 description: >
-  [Internal — loaded by /optimize-profile] This skill should be used when the user asks to "optimize my LinkedIn profile",
+  [Internal — loaded by /optimize-profile] This skill should be used when the user asks to "optimise my LinkedIn profile" (or "optimize"),
   "improve my LinkedIn", "make my profile stand out", "update my LinkedIn headline",
   "rewrite my LinkedIn summary", "LinkedIn SEO", "attract recruiters on LinkedIn",
   or needs guidance on making their LinkedIn profile more visible to recruiters
@@ -72,7 +72,7 @@ After proposing all content, generate an alignment report:
 - Flag LinkedIn content that contradicts or isn't supported by the CV
 - Tone shift is expected: CV formal/concise → LinkedIn conversational/first-person
 
-## Optimization Process
+## Optimisation Process
 
 1. **Load CV** — follow `shared-references/cv-loading.md`. Extract structured data (roles, skills, achievements, keywords). Reuse master keyword list from `user-profile.json` if available.
 2. **Read current LinkedIn profile** via browser, score each section (1-10)

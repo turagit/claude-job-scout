@@ -18,16 +18,16 @@ Loaded on demand by `_cv-optimizer/SKILL.md` after Phase 1 analysis completes. T
 When user provides a target job description:
 1. Extract all hard skills, tools, certifications, and methodologies from the JD
 2. Compare against current CV content
-3. Categorize gaps: **must-add** (required skills the user has but CV doesn't mention), **should-add** (preferred skills), **cannot-add** (skills the user doesn't have — never fabricate)
+3. Categorise gaps: **must-add** (required skills the user has but CV doesn't mention), **should-add** (preferred skills), **cannot-add** (skills the user doesn't have — never fabricate)
 4. Suggest natural placements within existing achievement bullets
-5. Calculate match percentage before and after optimization
+5. Calculate match percentage before and after optimisation
 6. Flag any JD "hidden requirements" (e.g., security clearance implied by client type, visa requirements implied by location)
 
 ---
 
 ## Post-Rewrite Keyword-Density Validation
 
-Runs between Phase 3 (optimized rewrite) and Phase 4 (output deliverables). After the optimized CV is produced, measure keyword density to catch stuffing and undershoot.
+Runs between Phase 3 (optimised rewrite) and Phase 4 (output deliverables). After the optimised CV is produced, measure keyword density to catch stuffing and undershoot.
 
 ### Target keyword set
 
@@ -48,7 +48,7 @@ Combine three sources:
 Present as a density table in the Phase 4 deliverables:
 
 ```
-Keyword Density Report (optimized CV — [M] total words)
+Keyword Density Report (optimised CV — [M] total words)
 ┌─────────────────┬───────┬─────────┬────────┐
 │ Keyword         │ Count │ Density │ Status │
 ├─────────────────┼───────┼─────────┼────────┤

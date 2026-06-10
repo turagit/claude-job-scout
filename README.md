@@ -4,7 +4,7 @@ An all-in-one LinkedIn job search automation plugin for Claude Code / Cowork. An
 
 ## What It Does
 
-This plugin turns Claude into your personal job search assistant on LinkedIn. It handles the pipeline from CV optimization to application submission, so you can focus on preparing for interviews instead of scrolling job boards.
+This plugin turns Claude into your personal job search assistant on LinkedIn. It handles the pipeline from CV optimisation to application submission, so you can focus on preparing for interviews instead of scrolling job boards.
 
 - **CV Analysis & Improvement** — ATS compatibility scoring, keyword gap analysis, persuasion-psychology-aware rewrites.
 - **Smart Job Search** — searches LinkedIn, scores every listing against your CV and stated requirements, ranks by fit.
@@ -12,7 +12,7 @@ This plugin turns Claude into your personal job search assistant on LinkedIn. It
 - **Daily Notification Sweep** — scans your unread job-alert notifications, scores new listings, and writes a ranked report.
 - **Easy Apply** — handles LinkedIn Easy Apply for jobs you approve. Hands off external applications to you.
 - **Inbox Monitoring** — scans recruiter messages, qualifies leads (hot/warm/cold), drafts replies for your approval.
-- **Profile Optimization** — rewrites your headline, summary, experience, and skills for recruiter and ATS visibility.
+- **Profile Optimisation** — rewrites your headline, summary, experience, and skills for recruiter and ATS visibility.
 
 ## Commands
 
@@ -22,13 +22,13 @@ All commands are user-invoked slash commands. The model will **not** auto-trigge
 |---------|-------------|
 | `/check-job-notifications` | **Daily driver** — check notifications + Top picks + Saved jobs, expand similar-jobs from A-tier hits, score new listings, save a ranked report |
 | `/deep-sweep` | **Weekly thorough scan** — adaptive multi-query fanout across all `target_titles[]` + synonyms, all source surfaces, Past Week, pages 1-3, similar-jobs expansion. Run once a week |
-| `/analyze-cv` | Analyze and optimize your CV for ATS and recruiters; discover per-workspace dealbreakers, voice, and scoring dimensions |
+| `/analyze-cv` | Analyse and optimise your CV for ATS and recruiters; discover per-workspace dealbreakers, voice, and scoring dimensions |
 | `/job-search` | Zero-arg: adaptive fanout across `target_titles[]` with synonym expansion on thin queries. Single-arg: search that title only |
 | `/create-alerts` | Create LinkedIn job alerts matching your search criteria |
 | `/match-jobs` | Score and rank job listings against your CV and requirements |
 | `/apply` | Apply to approved jobs via LinkedIn Easy Apply |
 | `/check-inbox` | Monitor LinkedIn inbox for recruiter messages and leads |
-| `/optimize-profile` | Analyze and improve your LinkedIn profile |
+| `/optimize-profile` | Analyse and improve your LinkedIn profile |
 | `/cover-letter` | Generate a tailored cover letter (3 angle options) for a specific job |
 | `/interview-prep` | Generate an interview-prep packet (SPAR narratives, predicted questions, questions to ask) for a specific job |
 | `/funnel-report` | Pipeline analytics: 30/60/90-day funnel, drop-offs, trending keywords, suggested next actions |
@@ -40,10 +40,10 @@ These are model-auto-loaded playbooks used by the commands above. You don't invo
 
 | Skill | Purpose |
 |-------|---------|
-| `_cv-optimizer` | ATS analysis, keyword optimization, SPAR-method rewrites |
+| `_cv-optimizer` | ATS analysis, keyword optimisation, SPAR-method rewrites |
 | `_job-matcher` | Hard-gated, segment-aware, per-dimension scoring with evidence quotes |
 | `_gate-engine` | Hard-gate evaluator — runs before scoring; auto-D-tiers any job that violates a declared dealbreaker |
-| `_profile-optimizer` | LinkedIn SEO, headline formulas, section-by-section optimization |
+| `_profile-optimizer` | LinkedIn SEO, headline formulas, section-by-section optimisation |
 | `_recruiter-engagement` | Lead qualification, response drafting, conversation management |
 
 ---
@@ -118,7 +118,7 @@ The first time you run any command in a new project, the plugin will ask:
 
 > "I don't see a `.job-scout/` folder in this project yet. This is where I'll keep your CV profile, the list of jobs I've already shown you, cached scores, and run reports — all scoped to *this* project so different job searches stay separate. Want me to create it now?"
 
-**Say yes.** The plugin will create the folder, write a stub `user-profile.json` and an empty `tracker.json`, and proceed. If you decline, the plugin will fall back to legacy behavior (writing loose files at your workspace root) for that session only, and will not nag you again in the same session.
+**Say yes.** The plugin will create the folder, write a stub `user-profile.json` and an empty `tracker.json`, and proceed. If you decline, the plugin will fall back to legacy behaviour (writing loose files at your workspace root) for that session only, and will not nag you again in the same session.
 
 ---
 

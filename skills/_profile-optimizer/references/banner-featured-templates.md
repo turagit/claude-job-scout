@@ -97,7 +97,7 @@ If the user has no supporting doc for a slot, suggest creating one:
 
 ### Prioritization
 
-If the user has more than 5 items, prioritize by:
+If the user has more than 5 items, prioritise by:
 1. Items backed by a supporting doc (verifiable > claimed)
 2. Items relevant to the target role (from master keyword list overlap)
 3. Items with the highest "authority signal" value (certs > recommendations > portfolio for most roles)

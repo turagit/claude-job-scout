@@ -169,6 +169,11 @@ main {
   color: #4b5563;
 }
 
+.score-pill.tier-d {
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
 .tag-chip {
   display: inline-block;
   font-size: 11px;

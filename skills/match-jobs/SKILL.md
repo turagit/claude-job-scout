@@ -5,7 +5,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 disable-model-invocation: true
 ---
 
-Analyze LinkedIn job listings and rank them against the user's CV and requirements.
+Analyse LinkedIn job listings and rank them against the user's CV and requirements.
 
 ## Browser policy (read first)
 

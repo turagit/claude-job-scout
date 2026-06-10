@@ -1,6 +1,6 @@
 ---
 name: check-job-notifications
-description: Check LinkedIn notifications for new job alerts, analyze matches against CV and requirements, and report best opportunities
+description: Check LinkedIn notifications for new job alerts, analyse matches against CV and requirements, and report best opportunities
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 disable-model-invocation: true
 ---
@@ -181,7 +181,7 @@ When the user approves applications, update status to "approved". `/apply` will 
 
 ## Step 10: Offer "Top job picks for you" sweep
 
-After saving, **ask the user**: "Done with notifications. Want me to continue and analyze/rank jobs from LinkedIn's 'Top job picks for you' feed at https://www.linkedin.com/jobs/, iterating through pages for any never-before-seen listings?"
+After saving, **ask the user**: "Done with notifications. Want me to continue and analyse/rank jobs from LinkedIn's 'Top job picks for you' feed at https://www.linkedin.com/jobs/, iterating through pages for any never-before-seen listings?"
 
 If declined, skip to Next Steps.
 

@@ -71,12 +71,12 @@ Fix suggestions:
 
 ## After Phase 3 rewrite
 
-Re-run the simulator on the optimized CV. Present a before/after comparison:
+Re-run the simulator on the optimised CV. Present a before/after comparison:
 
 ```
 ATS Score Improvement
 ┌──────────┬──────────┬───────────┬────────┐
-│ ATS      │ Original │ Optimized │ Change │
+│ ATS      │ Original │ Optimised │ Change │
 ├──────────┼──────────┼───────────┼────────┤
 │ Workday  │ 72       │ 91        │ +19    │
 │ Greenhouse│ 68      │ 88        │ +20    │

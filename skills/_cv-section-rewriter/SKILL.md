@@ -2,8 +2,8 @@
 name: _cv-section-rewriter
 description: >
   [Internal subagent — dispatched only by _cv-optimizer, not user-invocable] Internal subagent skill. Dispatched by _cv-optimizer during Phase 3
-  (Optimized Rewrite), one instance per role block. Returns SPAR-method
-  optimized bullets as a structured delta. Not user-invocable.
+  (Optimised Rewrite), one instance per role block. Returns SPAR-method
+  optimised bullets as a structured delta. Not user-invocable.
 version: 0.1.0
 ---
 
@@ -77,7 +77,7 @@ Apply the rules in `../_cv-optimizer/references/phase-3-optimized-rewrite.md` (S
 
 ## Budget
 
-`budget_lines: 80`. If the subagent can't fit within budget (many original bullets to compress or expand), return `status: "partial"` with the highest-impact bullets optimized and a continuation cursor for the rest.
+`budget_lines: 80`. If the subagent can't fit within budget (many original bullets to compress or expand), return `status: "partial"` with the highest-impact bullets optimised and a continuation cursor for the rest.
 
 ## Not user-invocable
 

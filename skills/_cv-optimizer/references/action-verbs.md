@@ -6,8 +6,8 @@ Start bullets with past-tense verbs (present for current role). Never repeat a v
 
 **Leadership & Influence:** Championed, Directed, Led, Orchestrated, Spearheaded, Transformed, Mentored, Steered, Mobilized, Appointed, Pioneered, Founded
 **Delivery & Achievement:** Delivered, Exceeded, Secured, Solved, Surpassed, Completed, Shipped, Achieved, Attained, Won
-**Technical & Engineering:** Architected, Automated, Built, Deployed, Engineered, Optimized, Scaled, Integrated, Migrated, Refactored, Implemented, Designed, Developed, Coded, Configured
-**Analysis & Insight:** Analyzed, Benchmarked, Diagnosed, Forecasted, Quantified, Validated, Assessed, Evaluated, Identified, Investigated, Modeled, Mapped
+**Technical & Engineering:** Architected, Automated, Built, Deployed, Engineered, Optimised, Scaled, Integrated, Migrated, Refactored, Implemented, Designed, Developed, Coded, Configured
+**Analysis & Insight:** Analysed, Benchmarked, Diagnosed, Forecasted, Quantified, Validated, Assessed, Evaluated, Identified, Investigated, Modeled, Mapped
 **Growth & Revenue:** Boosted, Expanded, Generated, Launched, Doubled, Tripled, Grew, Accelerated, Increased, Captured, Monetized
 **Process & Efficiency:** Eliminated, Modernized, Redesigned, Simplified, Standardized, Streamlined, Consolidated, Reduced, Cut, Halved, Shortened
 **Communication & Collaboration:** Collaborated, Facilitated, Negotiated, Partnered, Presented, Advocated, Aligned, Influenced, Briefed, Coordinated

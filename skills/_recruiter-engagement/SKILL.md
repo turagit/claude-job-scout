@@ -17,12 +17,12 @@ Monitor, qualify, and draft professional responses to recruiter messages on Link
 
 1. Navigate to LinkedIn messaging via browser
 2. Scan recent messages for recruiter keywords (opportunity, role, position, hiring, interested, candidate)
-3. Categorize: **Hot Lead** (specific role, salary/company disclosed, relevant), **Warm Lead** (generic but relevant company/industry), **Cold Lead** (mass outreach, irrelevant), **Not a Lead** (connection requests, promos)
+3. Categorise: **Hot Lead** (specific role, salary/company disclosed, relevant), **Warm Lead** (generic but relevant company/industry), **Cold Lead** (mass outreach, irrelevant), **Not a Lead** (connection requests, promos)
 4. Present summary with recommended actions
 
 ## Lead Qualification
 
-For each lead, extract: role details, company (name, size, industry, stage), compensation, location/remote status, timeline, and why they reached out.
+For each lead, extract: role details, company (name, size, industry, stage), compensation, location/remote status, timeline, and why they got in touch.
 
 ### Qualifying Questions (ask via drafted reply)
 

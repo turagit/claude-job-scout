@@ -1,11 +1,11 @@
 ---
 name: optimize-profile
-description: Analyze and improve your LinkedIn profile for recruiters and ATS
+description: Analyse and improve your LinkedIn profile for recruiters and ATS
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 disable-model-invocation: true
 ---
 
-Optimize the user's LinkedIn profile for recruiter visibility and ATS, using their CV as the primary content source.
+Optimise the user's LinkedIn profile for recruiter visibility and ATS, using their CV as the primary content source.
 
 ## Browser policy (read first)
 
@@ -39,7 +39,7 @@ After the read, update each section's `content`, `hash`, and `scored_at` in `.jo
 
 Check SSI score at `linkedin.com/sales/ssi`. Note recent posting activity and engagement level. Flag if SSI < 70 or no activity in 30+ days.
 
-## Step 4: Analyze and Score
+## Step 4: Analyse and Score
 
 Load the **_profile-optimizer** skill.
 

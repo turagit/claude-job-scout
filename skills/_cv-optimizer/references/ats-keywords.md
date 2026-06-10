@@ -26,7 +26,7 @@ Product Strategy, Product Roadmap, User Research, A/B Testing, OKRs, KPIs, Stake
 
 ## Marketing / Growth
 
-SEO, SEM, PPC, Google Ads, Meta Ads, Content Marketing, Content Strategy, Marketing Automation, HubSpot, Marketo, Salesforce, Google Analytics (GA4), Conversion Rate Optimization (CRO), Growth Hacking, Brand Strategy, Email Marketing, Social Media Marketing, Demand Generation, Lead Generation, Account-Based Marketing (ABM), Attribution Modeling, Customer Acquisition Cost (CAC), LTV
+SEO, SEM, PPC, Google Ads, Meta Ads, Content Marketing, Content Strategy, Marketing Automation, HubSpot, Marketo, Salesforce, Google Analytics (GA4), Conversion Rate Optimisation (CRO), Growth Hacking, Brand Strategy, Email Marketing, Social Media Marketing, Demand Generation, Lead Generation, Account-Based Marketing (ABM), Attribution Modeling, Customer Acquisition Cost (CAC), LTV
 
 ## Finance
 

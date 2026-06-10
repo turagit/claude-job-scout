@@ -43,13 +43,13 @@ For each unique job ID extracted from a thread:
 
 After this step, the inbox scan has populated the tracker with recruiter-sourced jobs the rest of the plugin would otherwise never see.
 
-## Step 2: Categorize
+## Step 2: Categorise
 
 Load the **_recruiter-engagement** skill. Classify each thread into the canonical `lead_tier` enum (`../shared-references/canonical-schemas.md`): `hot` (specific role, relevant, details shared), `warm` (generic but relevant company/industry), `cold` (mass outreach, irrelevant), `non-lead` (connection requests, promotions). Scam or red-flag signals (no company disclosed, requests for personal data, pay-to-apply, pressure tactics) are not a tier — record them in `lead_tier_detail` (e.g. `"red flag: pay-to-apply scheme"`) and surface them prominently in the summary.
 
 ## Step 3: Present Summary
 
-Show leads grouped by category with: recruiter name, company, role mentioned, date received, brief summary of why it was categorized that way, and **known facts** from lead-memory notes (if any — e.g., "Known: IR35 outside, rate £650-750/day"). Recommend responding to Hot Leads first.
+Show leads grouped by category with: recruiter name, company, role mentioned, date received, brief summary of why it was categorised that way, and **known facts** from lead-memory notes (if any — e.g., "Known: IR35 outside, rate £650-750/day"). Recommend responding to Hot Leads first.
 
 ## Step 4: Draft and Send Responses
 

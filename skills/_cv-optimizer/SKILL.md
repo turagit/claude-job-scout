@@ -1,16 +1,16 @@
 ---
 name: _cv-optimizer
 description: >
-  [Internal — loaded by /analyze-cv] This skill should be used when the user asks to "analyze my CV", "improve my resume",
-  "optimize my CV for ATS", "check my CV", "review my resume", "make my CV better",
-  "tailor my CV", or needs guidance on CV formatting, keyword optimization,
+  [Internal — loaded by /analyze-cv] This skill should be used when the user asks to "analyse my CV" (or "analyze"),
+  "improve my CV/resume", "optimise my CV for ATS" (or "optimize"), "check my CV", "review my CV",
+  "make my CV better", "tailor my CV", or needs guidance on CV formatting, keyword optimisation,
   or ATS compatibility. Also triggers when preparing a CV for job applications.
 version: 0.3.0
 ---
 
 # CV Optimizer (Orchestrator)
 
-Analyze, score, and transform CVs into documents that pass ATS filters **and** compel human reviewers to shortlist the candidate — using evidence-based persuasion psychology throughout.
+Analyse, score, and transform CVs into documents that pass ATS filters **and** compel human reviewers to shortlist the candidate — using evidence-based persuasion psychology throughout.
 
 This file is the **orchestrator**: it names the phases, the gates between them, and the lazy-loaded reference file for each phase. Phase content lives in `references/phase-N-*.md` and is loaded only when that phase actually runs.
 
@@ -22,7 +22,7 @@ This file is the **orchestrator**: it names the phases, the gates between them, 
 | 1 | Seven-dimension scoring | `references/phase-1-seven-dimension-scoring.md` | Always, unless a valid `cv-analysis-<hash>.json` cache hit exists |
 | 2 | Scoring & gap analysis | `references/phase-2-gap-analysis.md` | Always after Phase 1 |
 | 2a | ATS scan simulation | `references/ats-simulator.md` | Always after Phase 2 (supplementary robot-gate check) |
-| 3 | Optimized rewrite | `references/phase-3-optimized-rewrite.md` | User requests a rewrite |
+| 3 | Optimised rewrite | `references/phase-3-optimized-rewrite.md` | User requests a rewrite |
 | 4 | Output deliverables | `references/phase-4-output-deliverables.md` | Always at end |
 
 **Rule:** do not load a phase reference until its gate is reached. Loading all phase references up front is the anti-pattern this orchestrator exists to prevent.
@@ -70,7 +70,7 @@ For each role block in the CV:
 - **`references/phase-3-optimized-rewrite.md`** — Phase 3 content (lazy)
 - **`references/phase-4-output-deliverables.md`** — Phase 4 content (lazy)
 - **`references/ats-keywords.md`** — ATS keyword categories by industry
-- **`references/action-verbs.md`** — Categorized action verbs
+- **`references/action-verbs.md`** — Categorised action verbs
 - **`references/psychology-cheatsheet.md`** — Quick-reference for persuasion techniques
 - **`../shared-references/freelance-context.md`** — Freelance CV structure
 - **`../shared-references/workspace-layout.md`** — `.job-scout/` layout and bootstrap

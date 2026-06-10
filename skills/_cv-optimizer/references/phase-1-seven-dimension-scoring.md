@@ -7,7 +7,7 @@ Loaded on demand by `_cv-optimizer/SKILL.md`. Runs always unless a valid `.job-s
 ### Seven-Dimension Scoring (1–10 each, weighted)
 
 #### 1. ATS Compatibility (20%)
-- **Standard section headings** recognized by all major ATS (Workday, Greenhouse, Lever, iCIMS, Taleo): "Professional Experience", "Education", "Skills", "Certifications" — not creative alternatives
+- **Standard section headings** recognised by all major ATS (Workday, Greenhouse, Lever, iCIMS, Taleo): "Professional Experience", "Education", "Skills", "Certifications" — not creative alternatives
 - **Clean formatting:** single-column layout, no tables/text boxes/images/headers-footers (ATS strips them), standard fonts (Arial, Calibri, Garamond), consistent date format (MMM YYYY)
 - **File format:** .docx preferred by ATS; .pdf acceptable if text-selectable (never scanned image PDFs)
 - **Contact block:** name, email, phone, LinkedIn URL, city/country — on separate plain-text lines
@@ -20,7 +20,7 @@ Loaded on demand by `_cv-optimizer/SKILL.md`. Runs always unless a valid `.job-s
 - Zero filler phrases: eliminate "responsible for", "duties included", "helped with", "involved in", "assisted with"
 - **Recency weighting:** current/most recent role gets 4–6 bullets, previous 3–4, older 2–3 (mirrors how recruiters actually read)
 
-#### 3. Keyword Optimization (15%)
+#### 3. Keyword Optimisation (15%)
 - Extract **hard skills, tools, certifications, methodologies** from target JD (if provided)
 - Include both spelled-out and acronym forms: "Continuous Integration/Continuous Deployment (CI/CD)"
 - Keywords woven **into achievement bullets** — not dumped in a skills-only section (ATS + humans both weight contextual usage higher)
@@ -29,7 +29,7 @@ Loaded on demand by `_cv-optimizer/SKILL.md`. Runs always unless a valid `.job-s
 
 #### 4. Structure & Visual Hierarchy (10%)
 - Reverse chronological within each section
-- **F-pattern optimized:** most important info in the left-most, top-most positions (matches eye-tracking research: recruiters scan in an F-shape spending 6–7 seconds on initial scan)
+- **F-pattern optimised:** most important info in the left-most, top-most positions (matches eye-tracking research: recruiters scan in an F-shape spending 6–7 seconds on initial scan)
 - Consistent bullet style, indentation, spacing
 - Strategic use of **bold** for company names, role titles, and key metrics — guides the eye to high-value content during the 7-second scan
 - Target length: 1 page (0–5 yrs), 2 pages (5–15 yrs), 3 pages (15+ or academic only)
@@ -53,7 +53,7 @@ Evidence-based techniques from behavioral psychology applied to CV content:
 - **Scarcity & Exclusivity:** "One of 3 engineers selected for..." or "Invited to join founding team..." signals selectivity.
 
 #### 7. Recruiter Experience & Readability (NEW — 10%)
-Optimized for the human who reads *after* the ATS passes:
+Optimised for the human who reads *after* the ATS passes:
 
 - **7-Second Scan Test:** Can a recruiter extract role, seniority, top 3 skills, and one impressive number within 7 seconds? If not, restructure.
 - **Jargon calibration:** Match the terminology level to the likely first reviewer (HR screens need broader terms; hiring-manager screens can handle deep technical language). When in doubt, use both: "Implemented event-driven architecture (Kafka, SNS/SQS) to handle 50k events/sec."

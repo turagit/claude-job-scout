@@ -1,12 +1,12 @@
 ---
 name: analyze-cv
-description: Analyze and optimize your CV for ATS and recruiters
+description: Analyse and optimise your CV for ATS and recruiters
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 argument-hint: [cv-file-path]
 disable-model-invocation: true
 ---
 
-Analyze and improve the user's CV using the **_cv-optimizer** skill.
+Analyse and improve the user's CV using the **_cv-optimizer** skill.
 
 ## Step 0: Bootstrap workspace
 
@@ -16,11 +16,11 @@ Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists in
 
 If argument provided, read file at @$1. Otherwise, follow `shared-references/cv-loading.md` to locate the CV, hash it, and load any existing profile.
 
-**Cache check:** if `.job-scout/cache/cv-analysis-<hash>.json` exists for the current CV's hash AND the user is not requesting a fresh run, return the cached analysis directly. Re-analyzing an unchanged CV against an unchanged profile burns tokens for no new information.
+**Cache check:** if `.job-scout/cache/cv-analysis-<hash>.json` exists for the current CV's hash AND the user is not requesting a fresh run, return the cached analysis directly. Re-analysing an unchanged CV against an unchanged profile burns tokens for no new information.
 
 ## Step 2: Discovery Interview (MANDATORY — DO NOT SKIP)
 
-Run the **Phase 0 Discovery Interview** from the _cv-optimizer skill. Ask all questions in a single structured message grouped by category (Identity & Career Context, Strengths & Differentiators, Target & Constraints). This is critical — the quality of the optimization depends entirely on having this context upfront.
+Run the **Phase 0 Discovery Interview** from the _cv-optimizer skill. Ask all questions in a single structured message grouped by category (Identity & Career Context, Strengths & Differentiators, Target & Constraints). This is critical — the quality of the optimisation depends entirely on having this context upfront.
 
 If the user has an existing `user-profile.json`, pre-fill what you can and confirm: "I have these details saved — are they still accurate?" Only ask for missing or potentially stale information.
 
@@ -101,7 +101,7 @@ Workspaces without `query_clusters[]` are never blocked — the search commands 
 
 After the interview, write all changes to `user-profile.json` via the atomic-write pattern in `../shared-references/state-validators.md` (using `validate_profile`). Set `discovery_complete: true` and `last_updated: <now>`.
 
-## Step 3: Analyze
+## Step 3: Analyse
 
 Load the **_cv-optimizer** skill. Score all seven dimensions (1–10 each, weighted). Present:
 
@@ -117,7 +117,7 @@ Be encouraging — highlight strengths before improvements. Frame improvements a
 ## Step 4: Generate Improved CV
 
 If user wants a rewrite:
-- Create optimized version applying all SPAR rewrites, keyword placements, psychological persuasion techniques, and structural improvements
+- Create optimised version applying all SPAR rewrites, keyword placements, psychological persuasion techniques, and structural improvements
 - Preserve the user's voice, facts, and tone preference (from discovery interview)
 - Save with "-optimized" suffix
 - Provide a **change summary** listing every modification made and why

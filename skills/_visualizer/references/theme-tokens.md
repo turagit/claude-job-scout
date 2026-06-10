@@ -4,14 +4,14 @@ Single source of truth for visual design across all rendered HTML reports. Every
 
 The full token set is implemented as CSS custom properties in `../assets/theme.css`. This file is the conceptual reference; `theme.css` is the implementation.
 
-## Color tokens
+## Colour tokens
 
 | Token | Value | Use |
 |-------|-------|-----|
 | `--bg-page` | linear-gradient(180deg, #fff 0%, #f5f3ff 100%) | Page background |
 | `--bg-card` | #ffffff | Card surfaces |
 | `--surface-soft` | #f5f3ff | Subtle inner surfaces (chip backgrounds, hover states) |
-| `--accent-from` | #7c3aed (violet 600) | Primary gradient start, A-tier pill, link color |
+| `--accent-from` | #7c3aed (violet 600) | Primary gradient start, A-tier pill, link colour |
 | `--accent-to` | #ec4899 (pink 500) | Primary gradient end |
 | `--accent-warn` | #fbbf24 (amber 400) | B-tier pill background |
 | `--accent-warn-fg` | #78350f (amber 900) | B-tier pill text |
@@ -35,15 +35,16 @@ The full token set is implemented as CSS custom properties in `../assets/theme.c
 | `--font-sans` | 'Inter', -apple-system, system-ui, sans-serif | Body text, titles |
 | `--font-mono` | 'JetBrains Mono', 'SF Mono', monospace | Score values, metric numbers, timestamps |
 
-## Tier-color mapping
+## Tier-colour mapping
 
-A score's tier is derived in the dispatcher (orchestrator) and passed in `inputs.data` as a `tier` string. Templates render the score pill with a class derived from the tier:
+The tier comes from the `_job-matcher` v1 rubric and is passed in `inputs.data` as an uppercase `tier` string. Templates render the tier pill with a class derived from the lowercased tier:
 
-| Tier | Score range | Pill class | Pill background |
-|------|-------------|------------|-----------------|
-| A | 85–100 | `score-pill tier-a` | violet→pink gradient |
-| B | 70–84 | `score-pill tier-b` | amber |
-| C | 55–69 | `score-pill tier-c` | gray |
+| Tier | Pill class | Pill background |
+|------|------------|-----------------|
+| A | `score-pill tier-a` | violet→pink gradient |
+| B | `score-pill tier-b` | amber |
+| C | `score-pill tier-c` | grey |
+| D (gated) | `score-pill tier-d` | muted |
 
 Templates never compute the tier themselves — they trust the dispatcher's `tier` field.
 
