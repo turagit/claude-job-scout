@@ -44,7 +44,7 @@
       "category": "aggregator",
       "access_lane": "api",
       "endpoint": "https://api.adzuna.com/v1/api/jobs/pt/search/1?results_per_page=50",
-      "needs_key": false,
+      "needs_key": true,
       "needs_slug": false,
       "priority": 3,
       "poll_method": "GET the country search endpoint (here 'pt' for Portugal) with app_id and app_key query params; paginate via the trailing page number in the path",
