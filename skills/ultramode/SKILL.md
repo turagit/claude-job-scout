@@ -20,13 +20,15 @@ All logged-in browser work in this command uses **the Claude Chrome extension ex
 The user types one of:
 
 ```
-/ultramode             — run the multi-source sweep (first run triggers onboarding)
-/ultramode sources     — re-run source discovery / rebuild the registry
-/ultramode onboarding  — re-run the first-run lane interview from scratch
+/ultramode                          — run the multi-source sweep (first run triggers onboarding)
+/ultramode sources                  — re-run source discovery / rebuild the registry
+/ultramode sources add <url|name>   — add a source you already use to the registry
+/ultramode onboarding               — re-run the first-run lane interview from scratch
 ```
 
 - **Bare `/ultramode`** — the sweep flow (Step 4). If `.job-scout/sources.json` is absent, first-run onboarding (Step 3) runs automatically, then the sweep proceeds.
 - **`/ultramode sources`** — re-dispatch `_source-discovery` and overwrite the registry (Step 3, discovery sub-step only — it reuses the already-known lane answers from `requirements`, re-asking only for genuine gaps). Does not run the sweep unless the user then runs bare `/ultramode`.
+- **`/ultramode sources add <url|name>`** — add a board or site the candidate already uses or trusts, at any time. The source is probed and access-lane-classified (login-walled → `extension` lane, never dropped), appended to `.job-scout/sources.json`, and joins subsequent sweeps driven by the existing keyword corpus — no re-specifying queries. Does not run the sweep on its own.
 - **`/ultramode onboarding`** — re-run the **whole** lane interview (Step 3 in full, including the explicit `base_country` question), then rebuild the registry.
 
 ## Step 0: Bootstrap workspace
