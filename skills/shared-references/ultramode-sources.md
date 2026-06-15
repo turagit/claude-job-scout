@@ -234,6 +234,64 @@ function resolve_ats(company_name):
 
 Notes for the implementer (Task 4): probe most-specific slug first to avoid a generic slug matching the wrong employer; stop at the first hit (do not enumerate all providers once one matches); honour each provider's rate limits and set a descriptive User-Agent; the negative-cache cooldown (30 days) keeps repeat sweeps cheap without permanently writing off a company that later adopts an ATS.
 
+## Adaptive priority order (Decision 5)
+
+`sources.json` carries a `priority_order[]` — the order the engine polls sources in (lower polls first; see `canonical-schemas.md` § `sources.json`). Discovery (Task 3, `_source-discovery`) writes a **static default** at build time, ordered by canonical preference (`ats-provider` first, then remote/national board, then aggregator, then community, then `freelance-marketplace` last). That default is right for a permanent job hunt — but **wrong** for a freelance + remote one, where an employer's own ATS is the *least* likely place a contract gig surfaces.
+
+So `priority_order` is **not hardcoded**: ultramode **derives** it from the workspace's `requirements` each run, reading three fields (`canonical-schemas.md` § `user-profile.json` `requirements`):
+
+- **`contract_type`** — `["freelance"]`, `["permanent"]`, or both.
+- **`work_arrangement`** — whether `"remote"` is present.
+- **`location_preferences`** — used as a tie-breaker (a remote-board source that covers the user's geography polls ahead of one that does not).
+
+### Derivation rule
+
+```
+function derive_priority_order(requirements, sources):
+    freelance = "freelance" in requirements.contract_type
+    permanent = "permanent" in requirements.contract_type
+    remote    = "remote" in requirements.work_arrangement
+
+    if freelance and remote and not permanent:
+        # Freelance + remote: contract gigs surface on remote boards,
+        # contract-capable aggregators and freelance marketplaces first;
+        # an employer ATS is the LEAST likely place a gig appears, so it
+        # drops to second band and is contract-filtered when swept.
+        bands = [
+            [remote-board sources covering location_preferences],
+            [remote-board sources (other), aggregator sources (contract-capable)],
+            [freelance-marketplace sources],
+            [ats-provider sources],         # ATS contract-filtered — lower priority for freelance+remote
+            [community, national-board sources],
+        ]
+    elif permanent and not freelance:
+        # Permanent: the employer's own ATS is the highest-signal,
+        # direct-to-employer listing — ATS-first.
+        bands = [
+            [ats-provider sources],          # ATS-first
+            [remote-board sources, national-board sources],
+            [aggregator sources],
+            [community sources],
+            [freelance-marketplace sources], # last
+        ]
+    else:
+        # Mixed (both contract_type values, or remote unset): keep the
+        # canonical-preference static default discovery already wrote.
+        bands = canonical_preference_default(sources)
+
+    # Flatten bands in order; within a band keep discovery's existing
+    # `priority` as the stable tie-break. Result is the source NAMES in
+    # poll order — written back to sources.json priority_order[].
+    return [s.name for band in bands for s in stable_sort(band, key=priority)]
+```
+
+The two named orderings, stated explicitly:
+
+- **Freelance + remote** → remote-board + contract-capable aggregator + freelance-marketplace **first**; ATS **second** (contract-filtered when swept). Not ATS-first.
+- **Permanent** → **ATS-first** (direct-to-employer), then boards, then aggregators, freelance-marketplace last.
+
+**Where it runs.** The sweep dispatcher (`/ultramode`, Task 7) calls `derive_priority_order` against the workspace `requirements` and the registry's `sources[]` at the start of a run, **before** fanning out `_source-sweep` dispatches, and uses the result as the fan-out order. `_source-sweep` consumes the order it is dispatched in (one source per dispatch — it never re-derives the order itself). This reference is the spec the command reads; **deriving the order is a reference-level rule, not a per-command edit** — no command file hardcodes either ordering.
+
 ## Cross-source dedupe + canonical preference (Decision 6)
 
 The same role often surfaces on several sources. Ultramode reuses the existing repost fingerprint from `linkedin-search.md` and extends it **across** sources.
@@ -270,6 +328,41 @@ ATS  >  LinkedIn  >  aggregator  >  marketplace
 ```
 
 (`ats-provider` category wins; then the LinkedIn lane; then `aggregator`/`remote-board`/`national-board`/`community`; then `freelance-marketplace` last.) The canonical entry's URL is the row's "apply at source" link. All other hits are **retained** on the canonical entry as `also_seen_on[]` (one entry per other source — name + url + lane), surfaced in the unified view as "also seen on N sources."
+
+### Where canonical selection runs — dispatcher merge time (cross-source step)
+
+The preference order above is applied **across** sources, but **one `_source-sweep` only ever sees one source** — it cannot know that the same fingerprint will also arrive from a different sweep. So **a single sweep never picks the canonical winner or writes `also_seen_on[]`.** Per `_source-sweep`'s Stage 2, a sweep only drops a candidate whose fingerprint is already in `known_fingerprints[]` (i.e. already in the tracker); it does **not** see another sweep's still-in-flight deltas. The cross-source winner is chosen one level up, by the **dispatcher** (`/ultramode`, Task 7), at **merge time**, when it folds the per-source deltas into the single in-memory tracker (the serial, single-writer merge in `_source-sweep` § Tracker coordination).
+
+The merge-time algorithm, run once per incoming delta as the dispatcher reconciles fan-in:
+
+```
+function merge_delta_into_tracker(delta, tracker):
+    fp = delta.fingerprint
+    existing = tracker.find_by_fingerprint(fp)     # already-merged entry, if any
+
+    if existing is None:
+        tracker.add(delta)                          # first sighting → it is canonical (for now)
+        return
+
+    # Fingerprint collision across sources → pick the canonical winner by the
+    # ATS > LinkedIn > aggregator > marketplace preference (the table above).
+    # Do NOT redefine that order here — apply it.
+    winner, loser = order_by_canonical_preference(existing, delta)
+
+    # The winner is the canonical "apply here" entry; the loser becomes a
+    # sighting recorded on the winner's also_seen_on[].
+    if winner is delta:                             # the new delta outranks the merged entry
+        delta.also_seen_on = existing.also_seen_on + [ sighting(existing) ]
+        tracker.replace(existing.id, with=delta)    # swap canonical, carry sightings forward
+    else:                                           # the merged entry stays canonical
+        winner.also_seen_on.append(sighting(loser))
+
+    # sighting(x) = { name: x.source.provider-or-board, url: x.url, lane: x.source.lane }
+```
+
+Two consequences make this single-writer-safe: (1) because the dispatcher merges deltas **serially** (no two sweeps write at once), every collision is resolved deterministically against the already-merged entry; (2) because the loser is **retained** as an `also_seen_on[]` sighting and never re-fetched (its JD was already filtered out, or is simply dropped), the merge costs no extra token spend. `_source-sweep` is the producer of the per-source deltas; **this merge-time selection is the consumer that turns N same-fingerprint deltas into one canonical entry + `also_seen_on[]`.**
+
+A runnable fixture proving this rule — three same-fingerprint jobs from `ats`, `linkedin`, `aggregator` lanes resolving to the `ats` canonical with the other two on `also_seen_on[]` — lives at `examples/ultramode-dedupe-example.json` alongside this reference.
 
 ### ATS-backed JD enrichment
 
