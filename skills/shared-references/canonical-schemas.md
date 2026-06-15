@@ -226,7 +226,7 @@ The tracker entry's `id` field is the single canonical identifier for a job. **T
       "url": "string — homepage or board URL",
       "category": "ats-provider | remote-board | aggregator | national-board | freelance-marketplace | community",
       "access_lane": "api | rss | html | extension",
-      "endpoint": "string — API/RSS endpoint; MUST be non-empty when access_lane is api or rss",
+      "endpoint": "string — the URL ultramode fetches: the JSON API (api), the feed (rss), or the listing/search page (html). MUST be non-empty for api, rss and html; may be empty for extension (the dispatcher navigates `url` in the browser). `url` is the human-facing homepage.",
       "needs_key": "boolean — true if an API key is required (looked up in user-profile ultramode.api_keys)",
       "needs_slug": "boolean — true if a per-board slug must be supplied to query",
       "priority": "number — lower polls first",

@@ -116,7 +116,7 @@ The subagent enumerates, live-probes, adversarially verifies, loops until the co
 Present the discovered registry for approval before writing — a short table per source: name, category, access lane, `needs_key` / `needs_slug`, and any `errors[]` (dry lanes, unconfirmed user sources). Note inline which sources are **keyless** vs **keyed** (key handling is Step 5). On approval:
 
 1. Resolve the backbone bodies from `../shared-references/ultramode-sources.md` § Universal Backbone (the subagent named them in `backbone[]`), fill `{country}` from the confirmed `base_country` (skip national-board entries when `base_country` is null), and union with the verified discovered/user fragment.
-2. Write the merged registry to **`.job-scout/sources.json`** (atomic-rename per `../shared-references/state-validators.md`), conforming to the `sources.json` schema in `../shared-references/canonical-schemas.md` (`base_country`/`target_geography` copied in, `priority_order[]`, `backbone[]`, `sources[]`).
+2. Write the merged registry to **`.job-scout/sources.json`** (write to `sources.json.tmp`, then `mv` it over `sources.json` — the atomic-rename recipe in `../shared-references/state-validators.md`), conforming to the `sources.json` schema in `../shared-references/canonical-schemas.md` (`base_country`/`target_geography` copied in, `priority_order[]`, `backbone[]`, `sources[]`).
 3. Set `user-profile.json` `ultramode.registry_built_at` to the build timestamp (merge, do not overwrite).
 
 The build is re-runnable any time via `/ultramode sources`; deleting `sources.json` triggers a fresh onboarding on the next run.
