@@ -1,0 +1,128 @@
+{
+  "data": {
+    "title": "Ultramode results",
+    "subtitle": "Same role, four sources · deduped to one row · 2026-06-15",
+    "generated_at": "2026-06-15 14:20",
+    "filename": "ultramode-2026-06-15.html",
+    "tier_counts": {
+      "a": 1,
+      "b": 1,
+      "c": 0,
+      "d": 0,
+      "total": 2
+    },
+    "source_breakdown": {
+      "Greenhouse · Vercel": 1,
+      "LinkedIn": 1,
+      "RemoteOK": 1,
+      "Otta": 1
+    },
+    "results": [
+      {
+        "title": "Senior Backend Engineer",
+        "company": "Vercel",
+        "location": "Remote (Global)",
+        "salary": "$170–200k",
+        "posted_at": "2026-06-15",
+        "applicants": 4,
+        "tier": "A",
+        "fresh": true,
+        "url": "https://boards.greenhouse.io/vercel/jobs/5001234",
+        "source": {
+          "lane": "ats",
+          "provider": "greenhouse",
+          "board": "vercel"
+        },
+        "also_seen_on": [
+          {
+            "lane": "linkedin",
+            "provider": "linkedin",
+            "board": "Top Picks"
+          },
+          {
+            "lane": "remote-board",
+            "provider": "remoteok",
+            "board": "remoteok"
+          },
+          {
+            "lane": "aggregator",
+            "provider": "otta",
+            "board": "otta"
+          }
+        ],
+        "tags": [
+          "TypeScript",
+          "Edge",
+          "Serverless"
+        ],
+        "dimensions": {
+          "Seniority match": {
+            "tier": "A",
+            "evidence": [
+              "Senior IC with platform ownership"
+            ]
+          },
+          "Tech stack": {
+            "tier": "A",
+            "evidence": [
+              "TypeScript and edge runtimes"
+            ]
+          },
+          "Work arrangement": {
+            "tier": "A",
+            "evidence": [
+              "Global remote, async-first"
+            ]
+          }
+        },
+        "rationale": "Surfaced on four sources at once — high signal. The Greenhouse link is the canonical apply route; the others mirror it."
+      },
+      {
+        "title": "Platform Engineer",
+        "company": "Linear",
+        "location": "Remote (Americas/EU)",
+        "salary": "$150–180k",
+        "posted_at": "2026-06-14",
+        "tier": "B",
+        "fresh": false,
+        "url": "https://www.linkedin.com/jobs/view/4055556666",
+        "source": {
+          "lane": "linkedin",
+          "provider": "linkedin",
+          "board": "Search"
+        },
+        "also_seen_on": [
+          {
+            "lane": "remote-board",
+            "provider": "remoteok",
+            "board": "remoteok"
+          }
+        ],
+        "tags": [
+          "Go",
+          "GraphQL"
+        ],
+        "dimensions": {
+          "Seniority match": {
+            "tier": "B",
+            "evidence": [
+              "Senior band"
+            ]
+          },
+          "Tech stack": {
+            "tier": "B",
+            "evidence": [
+              "Go backend with GraphQL"
+            ]
+          },
+          "Work arrangement": {
+            "tier": "A",
+            "evidence": [
+              "Overlapping-hours remote"
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

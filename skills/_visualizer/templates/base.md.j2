@@ -1,3 +1,9 @@
+{# source_chip(source) is provided here for every Tier 1 view to inherit, per
+   ../../shared-references/workspace-layout.md § "Template macro contract".
+   The implementation lives in templates/markdown/_macros.md.j2 (single home);
+   the base imports it and re-exports it as `source_chip` for in-shell use. #}
+{% import "markdown/_macros.md.j2" as macros %}
+{% set source_chip = macros.source_chip %}
 {{ view_body | raw }}
 
 ---

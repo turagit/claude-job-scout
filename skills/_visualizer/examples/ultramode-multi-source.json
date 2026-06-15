@@ -1,0 +1,216 @@
+{
+  "data": {
+    "title": "Ultramode results",
+    "subtitle": "18 roles across 5 sources · ranked best-first · 2026-06-15",
+    "generated_at": "2026-06-15 09:42",
+    "filename": "ultramode-2026-06-15.html",
+    "tier_counts": {
+      "a": 2,
+      "b": 1,
+      "c": 1,
+      "d": 1,
+      "total": 5
+    },
+    "source_breakdown": {
+      "LinkedIn": 2,
+      "Greenhouse · Miro": 1,
+      "RemoteOK": 1,
+      "Otta": 1
+    },
+    "results": [
+      {
+        "title": "Staff Backend Engineer",
+        "company": "Stripe",
+        "location": "Remote (EU)",
+        "salary": "€180–220k",
+        "posted_at": "2026-06-14",
+        "applicants": 9,
+        "tier": "A",
+        "fresh": true,
+        "url": "https://www.linkedin.com/jobs/view/4012345678",
+        "source": {
+          "lane": "linkedin",
+          "provider": "linkedin",
+          "board": "Top Picks"
+        },
+        "also_seen_on": [
+          {
+            "lane": "ats",
+            "provider": "greenhouse",
+            "board": "stripe"
+          }
+        ],
+        "tags": [
+          "Go",
+          "Payments",
+          "Distributed systems"
+        ],
+        "dimensions": {
+          "Seniority match": {
+            "tier": "A",
+            "evidence": [
+              "Staff-level scope with org-wide impact"
+            ]
+          },
+          "Tech stack": {
+            "tier": "A",
+            "evidence": [
+              "Go, gRPC, event-driven services"
+            ]
+          },
+          "Work arrangement": {
+            "tier": "A",
+            "evidence": [
+              "Fully remote within the EU"
+            ]
+          }
+        },
+        "rationale": "Direct hit on seniority, stack, and remote arrangement — your strongest match this run."
+      },
+      {
+        "title": "Senior Platform Engineer",
+        "company": "Miro",
+        "location": "Remote (Europe)",
+        "salary": "€150–175k",
+        "posted_at": "2026-06-13",
+        "applicants": 21,
+        "tier": "A",
+        "fresh": false,
+        "url": "https://boards.greenhouse.io/miro/jobs/4012345",
+        "source": {
+          "lane": "ats",
+          "provider": "greenhouse",
+          "board": "miro"
+        },
+        "also_seen_on": [],
+        "tags": [
+          "Kubernetes",
+          "AWS",
+          "Platform"
+        ],
+        "dimensions": {
+          "Seniority match": {
+            "tier": "A",
+            "evidence": [
+              "Senior IC track, no people management required"
+            ]
+          },
+          "Tech stack": {
+            "tier": "B",
+            "evidence": [
+              "Heavy Kubernetes — adjacent to your container experience"
+            ]
+          },
+          "Work arrangement": {
+            "tier": "A",
+            "evidence": [
+              "Remote across European time zones"
+            ]
+          }
+        },
+        "rationale": "Sourced straight from the company's Greenhouse board — apply direct for a cleaner funnel."
+      },
+      {
+        "title": "Backend Engineer, Growth",
+        "company": "Remote.com",
+        "location": "Remote (Worldwide)",
+        "salary": "$120–150k",
+        "posted_at": "2026-06-12",
+        "tier": "B",
+        "fresh": false,
+        "url": "https://remoteok.com/remote-jobs/123456",
+        "source": {
+          "lane": "remote-board",
+          "provider": "remoteok",
+          "board": "remoteok"
+        },
+        "also_seen_on": [],
+        "tags": [
+          "Node.js",
+          "PostgreSQL"
+        ],
+        "dimensions": {
+          "Seniority match": {
+            "tier": "B",
+            "evidence": [
+              "Mid-to-senior band — slightly below your target"
+            ]
+          },
+          "Tech stack": {
+            "tier": "B",
+            "evidence": [
+              "Node and Postgres rather than Go"
+            ]
+          },
+          "Work arrangement": {
+            "tier": "A",
+            "evidence": [
+              "Async-first, worldwide remote"
+            ]
+          }
+        }
+      },
+      {
+        "title": "Software Engineer (Backend)",
+        "company": "Pleo",
+        "location": "Lisbon / Remote",
+        "posted_at": "2026-06-10",
+        "tier": "C",
+        "fresh": false,
+        "url": "https://app.otta.com/jobs/pleo-backend",
+        "source": {
+          "lane": "aggregator",
+          "provider": "otta",
+          "board": "otta"
+        },
+        "also_seen_on": [],
+        "tags": [
+          "Kotlin"
+        ],
+        "dimensions": {
+          "Seniority match": {
+            "tier": "C",
+            "evidence": [
+              "Mid-level role"
+            ]
+          },
+          "Tech stack": {
+            "tier": "C",
+            "evidence": [
+              "JVM/Kotlin shop"
+            ]
+          },
+          "Work arrangement": {
+            "tier": "B",
+            "evidence": [
+              "Hybrid with Lisbon anchor days"
+            ]
+          }
+        }
+      },
+      {
+        "title": "Contract PHP Developer",
+        "company": "LegacyWorks",
+        "location": "On-site, Berlin",
+        "posted_at": "2026-06-09",
+        "tier": "D",
+        "url": "https://www.linkedin.com/jobs/view/4099999999",
+        "source": {
+          "lane": "linkedin",
+          "provider": "linkedin",
+          "board": "Search"
+        },
+        "gate_violations": [
+          {
+            "kind": "work_arrangement",
+            "detail": "on-site only; you require remote"
+          },
+          {
+            "kind": "contract_type",
+            "detail": "fixed-term contract"
+          }
+        ]
+      }
+    ]
+  }
+}

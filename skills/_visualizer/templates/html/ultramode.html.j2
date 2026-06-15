@@ -1,0 +1,97 @@
+{# schema:
+   required:
+     - data.title
+     - data.subtitle
+     - data.generated_at
+     - data.filename
+     - data.tier_counts
+     - data.results
+   optional:
+     - data.source_breakdown
+   Each result carries the match-jobs job shape (tier, fresh, dimensions, gate_violations,
+   rationale, tags) PLUS:
+     - source: {lane, provider, board}  — structured; rendered via source_chip()
+     - also_seen_on[]: [{lane, provider, board}] — other sources that surfaced the same role
+   Results arrive pre-ranked by the dispatcher: tier A→B→C, freshest-first within tier;
+   gated (D-tier) entries sort to the end and collapse into the "Filtered out" group.
+#}
+{% import "_macros.html.j2" as macros %}
+<header class="report-header">
+  <div class="icon">⚡</div>
+  <div>
+    <h1>{{ data.title }}</h1>
+    <div class="subtitle">{{ data.subtitle }}</div>
+  </div>
+</header>
+
+{% if data.source_breakdown %}
+<section class="run-meta" style="margin:12px 0;padding:12px 16px;background:var(--surface-soft);border-radius:8px;font-size:13px">
+  <strong>Sources searched:</strong>
+  {% for src, n in data.source_breakdown.items() %}<span class="tag-chip" style="margin-right:4px">{{ src }} · {{ n }}</span>{% endfor %}
+</section>
+{% endif %}
+
+{% if data.results %}
+<div class="toolbar">
+  <button data-sort="date" class="active">Date ↓</button>
+  <button data-sort="company">Company A–Z</button>
+  <span style="flex:1"></span>
+  <button data-filter="all" data-filter-attr="tier" class="active">All ({{ data.tier_counts.total }})</button>
+  <button data-filter="A" data-filter-attr="tier">A-tier ({{ data.tier_counts.a }})</button>
+  <button data-filter="B" data-filter-attr="tier">B-tier ({{ data.tier_counts.b }})</button>
+  <button data-filter="C" data-filter-attr="tier">C-tier ({{ data.tier_counts.c }})</button>
+  <button data-filter="D" data-filter-attr="tier">Filtered ({{ data.tier_counts.d }})</button>
+</div>
+
+<section>
+{% for job in data.results %}
+  <article class="job-card" data-tier="{{ job.tier }}" data-sort_date="{{ job.posted_at }}" data-sort_company="{{ job.company }}">
+    {% if job.gate_violations and job.gate_violations|length > 0 %}
+      <div class="gated-banner" style="background:var(--surface-muted,#f5f5f5);border-left:3px solid var(--danger,#c0392b);padding:8px 12px;border-radius:4px;font-size:13px">
+        🚫 Filtered out — {% for v in job.gate_violations %}<strong>{{ v.kind }}</strong>{% if v.detail %} ({{ v.detail }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+      </div>
+      <div class="meta" style="margin-top:6px;font-size:12px;color:var(--text-muted)">{{ job.title }} · {{ job.company }} · {{ job.location }}{% if job.source %} · {{ macros.source_chip(job.source) }}{% endif %}</div>
+    {% else %}
+      <div class="header">
+        <div class="title">{{ job.title }}{% if job.fresh %} <span class="tag-chip" style="background:var(--accent-from);color:#fff">⚡ apply early</span>{% endif %}</div>
+        <div class="score-pill tier-{{ job.tier|lower }}">{{ job.tier }}</div>
+      </div>
+      <div class="meta">{{ job.company }} · {{ job.location }}{% if job.salary %} · {{ job.salary }}{% endif %}{% if job.posted_at %} · {{ job.posted_at }}{% endif %}{% if job.applicants %} · {{ job.applicants }} applicants{% endif %}{% if job.source %} · {{ macros.source_chip(job.source) }}{% endif %}{% if job.also_seen_on and job.also_seen_on|length > 0 %} · <span class="tag-chip accent">also seen on {{ job.also_seen_on|length }}</span>{% endif %}</div>
+      {% if job.tags %}
+      <div>
+        {% for tag in job.tags %}<span class="tag-chip">{{ tag }}</span>{% endfor %}
+      </div>
+      {% endif %}
+      {% if job.dimensions %}
+      <table class="dim-table" style="width:100%;margin-top:10px;font-size:13px;border-collapse:collapse">
+        {% for dim_name, dim in job.dimensions.items() %}
+        <tr class="dim-row dim-tier-{{ dim.tier }}">
+          <th style="text-align:left;padding:4px 8px;font-weight:600;color:var(--text-strong);white-space:nowrap">{{ dim_name }}</th>
+          <td style="padding:4px 8px;width:32px"><span class="tier-badge tier-{{ dim.tier|lower }}" style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700">{{ dim.tier }}</span></td>
+          <td class="evidence" style="padding:4px 8px;color:var(--text-muted);font-style:italic">{% for q in dim.evidence[:2] %}"{{ q }}"{% if not loop.last %}<br/>{% endif %}{% endfor %}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+      {% if job.rationale %}
+      <div style="font-size:13px;color:var(--text-strong);margin-top:8px;line-height:1.5">{{ job.rationale }}</div>
+      {% endif %}
+      {% if job.also_seen_on and job.also_seen_on|length > 0 %}
+      <div class="meta" style="margin-top:8px;font-size:12px">Also on: {% for s in job.also_seen_on %}{{ macros.source_chip(s) }}{% endfor %}</div>
+      {% endif %}
+      {% if job.url %}
+      <div style="margin-top:10px">
+        <a href="{{ job.url }}" target="_blank" rel="noopener noreferrer" class="copy-btn" style="text-decoration:none;display:inline-block">Apply at source ↗</a>
+      </div>
+      {% endif %}
+    {% endif %}
+  </article>
+{% endfor %}
+</section>
+{% else %}
+<div class="empty-state">
+  <div class="icon">🌱</div>
+  <div class="title">No jobs surfaced across your sources.</div>
+  <div class="hint">Every source returned IDs already in your tracker, or your filters left nothing through. Try broadening your `target_titles`, relaxing a deal-breaker, or running `/ultramode` again later.</div>
+</div>
+{% endif %}

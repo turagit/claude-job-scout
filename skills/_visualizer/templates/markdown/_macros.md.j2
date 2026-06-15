@@ -1,0 +1,25 @@
+{# Shared markdown template macros — imported by base.md.j2 and any view that needs them.
+   Single home for the structured-source → label rendering contract documented in
+   ../../shared-references/workspace-layout.md § "Template macro contract: source_chip(source)".
+#}
+
+{# source_chip(source) — render a structured {lane, provider, board} source object
+   (or a bare legacy string, during the lazy tracker 2→3 upgrade) as a short label.
+   Same rules as the HTML variant, without the <span> wrapper (markdown context). #}
+{% macro source_chip(source) -%}
+{%- if source is mapping -%}
+  {%- if source.lane == "linkedin" -%}
+    {{- source.board or source.provider or "LinkedIn" -}}
+  {%- else -%}
+    {%- set prov = (source.provider or "")|replace("-", " ")|title -%}
+    {%- set brd = (source.board or "")|replace("-", " ")|title -%}
+    {%- if brd and brd|lower != prov|lower -%}
+      {{- (prov ~ " · " ~ brd) if prov else brd -}}
+    {%- else -%}
+      {{- prov or brd -}}
+    {%- endif -%}
+  {%- endif -%}
+{%- elif source -%}
+{{- source -}}
+{%- endif -%}
+{%- endmacro %}

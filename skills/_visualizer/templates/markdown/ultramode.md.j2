@@ -1,0 +1,58 @@
+{# schema:
+   required:
+     - data.title
+     - data.subtitle
+     - data.generated_at
+     - data.tier_counts
+     - data.results
+   optional:
+     - data.source_breakdown
+   Each result carries the match-jobs job shape PLUS source:{lane,provider,board}
+   and also_seen_on[]. Results arrive pre-ranked tier A→B→C, freshest-first within tier.
+#}
+{% import "_macros.md.j2" as macros %}
+## {{ data.title }}
+
+_{{ data.subtitle }}_
+
+{% if data.source_breakdown %}
+**Sources searched:** {% for src, n in data.source_breakdown.items() %}{{ src }} ({{ n }}){% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}
+
+{% if data.results %}
+| Tier | Title | Company | Location | Source | Posted |
+|------|-------|---------|----------|--------|--------|
+{% for job in data.results %}{% if job.gate_violations and job.gate_violations|length > 0 %}| 🚫 | ~~{{ job.title }}~~ | {{ job.company }} | {{ job.location }} | {{ macros.source_chip(job.source) }} | |
+{% else %}| {% if job.tier == "A" %}🟢 A{% elif job.tier == "B" %}🟡 B{% elif job.tier == "C" %}⚪ C{% else %}{{ job.tier }}{% endif %} | {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %}{% if job.fresh %} ⚡{% endif %} | {{ job.company }} | {{ job.location }} | {{ macros.source_chip(job.source) }}{% if job.also_seen_on and job.also_seen_on|length > 0 %} _+{{ job.also_seen_on|length }}_{% endif %} | {{ job.posted_at }} |
+{% endif %}{% endfor %}
+
+**Tier counts:** A: {{ data.tier_counts.a }} · B: {{ data.tier_counts.b }} · C: {{ data.tier_counts.c }} · Filtered: {{ data.tier_counts.d }} · Total: {{ data.tier_counts.total }}
+_⚡ = posted within 48 hours — apply early. Source column shows the canonical board; "+N" means the same role also surfaced on N other sources._
+
+### Detail — A & B tier with dimensions
+
+{% for job in data.results %}{% if not (job.gate_violations and job.gate_violations|length > 0) %}{% if job.tier == "A" or job.tier == "B" %}
+#### {% if job.tier == "A" %}🟢{% else %}🟡{% endif %} {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %} · {{ job.company }} ({{ job.tier }})
+
+_Source: {{ macros.source_chip(job.source) }}{% if job.also_seen_on and job.also_seen_on|length > 0 %} · also seen on {{ job.also_seen_on|length }} ({% for s in job.also_seen_on %}{{ macros.source_chip(s) }}{% if not loop.last %}, {% endif %}{% endfor %}){% endif %}_
+
+{% if job.dimensions %}| Dimension | Tier | Evidence |
+|---|:---:|---|
+{% for dim_name, dim in job.dimensions.items() %}| {{ dim_name }} | **{{ dim.tier }}** | {% for q in dim.evidence[:2] %}_"{{ q }}"_{% if not loop.last %}<br/>{% endif %}{% endfor %} |
+{% endfor %}
+{% endif %}{% if job.rationale %}
+{{ job.rationale }}
+{% endif %}{% if job.url %}
+[Apply at source ↗]({{ job.url }})
+{% endif %}
+{% endif %}{% endif %}{% endfor %}
+
+### Filtered out (gate violations)
+
+{% for job in data.results %}{% if job.gate_violations and job.gate_violations|length > 0 %}
+- 🚫 **{{ job.title }}** · {{ job.company }} · {{ job.location }} ({{ macros.source_chip(job.source) }}) — gated on: {% for v in job.gate_violations %}**{{ v.kind }}**{% if v.detail %} ({{ v.detail }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}{% endfor %}
+
+{% else %}
+🌱 **No jobs surfaced across your sources.** Every source returned IDs already in your tracker, or your filters left nothing through. Try broadening your `target_titles`, relaxing a deal-breaker, or running `/ultramode` again later.
+{% endif %}

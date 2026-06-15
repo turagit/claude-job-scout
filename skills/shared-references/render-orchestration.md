@@ -24,7 +24,8 @@ Universal fields (every view):
 
 Per-view extensions (only when the view's schema requires them):
 
-- `tier_counts: { a, b, c, d, total }` — for views that bucket scored items: `match-jobs`, `job-search`, `check-job-notifications`, `deep-sweep`. Populate every key (use `0` when none) so toolbar buttons render `(0)` rather than blank; `d` is the gated/filtered count.
+- `tier_counts: { a, b, c, d, total }` — for views that bucket scored items: `match-jobs`, `job-search`, `check-job-notifications`, `deep-sweep`, `ultramode`. Populate every key (use `0` when none) so toolbar buttons render `(0)` rather than blank; `d` is the gated/filtered count.
+- `source_breakdown: { "<source label>": <count> }` — optional, for multi-source views (`deep-sweep`, `ultramode`). A name→count map shown as a "sources searched" strip. Labels are pre-rendered (e.g. `Greenhouse · Miro`).
 - `unread_count` — for `check-job-notifications` and `check-inbox`.
 - `thread_count` — for `check-inbox`.
 - `metrics`, `stages` — for `funnel-report`.
@@ -42,12 +43,25 @@ Per-view extensions (only when the view's schema requires them):
 | `funnel-report` | `funnel-report-<YYYY-MM-DD-HHMM>.html` |
 | `interview-prep` | `interview-prep-<role-slug>-<YYYY-MM-DD-HHMM>.html` |
 | `deep-sweep` | `deep-sweep-<YYYY-MM-DD>.html` |
+| `ultramode` | `ultramode-<YYYY-MM-DD>.html` |
 
 For `interview-prep`: `<role-slug>` is `<tracker-id>-<4-char-disambiguator>`. The disambiguator is the first 4 characters of the SHA-1 hash of the input role title — keeps filenames distinct even when re-running prep on the same tracker entry.
 
 ### Tier classification (used by views with scored items)
 
 Tiers come straight from the `_job-matcher` v1 rubric — uppercase `A | B | C | D` with per-dimension `{tier, evidence[]}` breakdowns. There is no aggregate score and no threshold mapping. D-tier (gated) jobs DO reach the renderer, carrying `gate_violations[]` — templates render them in a collapsed "Filtered out" group with a gated banner, never among the live results. Templates render `tier-a` / `tier-b` / `tier-c` pill variants for live cards (apply `|lower` to the tier when building the CSS class).
+
+### The `ultramode` view (D8 — unified, source-agnostic results)
+
+`ultramode` is the single results view for a multi-source run (Phase 11). It mirrors `match-jobs` exactly — same tier pills, per-dimension table, "⚡ apply early" chip, "Filtered out" gated group, and toolbar — with three source-aware additions and one ordering rule:
+
+1. **Source is a chip, not a grouping axis.** The list is **one unified, source-agnostic ranking** — results are never bucketed by source. Each result carries a structured `source: {lane, provider, board}` object rendered through the shared `source_chip()` macro (defined in the template bases, see `workspace-layout.md` § "Template macro contract"). The macro also accepts a bare legacy string during the lazy tracker `2 → 3` upgrade. Never interpolate `{{ job.source }}` directly.
+2. **"Also seen on N".** When a result carries a non-empty `also_seen_on: [{lane, provider, board}, …]` array (other sources that surfaced the same role after dedupe), the card shows an "also seen on N" indicator and an "Also on: …" line of secondary source chips. The primary `url` is the **canonical** apply route; the mirrors are informational.
+3. **"Apply at source ↗".** Every live card carries a direct link to the canonical listing (`job.url`) as an "Apply at source ↗" CTA, in addition to the inline source chip.
+
+**Ordering (dispatcher's responsibility).** The dispatcher pre-sorts `data.results` into the final render order: **tier A → B → C, freshest-first within each tier** (descending `posted_at`), with **gated (D-tier) entries last**. The template does not re-sort; it renders the array in order and collapses any entry carrying `gate_violations[]` into the "Filtered out" group, exactly as `match-jobs` does. (The toolbar's client-side sort/filter still works on top, via `interactive.js`.)
+
+**Payload shape.** Same universal fields plus `tier_counts` and optional `source_breakdown` (above). Each entry in `results[]` uses the `match-jobs` job shape (`title`, `company`, `location`, `salary`, `posted_at`, `tier`, `fresh`, `tags`, `dimensions{<name>:{tier,evidence[]}}`, `gate_violations[]`, `rationale`, `url`) **plus** `source: {lane, provider, board}` and `also_seen_on: [{lane, provider, board}]`. Worked example payloads live in `_visualizer/examples/ultramode-*.json`.
 
 ## Step B: Read the render config
 
@@ -153,6 +167,7 @@ A 2–3 line summary printed even when HTML rendering succeeds. Format depends o
 | `check-inbox` | `✓ {{N}} threads — {{unread}} unread — opened report in Chrome` |
 | `interview-prep` | `✓ Prep dossier for {{role}} at {{company}} — opened report in Chrome` |
 | `deep-sweep` | `✓ Deep sweep — {{N_queries}} queries · {{N_new}} new jobs — A:{{a}} B:{{b}} · Filtered:{{gated}} — opened report in Chrome` |
+| `ultramode` | `✓ Ultramode — {{N_sources}} sources · {{N_new}} new jobs — A:{{a}} B:{{b}} C:{{c}} · Filtered:{{gated}} — opened report in Chrome` |
 
 When falling back to markdown, replace the trailing clause with `— rendered above`.
 

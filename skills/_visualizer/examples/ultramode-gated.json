@@ -1,0 +1,105 @@
+{
+  "data": {
+    "title": "Ultramode results",
+    "subtitle": "3 roles surfaced · 1 live · 2 filtered out · 2026-06-15",
+    "generated_at": "2026-06-15 11:05",
+    "filename": "ultramode-2026-06-15.html",
+    "tier_counts": {
+      "a": 0,
+      "b": 1,
+      "c": 0,
+      "d": 2,
+      "total": 3
+    },
+    "source_breakdown": {
+      "LinkedIn": 1,
+      "Greenhouse · Acme": 1,
+      "WeWorkRemotely": 1
+    },
+    "results": [
+      {
+        "title": "Backend Engineer",
+        "company": "Northwind",
+        "location": "Remote (EU)",
+        "salary": "€130–155k",
+        "posted_at": "2026-06-14",
+        "tier": "B",
+        "fresh": true,
+        "url": "https://weworkremotely.com/remote-jobs/northwind-backend",
+        "source": {
+          "lane": "remote-board",
+          "provider": "weworkremotely",
+          "board": "weworkremotely"
+        },
+        "also_seen_on": [],
+        "tags": [
+          "Go",
+          "Remote"
+        ],
+        "dimensions": {
+          "Seniority match": {
+            "tier": "B",
+            "evidence": [
+              "Senior band, IC track"
+            ]
+          },
+          "Tech stack": {
+            "tier": "A",
+            "evidence": [
+              "Go-first backend"
+            ]
+          },
+          "Work arrangement": {
+            "tier": "A",
+            "evidence": [
+              "EU-remote"
+            ]
+          }
+        },
+        "rationale": "Only live match this run — strong on stack and remote fit."
+      },
+      {
+        "title": "Senior Engineer",
+        "company": "Acme",
+        "location": "On-site, Munich",
+        "posted_at": "2026-06-12",
+        "tier": "D",
+        "url": "https://boards.greenhouse.io/acme/jobs/77",
+        "source": {
+          "lane": "ats",
+          "provider": "greenhouse",
+          "board": "acme"
+        },
+        "gate_violations": [
+          {
+            "kind": "work_arrangement",
+            "detail": "on-site only; you require remote"
+          }
+        ]
+      },
+      {
+        "title": "Junior Developer",
+        "company": "Startup XYZ",
+        "location": "Remote",
+        "posted_at": "2026-06-11",
+        "tier": "D",
+        "url": "https://www.linkedin.com/jobs/view/4088888888",
+        "source": {
+          "lane": "linkedin",
+          "provider": "linkedin",
+          "board": "Search"
+        },
+        "gate_violations": [
+          {
+            "kind": "seniority_floor",
+            "detail": "junior role; below your senior floor"
+          },
+          {
+            "kind": "salary_floor",
+            "detail": "advertised band below your floor"
+          }
+        ]
+      }
+    ]
+  }
+}

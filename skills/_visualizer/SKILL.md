@@ -7,7 +7,7 @@ version: 1.0.0
 
 # Visualizer (Subagent)
 
-Render a structured command-output payload as either a self-contained HTML report or a styled-markdown body. The dispatching skill is one of the six Tier 1 user-facing commands (`match-jobs`, `job-search`, `check-job-notifications`, `funnel-report`, `check-inbox`, `interview-prep`); future Tier 2 work will add `analyze-cv`, `cover-letter`, and `optimize-profile`.
+Render a structured command-output payload as either a self-contained HTML report or a styled-markdown body. The dispatching skill is one of the Tier 1 user-facing commands (`match-jobs`, `job-search`, `check-job-notifications`, `funnel-report`, `check-inbox`, `interview-prep`, `deep-sweep`, `ultramode`); future Tier 2 work will add `analyze-cv`, `cover-letter`, and `optimize-profile`. The `ultramode` view (Phase 11) is the unified, source-agnostic multi-source results report.
 
 **This skill is dispatched only by other skills, via the `Agent` tool, per `../shared-references/subagent-protocol.md`.** It is not user-invocable.
 
@@ -19,7 +19,7 @@ The dispatcher passes a single JSON envelope as the prompt body:
 {
   "task": "render-report",
   "inputs": {
-    "view": "match-jobs | job-search | check-job-notifications | funnel-report | check-inbox | interview-prep",
+    "view": "match-jobs | job-search | check-job-notifications | funnel-report | check-inbox | interview-prep | deep-sweep | ultramode",
     "format": "html | markdown | plain",
     "data": { /* view-specific payload */ },
     "output_dir": "/abs/path/to/.job-scout/reports"
@@ -68,7 +68,7 @@ Verify all four required keys are present in `inputs`: `view`, `format`, `data`,
 }
 ```
 
-`view` must be one of the six allowed values. `format` must be one of `html`, `markdown`, `plain`.
+`view` must be one of the allowed values listed in the input shape above (`match-jobs`, `job-search`, `check-job-notifications`, `funnel-report`, `check-inbox`, `interview-prep`, `deep-sweep`, `ultramode`). `format` must be one of `html`, `markdown`, `plain`.
 
 ### Step 2: Resolve template path
 
@@ -212,4 +212,4 @@ The dispatcher's fallback chain handles the error.
 
 ## Not user-invocable
 
-This skill has no user-facing slash command. It is dispatched only via the `Agent` tool by the six Tier 1 commands. The dispatching skill always passes a self-contained JSON envelope.
+This skill has no user-facing slash command. It is dispatched only via the `Agent` tool by the Tier 1 commands. The dispatching skill always passes a self-contained JSON envelope.

@@ -215,3 +215,43 @@ Gated jobs render as:
 - **<<gate_violation kind 2>>** — <<one-line reason>>
 ```
 
+## `source_chip()` macro (Phase 11)
+
+A shared Jinja macro that turns a structured `source` object into a short, human-readable `.tag-chip` (HTML) or label (markdown). It is the single home for the structured-`source` → string rendering contract; templates **must never** interpolate `{{ job.source }}` directly, because the field is an object (`{lane, provider, board}`), not a string.
+
+- **Where it lives:** implemented once in `templates/html/_macros.html.j2` and `templates/markdown/_macros.md.j2`. The shared bases (`base.html.j2`, `base.md.j2`) import it and re-export it as `source_chip`, so every Tier 1 view inherits it; views that render standalone (e.g. for verification) import the partial directly with `{% import "_macros.html.j2" as macros %}` and call `macros.source_chip(...)`. See `../../shared-references/workspace-layout.md` § "Template macro contract".
+- **Input:** a structured `{lane, provider, board}` object, or — during the lazy tracker `2 → 3` upgrade — a bare legacy string.
+- **Output rules:**
+  - `lane == "linkedin"` → the `board` surface alone (e.g. `Top Picks`, `Search`) to preserve today's appearance.
+  - external lane → `Provider · Board`, title-cased from the slugs (e.g. `Greenhouse · Miro`); the board is omitted when it equals the provider (e.g. `remoteok`/`remoteok` → `Remoteok`).
+  - bare string → rendered verbatim.
+  - empty / missing → renders nothing.
+
+```html
+<span class="tag-chip">Greenhouse · Miro</span>   <!-- {lane:"ats", provider:"greenhouse", board:"miro"} -->
+<span class="tag-chip">Top Picks</span>           <!-- {lane:"linkedin", provider:"linkedin", board:"Top Picks"} -->
+```
+
+## `ultramode` view — unified multi-source results (Phase 11)
+
+The `ultramode` view is `match-jobs` with source awareness. It reuses every job-card primitive (tier pill, "⚡ apply early" chip, dimension table, gated banner, "Filtered out" group, toolbar) and adds **only three** source-specific elements:
+
+1. **Source chip** — `{{ macros.source_chip(job.source) }}` appended to the card's `.meta` line, so the list stays one unified ranking rather than per-source groups.
+2. **"also seen on N"** — when `job.also_seen_on[]` is non-empty (other sources that surfaced the same role after dedupe), a `.tag-chip.accent` "also seen on N" indicator sits in the `.meta` line, with a secondary "Also on: …" line of source chips below the card body.
+3. **"Apply at source ↗" CTA** — a `.copy-btn`-styled anchor to the canonical `job.url`, the direct apply route, distinct from the inline source chip.
+
+```html
+<article class="job-card" data-tier="A" data-sort_date="2026-06-15" data-sort_company="Vercel">
+  <div class="header">
+    <div class="title">Senior Backend Engineer <span class="tag-chip" style="background:var(--accent-from);color:#fff">⚡ apply early</span></div>
+    <div class="score-pill tier-a">A</div>
+  </div>
+  <div class="meta">Vercel · Remote (Global) · $170–200k · 2026-06-15 · {{ macros.source_chip(job.source) }} · <span class="tag-chip accent">also seen on 3</span></div>
+  <!-- dimension table … -->
+  <div class="meta" style="margin-top:8px">Also on: {{ macros.source_chip(s) for s in job.also_seen_on }}</div>
+  <div style="margin-top:10px"><a href="{{ job.url }}" class="copy-btn">Apply at source ↗</a></div>
+</article>
+```
+
+The dispatcher pre-sorts `data.results` tier A→B→C, freshest-first within tier, gated last; the template renders in order and collapses any `gate_violations[]` entry into the "Filtered out" group. Worked payloads: `../examples/ultramode-{multi-source,gated,empty,also-seen}.json`.
+
