@@ -14,6 +14,32 @@ Without enforcement, state writes drift from spec over time — skills invent ad
 4. **Type checks:** strings stay strings, arrays stay arrays, numbers stay numbers, ISO8601 fields match `^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z?)?$`.
 5. **Status transition check:** if updating an existing job, the new status must be a legal successor of the current status per `canonical-schemas.md` § Status transition rules.
 
+## Canonical reader: `tracker_read_source(value)`
+
+The tracker's `source` field has two shapes on disk during the v2 → v3 lazy upgrade: a bare legacy string (`"Search"`) written before Phase 11, and the structured object `{lane, provider, board}` written after. **Every skill that reads `tracker.jobs[*].source` MUST call `tracker_read_source(value)`** rather than inspecting the field's shape itself. This is the single point where the legacy lift lives.
+
+Contract:
+
+- **Bare string in →** lift to LinkedIn structured: `tracker_read_source("Search")` returns `{lane: "linkedin", provider: "linkedin", board: "Search"}`. The string becomes `board`; `lane` and `provider` are both `"linkedin"`.
+- **Structured object in →** pass through unchanged (assume already canonical).
+- **Null/missing in →** return `{lane: "linkedin", provider: "linkedin", board: "Search"}` as a safe default (matches the historical implicit default for entries written without a source).
+
+```bash
+# jq implementation — emits the structured source for any legacy or structured input.
+# Usage: jq '.jobs["<id>"].source | <this filter>' tracker.json
+tracker_read_source='
+  if . == null then
+    {lane: "linkedin", provider: "linkedin", board: "Search"}
+  elif type == "string" then
+    {lane: "linkedin", provider: "linkedin", board: .}
+  else
+    .
+  end
+'
+```
+
+This is a **read-side** shim only — it never writes. The structured form is persisted lazily: the next time a skill writes an entry, it writes the structured `source` (and bumps the tracker file `schema_version` to `3` on that first write). See `canonical-schemas.md` § Structured `source` (v3).
+
 ## Standard validation procedure (operational)
 
 Skills must implement this as a pre-write step. The exact mechanism in this codebase is a `jq` check followed by an atomic file-rename pattern.
@@ -54,11 +80,12 @@ validate_tracker() {
     echo "SCHEMA_VIOLATION: rubric_version $bad_rv" >&2; return 2
   fi
 
-  # 4. schema_version present and == 2
+  # 4. schema_version present and 2 or 3
+  #    (v2 = pre-Phase-11 string source; v3 = structured source after first lazy write)
   local sv
   sv=$(jq -r '.schema_version // "missing"' "$f")
-  if [ "$sv" != "2" ]; then
-    echo "SCHEMA_VIOLATION: schema_version is $sv, expected 2" >&2; return 2
+  if [ "$sv" != "2" ] && [ "$sv" != "3" ]; then
+    echo "SCHEMA_VIOLATION: schema_version is $sv, expected 2 or 3" >&2; return 2
   fi
 
   return 0

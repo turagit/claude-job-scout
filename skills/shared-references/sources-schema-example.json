@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "base_country": "Portugal",
+  "target_geography": ["Portugal", "remote-EU"],
+  "priority_order": [
+    "Greenhouse (Miro)",
+    "RemoteOK",
+    "Adzuna",
+    "Upwork RSS"
+  ],
+  "backbone": [
+    "Adzuna"
+  ],
+  "sources": [
+    {
+      "name": "Greenhouse (Miro)",
+      "url": "https://boards.greenhouse.io/miro",
+      "category": "ats-provider",
+      "access_lane": "api",
+      "endpoint": "https://boards-api.greenhouse.io/v1/boards/miro/jobs?content=true",
+      "needs_key": false,
+      "needs_slug": true,
+      "priority": 1,
+      "poll_method": "GET the board JSON endpoint; each company board is one slug (here 'miro'); paginate via the returned jobs array",
+      "notes": "Public board API, no key required. needs_slug is true because the company board token must be supplied per target company.",
+      "verified_at": "2026-06-15T00:00:00Z"
+    },
+    {
+      "name": "RemoteOK",
+      "url": "https://remoteok.com",
+      "category": "remote-board",
+      "access_lane": "api",
+      "endpoint": "https://remoteok.com/api",
+      "needs_key": false,
+      "needs_slug": false,
+      "priority": 2,
+      "poll_method": "GET the JSON feed; first element is a legal/metadata notice, skip it; filter the rest by tags and posted date",
+      "notes": "Whole-board remote feed; set a descriptive User-Agent. Remote-only, so best for remote-EU target geography.",
+      "verified_at": "2026-06-15T00:00:00Z"
+    },
+    {
+      "name": "Adzuna",
+      "url": "https://www.adzuna.com",
+      "category": "aggregator",
+      "access_lane": "api",
+      "endpoint": "https://api.adzuna.com/v1/api/jobs/pt/search/1?results_per_page=50",
+      "needs_key": false,
+      "needs_slug": false,
+      "priority": 3,
+      "poll_method": "GET the country search endpoint (here 'pt' for Portugal) with app_id and app_key query params; paginate via the trailing page number in the path",
+      "notes": "Occupation-agnostic multi-country aggregator; part of the universal backbone. Free tier needs an app_id/app_key pair — see needs_key. Country code in the path is led by base_country.",
+      "verified_at": "2026-06-15T00:00:00Z"
+    },
+    {
+      "name": "Upwork RSS",
+      "url": "https://www.upwork.com",
+      "category": "freelance-marketplace",
+      "access_lane": "rss",
+      "endpoint": "https://www.upwork.com/ab/feed/jobs/rss?q=backend&sort=recency",
+      "needs_key": false,
+      "needs_slug": false,
+      "priority": 4,
+      "poll_method": "Fetch the saved-search RSS feed; each item is one posting; dedupe by the item GUID before extracting",
+      "notes": "Freelance/contract postings via a public saved-search RSS feed; the q parameter carries the search terms. Best for freelance contract_type workspaces.",
+      "verified_at": "2026-06-15T00:00:00Z"
+    }
+  ]
+}
