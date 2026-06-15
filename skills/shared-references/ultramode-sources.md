@@ -327,7 +327,7 @@ On a fingerprint collision, choose the **canonical "apply here" entry** by direc
 ATS  >  LinkedIn  >  aggregator  >  marketplace
 ```
 
-(`ats-provider` category wins; then the LinkedIn lane; then `aggregator`/`remote-board`/`national-board`/`community`; then `freelance-marketplace` last.) The canonical entry's URL is the row's "apply at source" link. All other hits are **retained** on the canonical entry as `also_seen_on[]` (one entry per other source — name + url + lane), surfaced in the unified view as "also seen on N sources."
+(`ats-provider` category wins; then the LinkedIn lane; then `aggregator`/`remote-board`/`national-board`/`community`; then `freelance-marketplace` last.) The canonical entry's URL is the row's "apply at source" link. All other hits are **retained** on the canonical entry as `also_seen_on[]` (one entry per other source — the loser's structured `source` object `{lane, provider, board}`, the same shape the `ultramode` view's `source_chip()` macro renders), surfaced in the unified view as "also seen on N sources."
 
 ### Where canonical selection runs — dispatcher merge time (cross-source step)
 
@@ -357,7 +357,7 @@ function merge_delta_into_tracker(delta, tracker):
     else:                                           # the merged entry stays canonical
         winner.also_seen_on.append(sighting(loser))
 
-    # sighting(x) = { name: x.source.provider-or-board, url: x.url, lane: x.source.lane }
+    # sighting(x) = x.source   # the loser's structured {lane, provider, board}; source_chip() renders the label
 ```
 
 Two consequences make this single-writer-safe: (1) because the dispatcher merges deltas **serially** (no two sweeps write at once), every collision is resolved deterministically against the already-merged entry; (2) because the loser is **retained** as an `also_seen_on[]` sighting and never re-fetched (its JD was already filtered out, or is simply dropped), the merge costs no extra token spend. `_source-sweep` is the producer of the per-source deltas; **this merge-time selection is the consumer that turns N same-fingerprint deltas into one canonical entry + `also_seen_on[]`.**

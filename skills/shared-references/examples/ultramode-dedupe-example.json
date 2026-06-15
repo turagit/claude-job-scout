@@ -47,29 +47,13 @@
     "posted_at": "2026-06-14",
     "fingerprint": "globex|senior platform engineer|remote",
     "also_seen_on": [
-      {
-        "name": "linkedin",
-        "url": "https://www.linkedin.com/jobs/view/4019998877",
-        "source": { "lane": "linkedin", "provider": "linkedin", "board": "Search" }
-      },
-      {
-        "name": "adzuna",
-        "url": "https://www.adzuna.com/jobs/details/778899",
-        "source": { "lane": "aggregator", "provider": "adzuna", "board": "adzuna" }
-      }
+      { "lane": "linkedin", "provider": "linkedin", "board": "Search" },
+      { "lane": "aggregator", "provider": "adzuna", "board": "adzuna" }
     ]
   },
   "also_seen_on": [
-    {
-      "name": "linkedin",
-      "url": "https://www.linkedin.com/jobs/view/4019998877",
-      "source": { "lane": "linkedin", "provider": "linkedin", "board": "Search" }
-    },
-    {
-      "name": "adzuna",
-      "url": "https://www.adzuna.com/jobs/details/778899",
-      "source": { "lane": "aggregator", "provider": "adzuna", "board": "adzuna" }
-    }
+    { "lane": "linkedin", "provider": "linkedin", "board": "Search" },
+    { "lane": "aggregator", "provider": "adzuna", "board": "adzuna" }
   ],
   "_why_canonical": "ats wins under ATS > LinkedIn > aggregator > marketplace (../ultramode-sources.md, Decision 6). The linkedin and aggregator sightings are retained as also_seen_on[], not dropped and not re-fetched. The location 'Remote (Anywhere)' on the aggregator normalises to 'remote' (normalise_location), which is why all three collide on one fingerprint."
 }
