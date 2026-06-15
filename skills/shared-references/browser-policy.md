@@ -10,6 +10,19 @@ Every command in this plugin that touches LinkedIn (or any other website) does s
 
 3. **Never send sensitive data through the browser automation.** No SSN, no bank details, no passwords, no session tokens. If a LinkedIn form asks for any of these, stop and hand off to the user.
 
+## Read-only `WebFetch` carve-out (ultramode public sources)
+
+Phase 11 ultramode reads structured **public** job sources — ATS JSON boards, aggregator/feed APIs, RSS feeds — over read-only `WebFetch`. This is a plain HTTP `GET` of a public URL: **no logged-in session, no cookies, no automation framework, no rendered browser.** It is therefore **not browser automation and not a violation of Hard Rule #1.**
+
+To be precise about what this carve-out does and does not change:
+
+- **Hard Rule #1 still governs all *in-browser* work.** The Claude Chrome extension remains the **only** mechanism that touches the user's logged-in session — opening listings, applying, recruiter replies, and any sweep of a logged-in surface. The carve-out adds a separate, sessionless read path for public HTTP; it does not relax the in-browser rule one inch.
+- **`WebFetch` here means: public HTTP `GET` → parse JSON/XML/HTML.** No credentials, no session tokens, no form submission, no clicking. If a source needs a login to read it, it is **not** eligible for this lane.
+- **The forbidden list is unchanged and still explicit.** No Playwright, no Selenium, no Puppeteer, no headless Chrome, no computer use, no MCP browser server other than the official Claude Chrome extension. The carve-out introduces **no** new browser-automation framework — it is the plugin's existing `WebFetch` capability, used read-only.
+- **Login-walled sources use the extension lane, never credentialed HTTP scraping.** Most freelance marketplaces, Slack/Discord communities, and some national boards/consumer aggregators sit behind a login. These are read through the Chrome extension in the user's own browser (with dedupe-before-extract), **never** by sending the user's credentials or session cookies through `WebFetch`. Per-source lane classification lives in `ultramode-sources.md`.
+
+In short: public, sessionless HTTP reads are permitted via `WebFetch`; anything touching the user's logged-in session stays inside the Chrome extension, and every other automation framework stays forbidden.
+
 ## Why this matters
 
 The plugin's trust model is: "Claude is my helper inside the browser I already use." The moment that boundary is crossed — computer use, external automation, or moving secrets around — the trust model breaks and users are right to panic. Keeping every browser interaction inside the Chrome extension means:
