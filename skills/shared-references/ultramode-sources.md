@@ -367,3 +367,15 @@ A runnable fixture proving this rule — three same-fingerprint jobs from `ats`,
 ### ATS-backed JD enrichment
 
 When an **aggregator** (or any non-ATS source) wins a collision whose canonical resolves to an **employer ATS**, fetch the **full JD from the ATS** (its `api`-lane JSON carries the complete description) rather than scoring on the aggregator's truncated text. This prevents scoring being starved by short aggregator snippets. The ATS JD is what gets stored under `jds/<id>.txt` for the canonical entry.
+
+## Key handling (D7) — keyless-first, never in a browser form
+
+Most of the taxonomy is **keyless**: every ATS-lane probe (Greenhouse, Lever, Ashby, …), every keyless backbone feed (RemoteOK, Remotive, Arbeitnow, Himalayas, Working Nomads, We Work Remotely, HN Who-is-hiring), and the `html`/`rss` lanes all run with **zero API keys**. **Keyless-first is the rule: ultramode runs a full sweep on a fresh workspace with no keys at all.** Only a few keyed aggregators (`needs_key: true` — Adzuna, Jooble) require a token.
+
+Where keys live and how they flow:
+
+- **Storage.** Keys live in `user-profile.json` under `ultramode.api_keys` — a `{ "<provider-slug>": "<token>" }` map (canonical-schemas § `user-profile.json` `ultramode`). This is **gitignored workspace state**; keys are never committed, never written to `config.json`, never written to `sources.json` (the registry only marks `needs_key: true`).
+- **Entry.** Keys are added/removed **only** via `/config ultramode key <provider> <token>` / `--remove` (the candidate pastes the token into the terminal). **A key is NEVER entered into a browser form** — ultramode does not type tokens into any web page the Chrome extension is driving (Hard Rule on sensitive data: SSN, bank details, passwords, and API keys never go into a browser form).
+- **Lookup.** The dispatcher (`/ultramode`, Task 7) reads `ultramode.api_keys` and passes **only** the key a given `needs_key` source requires into that source's `_source-sweep` envelope (`api_keys`), looked up by provider slug. Keys are never logged or echoed back to the candidate.
+- **Prompt + graceful skip.** When discovery flags a keyed aggregator that **materially** helps the lane, the dispatcher prompts **inline** with the signup link, once. If the candidate declines, or the key is simply absent from `ultramode.api_keys`, the dispatcher **gracefully skips** that source — never blocks the run — and records `Skipped <provider> (no API key)` in the report so the candidate sees what was not searched and can add the key later via `/config`.
+- **`ultramode.default`.** The `/config ultramode default <true|false>` toggle (default `false`) controls whether ultramode runs without re-prompting; it lives in the same `ultramode` block.
