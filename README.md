@@ -23,6 +23,7 @@ All commands are user-invoked slash commands. The model will **not** auto-trigge
 |---------|-------------|
 | `/check-job-notifications` | **Daily driver** — check notifications + Top picks + Saved jobs, expand similar-jobs from A-tier hits, score new listings, save a ranked report |
 | `/deep-sweep` | **Weekly thorough scan** — full Boolean query plan (title clusters + skill queries + synonyms), all source surfaces, Past Week, pages 1-3, similar-jobs expansion. Run once a week |
+| `/ultramode` | **Opt-in multi-source sweep** beyond LinkedIn (off by default) — builds a verified per-workspace source registry from your CV, sweeps it, and returns one unified tier-ranked report with a direct apply-at-source link per role. `sources`: edit the registry; `onboarding`: re-run the lane interview |
 | `/analyze-cv` | Analyse and optimise your CV for ATS and recruiters; discover per-workspace dealbreakers, voice, scoring dimensions, and Boolean query clusters |
 | `/job-search` | Zero-arg: the full query plan — Boolean title clusters, skill-combination queries, geo iteration, synonym rescue, repost dedupe. Single-arg: search that title only |
 | `/create-alerts` | Zero-arg: derive 3-5 LinkedIn alerts from your query plan. `manual`: dictate criteria yourself |
@@ -46,6 +47,30 @@ These are model-auto-loaded playbooks used by the commands above. You don't invo
 | `_gate-engine` | Hard-gate evaluator — runs before scoring; auto-D-tiers any job that violates a declared dealbreaker |
 | `_profile-optimizer` | LinkedIn SEO, headline formulas, section-by-section optimisation |
 | `_recruiter-engagement` | Lead qualification, response drafting, conversation management |
+
+---
+
+### Ultramode — sourcing beyond LinkedIn (v0.11.0+)
+
+LinkedIn is one market surface. Many of the roles you could actually land are posted elsewhere first — on employer ATS boards, on occupation- and geography-specific boards, on remote-native feeds, in freelance marketplaces, and in community channels. **Ultramode** is an opt-in sweep that widens your sourcing into those places and folds everything it finds into the same tracker, scoring, and report you already use.
+
+**It is off by default.** The LinkedIn pipeline is unchanged — turning ultramode on is a choice you own.
+
+**How to use it:**
+
+- `/ultramode` — runs the external sweep and renders its own report.
+- `/ultramode sources` — re-runs source discovery or lets you edit the registry (and `/ultramode sources add <url|name>` adds a board you already use).
+- `/ultramode onboarding` — re-runs the lane interview.
+
+**The first run** reads what it can from your CV and keyword corpus, then asks you for what it cannot safely infer — your **base country** (asked explicitly and always confirmed out loud, never guessed from an email handle), your target geography, work arrangement, contract type, and field. From that it builds a **verified** per-workspace source registry (`.job-scout/sources.json`): it enumerates candidate sources widely, live-probes and adversarially verifies every one before it counts, and keeps going until fresh strategies turn up nothing new. Nothing enters the registry on the model's word alone.
+
+**The source categories** it covers are universal — employer ATS providers, remote-native boards, aggregators, national and vertical boards, freelance marketplaces, and community channels — but the concrete sources that fill them are derived for *your* lane. A small universal backbone is always available so even rare occupations have coverage out of the box.
+
+**Keyless-first.** Ultramode works immediately with zero API keys (ATS boards, niche and remote feeds, and any keyless aggregator). If discovery finds a keyed aggregator that would materially improve coverage for your lane, it asks inline with the signup link and gracefully skips if you decline. Any keys you add live in your gitignored workspace config and are never entered into a browser form.
+
+**The results** come back as one unified, tier-ranked report — every job from every source in a single list, ranked A→B→C and freshest-first, with the **source shown only as a chip**, never as the organising axis. Each role carries a direct **apply-at-source** link to the canonical, direct-to-employer listing (employer ATS is preferred over LinkedIn, aggregators, and marketplaces), plus an "also seen on N sources" line. Dealbreaker-gated jobs collapse into the same "Filtered out" group as everywhere else.
+
+Set `/config ultramode.default on` to have your existing `/job-search` and `/deep-sweep` sweeps widen to the external registry automatically.
 
 ---
 
