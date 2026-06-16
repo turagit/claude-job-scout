@@ -313,7 +313,7 @@ The derived map of what the user's CV can credibly speak to, used by discovery a
 
 - `stated` — capabilities the CV names outright (the literal skills and tools on the page).
 - `latent` — capabilities strongly implied by the stated ones but not named (e.g. someone who ran on-call rotations for a payments platform latently knows incident response).
-- `adjacent` — neighbouring capabilities a short hop away that the user could credibly grow into or that recruiters would read across to.
+- `adjacent` — neighbouring capabilities a short hop away that the user could credibly grow into or that recruiters would read across to. Each adjacent entry is an **object** carrying a `capability` and a one-sentence `domain_bridge` justification (the bounded-adjacency rule — see `capability-graph.md`), so every adjacency is defensible rather than a blind keyword sprawl.
 
 ```json
 {
@@ -322,7 +322,11 @@ The derived map of what the user's CV can credibly speak to, used by discovery a
   "built_at": "2026-06-16T09:00:00Z",
   "stated": ["python", "postgresql", "aws lambda", "terraform"],
   "latent": ["incident response", "infrastructure as code", "cost optimisation"],
-  "adjacent": ["kubernetes", "platform engineering", "data engineering"]
+  "adjacent": [
+    { "capability": "kubernetes", "domain_bridge": "containerised Lambda + Terraform-managed infra reads across to orchestration" },
+    { "capability": "platform engineering", "domain_bridge": "Terraform/Lambda plus latent IaC ownership extends to team-facing platform tooling" },
+    { "capability": "data engineering", "domain_bridge": "PostgreSQL at scale + Python pipelines transfer to ETL ownership" }
+  ]
 }
 ```
 

@@ -97,6 +97,18 @@ Generate the Boolean search clusters that `/job-search` and `/deep-sweep` will r
 
 Workspaces without `query_clusters[]` are never blocked — the search commands fall back to one plain query per title.
 
+### Step 3e: Capability-graph discovery (D5, v0.11.0)
+
+Build the **CV capability graph** — the recall engine that lets `/job-search` and `/deep-sweep` reach great-fit roles a literal keyword match misses. Full build, bounded-adjacency, and read contracts live in `../shared-references/capability-graph.md`; this step is the propose-then-approve UX and the cache write.
+
+1. Run the **single LLM pass** described in `../shared-references/capability-graph.md` § The build over three inputs already in context: `cv_summary`, the full CV text (the parsed text from `cache/cv-<cv_hash>.json`), and the **dimensions just approved in Step 3c**. It emits the `{stated, latent, adjacent}` payload. Every `adjacent` entry MUST carry an explicit `domain_bridge` sentence naming the one-hop bridge from a `stated`/`latent` capability (bounded adjacency — see § Bounded adjacency).
+2. Present the proposed graph to the user as a structured block — the three bands, and for each adjacency its `domain_bridge` justification so the hop is reviewable. Ask: "Here's what your CV can credibly speak to beyond the literal keywords. The adjacencies are one-hop stretches — each shows why. Keep all of them, or trim any that don't fit the roles you want?" (same propose-then-approve UX as the dimensions and clusters above).
+3. On approval (or after the user trims adjacencies), write `.job-scout/cache/capability-graph.json` keyed by `cv_hash`, per the shape in `../shared-references/canonical-schemas.md` § `cache/capability-graph.json` — set `schema_version: 1`, `cv_hash` to the current CV's hash, and `built_at` to now (ISO8601). Write it via the **atomic temp-then-rename** pattern in `../shared-references/state-validators.md` § Atomic write pattern, **immediately on approval** — NOT batched with the end-of-run profile write below, so a later crash in this run cannot lose an already-approved graph.
+
+**Auto-build fallback (existing workspace, cache absent at discovery time).** When a search command (`/job-search`, `/deep-sweep`) needs the graph but `cache/capability-graph.json` is absent or stale by `cv_hash` on a workspace that has already completed discovery, auto-build it inline from the same three inputs and show a **one-time "I've derived these adjacent capabilities from your CV — review and trim?"** prompt before the first capability search. This is a lightweight catch-up — it does NOT trigger a full `/analyze-cv --rediscover`. On approval write via the same atomic pattern, immediately, keyed by `cv_hash`.
+
+The capability graph is consumed by the `capability` query family (`../shared-references/linkedin-search.md` §3), where it combines with the jargon alias map (`../shared-references/jargon-normalizer.md`) to expand searches — recall-only, never a dropper.
+
 ### Persist + mark discovery complete
 
 After the interview, write all changes to `user-profile.json` via the atomic-write pattern in `../shared-references/state-validators.md` (using `validate_profile`). Set `discovery_complete: true` and `last_updated: <now>`.
