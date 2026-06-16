@@ -31,6 +31,7 @@ _⚡ = posted within 48 hours — apply early._
 #### {% if job.tier == "A" %}🟢{% else %}🟡{% endif %} {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %} · {{ job.company }} ({{ job.tier }})
 
 {% if job.matched_query %}_Via query: `{{ job.matched_query }}`_
+{% endif %}{% if job.competitiveness or job.confidence or job.match_explanation_tag %}{% if job.match_explanation_tag %}`{{ job.match_explanation_tag|replace('-', ' ') }}`{% endif %}{% if job.competitiveness %} · 🎯 competitiveness: **{{ job.competitiveness }}**{% endif %}{% if job.confidence %} · confidence: **{{ job.confidence }}**{% endif %}
 {% endif %}
 {% if job.dimensions %}| Dimension | Tier | Evidence |
 |---|:---:|---|

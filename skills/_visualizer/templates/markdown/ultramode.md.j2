@@ -35,7 +35,9 @@ _⚡ = posted within 48 hours — apply early. Source column shows the canonical
 #### {% if job.tier == "A" %}🟢{% else %}🟡{% endif %} {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %} · {{ job.company }} ({{ job.tier }})
 
 _Source: {{ macros.source_chip(job.source) }}{% if job.also_seen_on and job.also_seen_on|length > 0 %} · also seen on {{ job.also_seen_on|length }} ({% for s in job.also_seen_on %}{{ macros.source_chip(s) }}{% if not loop.last %}, {% endif %}{% endfor %}){% endif %}_
-
+{% if job.competitiveness or job.confidence or job.match_explanation_tag %}
+{% if job.match_explanation_tag %}`{{ job.match_explanation_tag|replace('-', ' ') }}`{% endif %}{% if job.competitiveness %} · 🎯 competitiveness: **{{ job.competitiveness }}**{% endif %}{% if job.confidence %} · confidence: **{{ job.confidence }}**{% endif %}
+{% endif %}
 {% if job.dimensions %}| Dimension | Tier | Evidence |
 |---|:---:|---|
 {% for dim_name, dim in job.dimensions.items() %}| {{ dim_name }} | **{{ dim.tier }}** | {% for q in dim.evidence[:2] %}_"{{ q }}"_{% if not loop.last %}<br/>{% endif %}{% endfor %} |

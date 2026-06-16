@@ -207,6 +207,10 @@ Build the `data` payload for the `ultramode` view per `../shared-references/rend
       "dimensions": { "<dim>": {"tier": "A|B|C|D", "evidence": ["..."]} },
       "gate_violations": [{"kind": "...", "detail": "..."}],
       "rubric_version": "v1", "rationale": "<A-tier / top-B only>",
+      "competitiveness": "high | med | low — OPTIONAL; omit when not yet derived (never null)",
+      "competitiveness_evidence": "<short supporting note — OPTIONAL; omit when absent>",
+      "confidence": "high | med | low — OPTIONAL; omit when not yet derived (never null)",
+      "match_explanation_tag": "all-fit | one-gap | multiple-gaps | overqualified | underqualified | trajectory-concern — OPTIONAL; omit when absent",
       "url": "<canonical apply-at-source URL>",
       "source": { "lane": "...", "provider": "...", "board": "..." },
       "also_seen_on": [ { "lane": "...", "provider": "...", "board": "..." } ],
@@ -217,7 +221,7 @@ Build the `data` payload for the `ultramode` view per `../shared-references/rend
 ```
 
 - **Source is a chip, not a grouping axis** — the list is **one unified, source-agnostic ranking**, never bucketed by source. `url` is the canonical "apply at source" link; mirrors go on `also_seen_on[]` ("also seen on N sources").
-- **Ordering is the dispatcher's responsibility:** pre-sort `results[]` to tier A → B → C (freshest-first within each tier, descending `posted_at`), gated (D-tier) entries last. The template does not re-sort.
+- **Ordering is the dispatcher's responsibility:** pre-sort `results[]` to tier A → B → C, gated (D-tier) entries last. **Within-tier (Phase 12):** order by `confidence` high → med → low (absent `confidence` sorts after any explicit value, treated as lowest), then `posted_at` descending (freshest-first) as the tie-breaker. The COMMAND applies this here in the payload-build; the template does not re-sort. The four optional scoring fields (`competitiveness`, `competitiveness_evidence`, `confidence`, `match_explanation_tag`) pass through verbatim from the tracker / score cache when present and are **omitted entirely when absent** — never `null` (see `../shared-references/canonical-schemas.md` § "Written lazily").
 - `source_breakdown` is an optional name→count strip (e.g. `Greenhouse · Miro`). Include any `Skipped <provider> (no API key)` line from Step 5 in the subtitle or a notes strip so the candidate sees what was not searched.
 
 ### Step 4h: Render via `_visualizer` (never inline)

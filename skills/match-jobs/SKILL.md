@@ -125,6 +125,10 @@ Construct a `data` payload for the render layer. Tiers come straight from the `_
       "dimensions": { "<dim_name>": {"tier": "A|B|C|D", "evidence": ["...", "..."]} },
       "gate_violations": [{"kind": "...", "detail": "..."}],
       "rubric_version": "v1",
+      "competitiveness": "high | med | low — OPTIONAL; omit the key entirely when not yet derived (never null)",
+      "competitiveness_evidence": "<short supporting note — OPTIONAL; omit when absent>",
+      "confidence": "high | med | low — OPTIONAL; omit the key entirely when not yet derived (never null)",
+      "match_explanation_tag": "all-fit | one-gap | multiple-gaps | overqualified | underqualified | trajectory-concern — OPTIONAL; omit when absent",
       "url": "<absolute job URL on LinkedIn — optional; include when known>",
       "tags": ["<tag1>", "<tag2>"],
       "rationale": "<one-paragraph rationale for A-tier and top B-tier; empty string otherwise>"
@@ -133,7 +137,7 @@ Construct a `data` payload for the render layer. Tiers come straight from the `_
 }
 ```
 
-Within each tier, order results by `posted_at` descending and set `fresh: true` per `../shared-references/linkedin-search.md` §6 — templates render the "⚡ apply early" chip. `tags` should be drawn from the matched skills / signals already computed during scoring. Limit to 5 tags per job.
+**Within-tier ordering (Phase 12).** Within each tier, order results by `confidence` high → med → low (entries whose `confidence` is absent sort *after* any explicit value, treated as lowest), then by `posted_at` descending as the tie-breaker. This is the COMMAND's responsibility, applied here in the payload-build before dispatch — the template renders `results[]` in the order supplied (mirroring the existing tier-order contract; the template never re-sorts). The optional scoring fields (`competitiveness`, `competitiveness_evidence`, `confidence`, `match_explanation_tag`) are passed through verbatim from the tracker / score cache when present, and **omitted entirely when absent** — never written as `null` (see `../shared-references/canonical-schemas.md` § "Written lazily"). Set `fresh: true` per `../shared-references/linkedin-search.md` §6 — templates render the "⚡ apply early" chip. `tags` should be drawn from the matched skills / signals already computed during scoring. Limit to 5 tags per job.
 
 The `url` is an absolute LinkedIn job URL captured during job extraction. It is optional: when present, the templates render a "View posting ↗" link in HTML and a clickable title in markdown; when omitted, the templates fall back to plain title text via `{% if job.url %}` guards.
 

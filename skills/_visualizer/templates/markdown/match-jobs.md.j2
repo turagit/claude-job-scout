@@ -25,6 +25,8 @@ _⚡ = posted within 48 hours — apply early._
 {% for job in data.results %}{% if not (job.gate_violations and job.gate_violations|length > 0) %}{% if job.tier == "A" or job.tier == "B" %}
 #### {% if job.tier == "A" %}🟢{% else %}🟡{% endif %} {% if job.url %}[{{ job.title }}]({{ job.url }}){% else %}{{ job.title }}{% endif %} · {{ job.company }} ({{ job.tier }})
 
+{% if job.competitiveness or job.confidence or job.match_explanation_tag %}{% if job.match_explanation_tag %}`{{ job.match_explanation_tag|replace('-', ' ') }}`{% endif %}{% if job.competitiveness %} · 🎯 competitiveness: **{{ job.competitiveness }}**{% endif %}{% if job.confidence %} · confidence: **{{ job.confidence }}**{% endif %}
+{% endif %}
 {% if job.dimensions %}| Dimension | Tier | Evidence |
 |---|:---:|---|
 {% for dim_name, dim in job.dimensions.items() %}| {{ dim_name }} | **{{ dim.tier }}** | {% for q in dim.evidence[:2] %}_"{{ q }}"_{% if not loop.last %}<br/>{% endif %}{% endfor %} |

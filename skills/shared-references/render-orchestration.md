@@ -51,6 +51,21 @@ For `interview-prep`: `<role-slug>` is `<tracker-id>-<4-char-disambiguator>`. Th
 
 Tiers come straight from the `_job-matcher` v1 rubric — uppercase `A | B | C | D` with per-dimension `{tier, evidence[]}` breakdowns. There is no aggregate score and no threshold mapping. D-tier (gated) jobs DO reach the renderer, carrying `gate_violations[]` — templates render them in a collapsed "Filtered out" group with a gated banner, never among the live results. Templates render `tier-a` / `tier-b` / `tier-c` pill variants for live cards (apply `|lower` to the tier when building the CSS class).
 
+### Optional scoring signals + within-tier ordering (Phase 12)
+
+The five **job-card** views (`match-jobs`, `job-search`, `check-job-notifications`, `deep-sweep`, `ultramode`) each carry four **optional, additive** scoring fields on every `results[]` entry. They surface as native `.tag-chip` badges on A/B-tier cards only (the C/D tiers and the gated group never show them). The fields and their enums (single source of truth: `canonical-schemas.md` § "Canonical enums"):
+
+| Field | Allowed values | Badge |
+|---|---|---|
+| `competitiveness` | `high` \| `med` \| `low` \| absent | `🎯 competitiveness: <value>` (`.tag-chip`) — the chip's `title` carries `competitiveness_evidence` as a hover tooltip |
+| `competitiveness_evidence` | string \| absent | (no standalone badge — tooltip only) |
+| `confidence` | `high` \| `med` \| `low` \| absent | `confidence: <value>` (`.tag-chip`) |
+| `match_explanation_tag` | `all-fit` \| `one-gap` \| `multiple-gaps` \| `overqualified` \| `underqualified` \| `trajectory-concern` \| absent | the tag, hyphens swapped for spaces (`.tag-chip.accent`) |
+
+**Back-compatibility (hard rule).** These keys are written **lazily** by the scorer — populated on the next scoring of an entry, never backfilled — and are **omitted entirely (never `null`)** when not yet derived. Pre-Phase-A entries simply lack the keys. Templates read them defensively (`{{ job.confidence or '' }}`); an absent field renders **nothing** and never errors. The whole badge row is guarded by `{% if job.tier in ['A','B'] and (job.competitiveness or job.confidence or job.match_explanation_tag) %}`, so a card with none of the three signals shows no badge row at all. No new CSS — the badges reuse `.tag-chip` / `.tag-chip.accent`.
+
+**Within-tier ordering is the COMMAND's responsibility (not the template).** Mirroring the existing tier-order contract, the dispatching command pre-sorts `results[]` in its payload-build step **before** dispatching to `_visualizer`; the template renders the array in supplied order and never re-sorts. The within-tier order is: **`confidence` high → med → low** (an entry whose `confidence` is absent sorts *after* any explicit value — treated as lowest), then **`posted_at` descending** as the tie-breaker. (`check-job-notifications` keeps its compensation-disclosure preference between the confidence and `posted_at` keys.) Each of the five commands documents this in its own payload-build step. Scope guard: only the five job-card views — `check-inbox`, `funnel-report`, and `interview-prep` render no job cards and carry none of these fields.
+
 ### The `ultramode` view (D8 — unified, source-agnostic results)
 
 `ultramode` is the single results view for a multi-source run (Phase 11). It mirrors `match-jobs` exactly — same tier pills, per-dimension table, "⚡ apply early" chip, "Filtered out" gated group, and toolbar — with three source-aware additions and one ordering rule:

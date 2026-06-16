@@ -27,6 +27,8 @@ _⚡ = posted within 48 hours — apply early._
 {% for note in data.results %}{% if not (note.gate_violations and note.gate_violations|length > 0) %}{% if note.tier == "A" or note.tier == "B" %}
 #### {% if note.tier == "A" %}🟢{% else %}🟡{% endif %} {% if note.url %}[{{ note.title }}]({{ note.url }}){% else %}{{ note.title }}{% endif %} · {{ note.company }} ({{ note.tier }})
 
+{% if note.competitiveness or note.confidence or note.match_explanation_tag %}{% if note.match_explanation_tag %}`{{ note.match_explanation_tag|replace('-', ' ') }}`{% endif %}{% if note.competitiveness %} · 🎯 competitiveness: **{{ note.competitiveness }}**{% endif %}{% if note.confidence %} · confidence: **{{ note.confidence }}**{% endif %}
+{% endif %}
 {% if note.dimensions %}| Dimension | Tier | Evidence |
 |---|:---:|---|
 {% for dim_name, dim in note.dimensions.items() %}| {{ dim_name }} | **{{ dim.tier }}** | {% for q in dim.evidence[:2] %}_"{{ q }}"_{% if not loop.last %}<br/>{% endif %}{% endfor %} |

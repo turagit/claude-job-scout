@@ -121,6 +121,10 @@ Construct a `data` payload for the render layer. Tiers come straight from the `_
       "dimensions": { "<dim_name>": {"tier": "A|B|C|D", "evidence": ["...", "..."]} },
       "gate_violations": [{"kind": "...", "detail": "..."}],
       "rubric_version": "v1",
+      "competitiveness": "high | med | low — OPTIONAL; omit when not yet derived (never null)",
+      "competitiveness_evidence": "<short supporting note — OPTIONAL; omit when absent>",
+      "confidence": "high | med | low — OPTIONAL; omit when not yet derived (never null)",
+      "match_explanation_tag": "all-fit | one-gap | multiple-gaps | overqualified | underqualified | trajectory-concern — OPTIONAL; omit when absent",
       "source": "Search",
       "matched_query": "<which query in the plan surfaced this job>",
       "url": "<absolute job URL on LinkedIn — optional>",
@@ -130,7 +134,7 @@ Construct a `data` payload for the render layer. Tiers come straight from the `_
 }
 ```
 
-Within each tier, order results by `posted_at` descending. Set `fresh: true` per `linkedin-search.md` §6 (A/B-tier, posted ≤48 h, low applicant count when known) — templates render the "⚡ apply early" chip. `tags` are drawn from matched skills/signals computed during scoring; limit to 5 per job. The `url` is optional; when present the templates render a "View posting ↗" link, otherwise plain text via `{% if job.url %}` guards.
+**Within-tier ordering (Phase 12).** Within each tier, order results by `confidence` high → med → low (absent `confidence` sorts after any explicit value, treated as lowest), then by `posted_at` descending as the tie-breaker. The COMMAND applies this here in the payload-build before dispatch; the template renders `results[]` in supplied order and never re-sorts. The optional scoring fields (`competitiveness`, `competitiveness_evidence`, `confidence`, `match_explanation_tag`) pass through verbatim from the tracker / score cache when present, and are **omitted entirely when absent** — never `null` (see `canonical-schemas.md` § "Written lazily"). Set `fresh: true` per `linkedin-search.md` §6 (A/B-tier, posted ≤48 h, low applicant count when known) — templates render the "⚡ apply early" chip. `tags` are drawn from matched skills/signals computed during scoring; limit to 5 per job. The `url` is optional; when present the templates render a "View posting ↗" link, otherwise plain text via `{% if job.url %}` guards.
 
 Merge newly scored jobs into `.job-scout/tracker.json` with status `"seen"`.
 

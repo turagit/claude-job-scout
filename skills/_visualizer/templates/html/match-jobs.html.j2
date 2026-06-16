@@ -41,6 +41,13 @@
         <div class="score-pill tier-{{ job.tier|lower }}">{{ job.tier }}</div>
       </div>
       <div class="meta">{{ job.company }} · {{ job.location }}{% if job.salary %} · {{ job.salary }}{% endif %}{% if job.posted_at %} · {{ job.posted_at }}{% endif %}{% if job.applicants %} · {{ job.applicants }} applicants{% endif %}{% if job.url %} · <a href="{{ job.url }}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-from);text-decoration:none;font-weight:600">View posting ↗</a>{% endif %}</div>
+      {% if job.tier in ['A', 'B'] and (job.competitiveness or job.confidence or job.match_explanation_tag) %}
+      <div class="signal-badges" style="margin-bottom:8px">
+        {% if job.match_explanation_tag %}<span class="tag-chip accent">{{ job.match_explanation_tag|replace('-', ' ') }}</span>{% endif %}
+        {% if job.competitiveness %}<span class="tag-chip" title="{{ job.competitiveness_evidence or '' }}">🎯 competitiveness: {{ job.competitiveness }}</span>{% endif %}
+        {% if job.confidence %}<span class="tag-chip">confidence: {{ job.confidence }}</span>{% endif %}
+      </div>
+      {% endif %}
       {% if job.tags %}
       <div>
         {% for tag in job.tags %}<span class="tag-chip">{{ tag }}</span>{% endfor %}

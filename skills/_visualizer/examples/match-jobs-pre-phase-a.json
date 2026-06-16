@@ -1,0 +1,89 @@
+{
+  "data": {
+    "title": "3 matches today",
+    "subtitle": "A-tier: 1 · B-tier: 1 · Filtered: 1",
+    "generated_at": "2026-06-16 09:42",
+    "filename": "match-jobs-latest.html",
+    "tier_counts": {
+      "a": 1,
+      "b": 1,
+      "c": 0,
+      "d": 1,
+      "total": 3
+    },
+    "results": [
+      {
+        "title": "Staff Backend Engineer",
+        "company": "Stripe",
+        "location": "Remote (EU)",
+        "salary": "€180–220k",
+        "posted_at": "2026-06-15",
+        "applicants": 8,
+        "fresh": true,
+        "tier": "A",
+        "tier_reason": null,
+        "dimensions": {
+          "Seniority match": {
+            "tier": "A",
+            "evidence": ["Staff-level scope with org-wide impact"]
+          },
+          "Tech stack": {
+            "tier": "A",
+            "evidence": ["Go, gRPC, event-driven services"]
+          },
+          "Work arrangement": {
+            "tier": "A",
+            "evidence": ["Fully remote within the EU"]
+          }
+        },
+        "gate_violations": [],
+        "rubric_version": "v1",
+        "url": "https://www.linkedin.com/jobs/view/4012345678",
+        "tags": ["Go", "Payments", "Distributed systems"],
+        "rationale": "Direct hit on seniority, stack, and remote arrangement — your strongest match this run."
+      },
+      {
+        "title": "Backend Engineer, Growth",
+        "company": "Remote.com",
+        "location": "Remote (Worldwide)",
+        "salary": "$120–150k",
+        "posted_at": "2026-06-12",
+        "fresh": false,
+        "tier": "B",
+        "tier_reason": null,
+        "dimensions": {
+          "Seniority match": {
+            "tier": "B",
+            "evidence": ["Mid-to-senior band — slightly below your target"]
+          },
+          "Tech stack": {
+            "tier": "B",
+            "evidence": ["Node and Postgres rather than Go"]
+          },
+          "Work arrangement": {
+            "tier": "A",
+            "evidence": ["Async-first, worldwide remote"]
+          }
+        },
+        "gate_violations": [],
+        "rubric_version": "v1",
+        "url": "https://www.linkedin.com/jobs/view/4012345680",
+        "tags": ["Node.js", "PostgreSQL"]
+      },
+      {
+        "title": "Contract PHP Developer",
+        "company": "LegacyWorks",
+        "location": "On-site, Berlin",
+        "posted_at": "2026-06-09",
+        "tier": "D",
+        "url": "https://www.linkedin.com/jobs/view/4099999999",
+        "gate_violations": [
+          {
+            "kind": "work_arrangement",
+            "detail": "on-site only; you require remote"
+          }
+        ]
+      }
+    ]
+  }
+}

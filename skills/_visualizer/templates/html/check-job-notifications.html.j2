@@ -42,6 +42,13 @@
         <div class="score-pill tier-{{ note.tier|lower }}">{{ note.tier }}</div>
       </div>
       <div class="meta">{{ note.company }}{% if note.location %} · {{ note.location }}{% endif %} · {{ note.received_at }}{% if note.source %} · <span class="tag-chip">{{ note.source }}</span>{% endif %}{% if note.url %} · <a href="{{ note.url }}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-from);text-decoration:none;font-weight:600">View posting ↗</a>{% endif %}</div>
+      {% if note.tier in ['A', 'B'] and (note.competitiveness or note.confidence or note.match_explanation_tag) %}
+      <div class="signal-badges" style="margin-bottom:8px">
+        {% if note.match_explanation_tag %}<span class="tag-chip accent">{{ note.match_explanation_tag|replace('-', ' ') }}</span>{% endif %}
+        {% if note.competitiveness %}<span class="tag-chip" title="{{ note.competitiveness_evidence or '' }}">🎯 competitiveness: {{ note.competitiveness }}</span>{% endif %}
+        {% if note.confidence %}<span class="tag-chip">confidence: {{ note.confidence }}</span>{% endif %}
+      </div>
+      {% endif %}
       {% if note.preview %}<div style="font-size:13px;color:var(--text-muted);margin-top:6px">{{ note.preview }}</div>{% endif %}
       {% if note.dimensions %}
       <table class="dim-table" style="width:100%;margin-top:10px;font-size:13px;border-collapse:collapse">

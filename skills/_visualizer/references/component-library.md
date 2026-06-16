@@ -188,6 +188,24 @@ The HTML card tier corresponds to the **overall** tier of the job (top right pil
 
 The score-pill content changed in v0.8.0: it displays the **tier letter** (A/B/C/D) rather than a numeric score, since the v1 rubric is dimension-tier-based and the aggregate number was removed by design. As of v0.10.0 templates no longer emit `data-sort_score` — sorting uses `data-sort_date` and `data-sort_company`.
 
+## `.job-card` — signal badges (Phase 12)
+
+A/B-tier live cards carry an optional row of **signal badges** between the `.meta` line and the dimension table, surfacing the four optional Phase-12 scoring fields. The row reuses the existing `.tag-chip` / `.tag-chip.accent` primitives — **no new CSS**. The fields (and their enums) are the single-source-of-truth set in `../../shared-references/canonical-schemas.md` § "Canonical enums":
+
+- `match_explanation_tag` (`all-fit` | `one-gap` | `multiple-gaps` | `overqualified` | `underqualified` | `trajectory-concern`) → `.tag-chip.accent`, hyphens rendered as spaces.
+- `competitiveness` (`high` | `med` | `low`) → `.tag-chip` labelled `🎯 competitiveness: <value>`; the chip's `title` attribute carries `competitiveness_evidence` as a hover tooltip.
+- `confidence` (`high` | `med` | `low`) → `.tag-chip` labelled `confidence: <value>`.
+
+```html
+<div class="signal-badges" style="margin-bottom:8px">
+  <span class="tag-chip accent">one gap</span>
+  <span class="tag-chip" title="Top Picks surfaced — under 10 applicants">🎯 competitiveness: high</span>
+  <span class="tag-chip">confidence: med</span>
+</div>
+```
+
+The whole row is guarded by `{% if job.tier in ['A','B'] and (job.competitiveness or job.confidence or job.match_explanation_tag) %}` and each chip by `{% if job.<field> %}`. **Back-compat:** the four keys are written lazily and **omitted (never `null`)** when not yet derived (see `canonical-schemas.md` § "Written lazily"); pre-Phase-A entries lack the keys entirely, so the row renders nothing and never errors. Badges appear only on the five **job-card** views (`match-jobs`, `job-search`, `check-job-notifications`, `deep-sweep`, `ultramode`) — never on `check-inbox`, `funnel-report`, or `interview-prep`, which render no job cards. **Within-tier ordering** (confidence high→med→low, then `posted_at` desc) is applied by each consuming command's payload-build step, not the template — see `../../shared-references/render-orchestration.md` § "Optional scoring signals + within-tier ordering".
+
 ## Markdown — dimension table
 
 The corresponding markdown view renders the dimension table as a four-column markdown table per job:

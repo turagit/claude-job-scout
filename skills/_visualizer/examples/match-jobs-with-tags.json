@@ -1,0 +1,136 @@
+{
+  "data": {
+    "title": "4 matches today",
+    "subtitle": "A-tier: 2 · B-tier: 1 · Filtered: 1",
+    "generated_at": "2026-06-16 09:42",
+    "filename": "match-jobs-latest.html",
+    "tier_counts": {
+      "a": 2,
+      "b": 1,
+      "c": 0,
+      "d": 1,
+      "total": 4
+    },
+    "results": [
+      {
+        "title": "Staff Backend Engineer",
+        "company": "Stripe",
+        "location": "Remote (EU)",
+        "salary": "€180–220k",
+        "posted_at": "2026-06-15",
+        "applicants": 8,
+        "fresh": true,
+        "tier": "A",
+        "tier_reason": null,
+        "dimensions": {
+          "Seniority match": {
+            "tier": "A",
+            "evidence": ["Staff-level scope with org-wide impact"]
+          },
+          "Tech stack": {
+            "tier": "A",
+            "evidence": ["Go, gRPC, event-driven services"]
+          },
+          "Work arrangement": {
+            "tier": "A",
+            "evidence": ["Fully remote within the EU"]
+          }
+        },
+        "gate_violations": [],
+        "rubric_version": "v1",
+        "competitiveness": "high",
+        "competitiveness_evidence": "Top Picks surface, under 10 applicants, your stack is a direct hit",
+        "confidence": "high",
+        "match_explanation_tag": "all-fit",
+        "url": "https://www.linkedin.com/jobs/view/4012345678",
+        "tags": ["Go", "Payments", "Distributed systems"],
+        "rationale": "Direct hit on seniority, stack, and remote arrangement — your strongest match this run."
+      },
+      {
+        "title": "Senior Platform Engineer",
+        "company": "Miro",
+        "location": "Remote (Europe)",
+        "salary": "€150–175k",
+        "posted_at": "2026-06-13",
+        "applicants": 21,
+        "fresh": false,
+        "tier": "A",
+        "tier_reason": null,
+        "dimensions": {
+          "Seniority match": {
+            "tier": "A",
+            "evidence": ["Senior IC track, no people management required"]
+          },
+          "Tech stack": {
+            "tier": "B",
+            "evidence": ["Heavy Kubernetes — adjacent to your container experience"]
+          },
+          "Work arrangement": {
+            "tier": "A",
+            "evidence": ["Remote across European time zones"]
+          }
+        },
+        "gate_violations": [],
+        "rubric_version": "v1",
+        "competitiveness": "med",
+        "competitiveness_evidence": "Healthy applicant pool; your Kubernetes is adjacent rather than core",
+        "confidence": "med",
+        "match_explanation_tag": "one-gap",
+        "url": "https://www.linkedin.com/jobs/view/4012345679",
+        "tags": ["Kubernetes", "AWS", "Platform"],
+        "rationale": "Strong on seniority and remote; the one gap is Kubernetes depth versus your container-adjacent background."
+      },
+      {
+        "title": "Backend Engineer, Growth",
+        "company": "Remote.com",
+        "location": "Remote (Worldwide)",
+        "salary": "$120–150k",
+        "posted_at": "2026-06-12",
+        "fresh": false,
+        "tier": "B",
+        "tier_reason": null,
+        "dimensions": {
+          "Seniority match": {
+            "tier": "B",
+            "evidence": ["Mid-to-senior band — slightly below your target"]
+          },
+          "Tech stack": {
+            "tier": "B",
+            "evidence": ["Node and Postgres rather than Go"]
+          },
+          "Work arrangement": {
+            "tier": "A",
+            "evidence": ["Async-first, worldwide remote"]
+          }
+        },
+        "gate_violations": [],
+        "rubric_version": "v1",
+        "competitiveness": "low",
+        "competitiveness_evidence": "Large applicant pool and a stack mismatch dampen your edge here",
+        "confidence": "low",
+        "match_explanation_tag": "multiple-gaps",
+        "url": "https://www.linkedin.com/jobs/view/4012345680",
+        "tags": ["Node.js", "PostgreSQL"],
+        "rationale": "Worth a look but several gaps — stack and seniority both sit below your ideal."
+      },
+      {
+        "title": "Contract PHP Developer",
+        "company": "LegacyWorks",
+        "location": "On-site, Berlin",
+        "posted_at": "2026-06-09",
+        "tier": "D",
+        "url": "https://www.linkedin.com/jobs/view/4099999999",
+        "gate_violations": [
+          {
+            "kind": "work_arrangement",
+            "detail": "on-site only; you require remote"
+          },
+          {
+            "kind": "contract_type",
+            "detail": "fixed-term contract"
+          }
+        ]
+      }
+    ]
+  }
+}

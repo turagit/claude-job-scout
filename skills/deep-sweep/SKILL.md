@@ -104,7 +104,7 @@ Construct a `data` payload for the render layer with these view-specific fields:
 }
 ```
 
-Within each tier, order results by `posted_at` descending and set `fresh: true` per `linkedin-search.md` §6 — A/B-tier jobs posted within 48 hours (with low applicant counts when known) get the "⚡ apply early" chip.
+**Within-tier ordering (Phase 12).** Within each tier, order results by `confidence` high → med → low (absent `confidence` sorts after any explicit value, treated as lowest), then by `posted_at` descending as the tie-breaker. The COMMAND applies this here in the payload-build before dispatch; the template renders `results[]` in supplied order and never re-sorts. The optional scoring fields (`competitiveness`, `competitiveness_evidence`, `confidence`, `match_explanation_tag`) come through from `job-search.results[]` verbatim when present and are **omitted entirely when absent** — never `null` (see `canonical-schemas.md` § "Written lazily"). Set `fresh: true` per `linkedin-search.md` §6 — A/B-tier jobs posted within 48 hours (with low applicant counts when known) get the "⚡ apply early" chip.
 
 Filename uses the run date — `/deep-sweep` is a time-series view, not a snapshot. Each run produces its own file; older files are archived per `render-orchestration.md` Step G's 90-day policy.
 
