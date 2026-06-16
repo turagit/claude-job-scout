@@ -7,7 +7,7 @@ description: >
   workspace: collects candidate IDs/fingerprints first, dedupes them against the
   tracker snapshot the dispatcher passed in (and the cross-source fingerprint
   rule), fetches the full JD only for genuinely-new roles, persists each new JD
-  to `jds/<namespaced-id>.txt`, sets the structured `source` + namespaced id on
+  to a namespaced blob under `jds/`, sets the structured `source` + namespaced id on
   the new entry, and returns delta-only new roles for the dispatcher to score and
   merge. Honours the source's access lane (api / rss / html / extension) and
   poll method. Never re-fetches a known role. Not user-invocable.
