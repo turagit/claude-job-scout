@@ -1,0 +1,22 @@
+{
+  "sre": ["site reliability engineer", "reliability engineer"],
+  "platform engineer": ["infrastructure engineer", "platform engineering"],
+  "devops engineer": ["devops", "dev ops engineer"],
+  "backend": ["back-end", "server-side"],
+  "frontend": ["front-end", "client-side"],
+  "full stack": ["fullstack", "full-stack"],
+  "ml engineer": ["machine learning engineer", "machine-learning engineer"],
+  "data engineer": ["data engineering", "etl engineer"],
+  "kubernetes": ["k8s", "container orchestration"],
+  "ci/cd": ["continuous integration", "continuous delivery", "continuous deployment"],
+  "iac": ["infrastructure as code", "infrastructure-as-code"],
+  "observability": ["monitoring and observability", "monitoring & alerting"],
+  "rest api": ["restful api", "rest apis", "restful apis"],
+  "postgresql": ["postgres", "psql"],
+  "javascript": ["js", "ecmascript"],
+  "typescript": ["ts"],
+  "engineering manager": ["em", "head of engineering"],
+  "product manager": ["pm", "product owner"],
+  "ux designer": ["user experience designer", "ux/ui designer"],
+  "qa engineer": ["quality assurance engineer", "test engineer"]
+}
