@@ -299,13 +299,13 @@ The tracker file `schema_version` is **NOT** bumped for these additions (it stay
       "priority": "number — lower polls first",
       "poll_method": "string — short note on how to poll (e.g. 'GET endpoint, paginate', 'fetch RSS', 'extension browse')",
       "notes": "string — free-text caveats, rate limits, coverage notes",
-      "verified_at": "ISO8601|null — when this source was last verified reachable"
+      "verified_at": "ISO8601|null — when this source was last verified reachable. NON-NULL is the admission proof: every entry — discovered, user-supplied, OR resolved from a curated lane seed — carries a probe-time timestamp. For `api`/`rss`/`html` lanes it attests a live job-bearing probe (Gate B saw postings); for an `extension`-lane entry it attests a recognised, reachable login-wall on a corroborated-real source (job presence is confirmed at the logged-in sweep, not at discovery). A null/absent verified_at means the entry should not be in `sources[]` (the never-fabricate invariant; see `ultramode-sources.md` § Curated lane seed)."
     }
   ]
 }
 ```
 
-A worked example with four real sources lives in `sources-schema-example.json` alongside this reference.
+A worked example with four real sources lives in `sources-schema-example.json` alongside this reference. The registry's `sources[]` length MUST equal `len(backbone bodies) + len(discovered fragment.sources) + len(retained user_sources)` — the dispatcher asserts this before the atomic write (`ultramode/SKILL.md` Step 3e) so a silently-dropped or silently-empty discovery fragment cannot pass as a complete registry.
 
 ## `cache/capability-graph.json` (CV capability graph)
 
@@ -366,6 +366,24 @@ Both caches are **regenerable and deletable** — they hold no source-of-truth s
 | `tracker.jobs.*.confidence` / `scores.*.confidence` | `high`, `med`, `low`, or absent/null |
 | `tracker.jobs.*.match_explanation_tag` / `scores.*.match_explanation_tag` | `all-fit`, `one-gap`, `multiple-gaps`, `overqualified`, `underqualified`, `trajectory-concern`, or absent/null |
 | `user-profile.dimensions[].type` | `load-bearing`, `modifying`, or absent (treated as `load-bearing`) |
+
+### Discovery / sweep `errors[]` codes
+
+`errors[]` is the transient diagnostics channel on the `_source-discovery` and `_source-sweep` delta envelopes (it is not persisted in `sources.json`). It exists so a thin or failed result is **auditable and retryable**, never a silent backbone-only swallow. Codes:
+
+| code | emitted by | meaning |
+|---|---|---|
+| `lane_dry` | discovery | a category/geography was probed and **genuinely** confirmed nothing (the critic asked, §2 admitted none). The honest empty result. |
+| `discovered_below_threshold` | discovery / dispatcher | the confirmed-set is below the known-rich-lane acceptance threshold (`ultramode/SKILL.md` Step 3e); names every dry lane and triggers the warn + offer-re-dispatch path. |
+| `probe_failed` | discovery / sweep | a candidate's live probe failed outright (timeout / `ECONNREFUSED` / blanket `403`) — distinct from `lane_dry`. The source could not be judged, not judged-and-rejected. |
+| `source_unreachable` | sweep | a known registry source's endpoint returned a transient non-2xx (e.g. `503`) and no candidates were collected this sweep; retryable next run (distinct from `probe_failed`, which is a discovery-time candidate-probe failure). |
+| `tool_unavailable` | discovery / sweep | N consecutive `WebFetch`/`WebSearch` calls failed outright, so the probe lane itself is dead. The dispatcher MUST treat this as a hard error to surface/retry on the main thread — **never** as a clean dry `ok`. |
+| `ats_watchlist_coldstart` | sweep | fewer than 1 A/B-tier employer; watchlist seeded from `companies_to_target[]` + the curated ATS seed only (will enrich after LinkedIn sweeps). |
+| `ats_unresolved` | sweep | an ATS company's slug did not resolve keylessly; queue an extension-lane sweep. |
+| `extension_lane_deferred` | sweep | the source is `extension`-lane; the dispatcher runs it on the main thread. |
+| `lane_unconfirmed` | discovery | a user-supplied source could not be reached to classify; retained with a note, not dropped. |
+
+An empty or below-threshold confirmed-set **MUST** populate `errors[]` (enumerating every dry lane by name, plus round and probe-attempt counts). A `status: "ok"` with an empty `sources[]` and an empty `errors[]` is itself a defect signal.
 
 The `query-stats.json` `family` enum gains `capability` here (Phase 12): a query family that searches on a CV capability — stated, latent, or adjacent — drawn from `cache/capability-graph.json`. The four scoring fields and `dimensions[].type` are listed for completeness; they are optional/additive and validated only when present.
 

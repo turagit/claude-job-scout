@@ -88,6 +88,16 @@ Read `requirements` for `target_geography`, `work_arrangement`, `contract_type`,
 
 Ask: **"Which job sources do you already use or trust?"** — boards, niche communities, a company careers page, a Slack/Discord jobs channel. Collect them as `user_sources[] = [{name, url}]`. These are always probed, classified, and retained by discovery (login-walled ones land in the `extension` lane; see `_source-discovery` § User sources). An empty answer is fine — the backbone still applies.
 
+### Step 3c-bis: Seed target companies (so the ATS lane is not dark on first run)
+
+The ATS lane is per-company: a fresh workspace with an empty `requirements.companies_to_target[]` and no A/B-tier employers yet has **nothing to resolve**, so the highest-signal direct-to-employer category stays dark on first run. To avoid that, seed it now:
+
+- **Ask** (optional): *"Name 2–5 companies you'd love to work for / contract with — I'll watch their own job boards directly."* Collect into `requirements.companies_to_target[]` (merge, do not overwrite).
+- **And/or derive** candidates from the CV corpus already loaded in Step 1 — the employer names in `cv_summary` work history and any companies named in `target_titles`/`segment` — and offer them for the user to confirm before adding.
+- An empty answer is fine: discovery still bootstraps the ATS lane from the **lane-matching `## Curated lane seed → ATS seed`** (`../shared-references/ultramode-sources.md`), so the category is no longer guaranteed empty. User-named companies simply add to it.
+
+This list is passed to discovery (Step 3d) and feeds the sweep-time ATS watchlist (`_source-sweep` § ATS watchlist).
+
 ### Step 3d: Dispatch `_source-discovery`
 
 Build the discovery input envelope from the CV corpus (Step 1) and the lane answers above, and dispatch `_source-discovery` via the `Agent` tool per `../shared-references/subagent-protocol.md`:
@@ -102,22 +112,50 @@ Build the discovery input envelope from the CV corpus (Step 1) and the lane answ
     "contract_type": ["<requirements.contract_type>"],
     "field": "<segment / target_titles descriptor>",
     "cv_keywords": ["<from cv_summary.key_skills + master_keyword_list>"],
+    "companies_to_target": ["<from Step 3c-bis — confirmed/derived companies, or []>"],
     "user_sources": [ { "name": "...", "url": "..." } ]
   },
-  "budget_lines": 200,
+  "budget_lines": 800,
   "allowed_tools": ["Read", "Grep", "WebFetch", "WebSearch"]
 }
 ```
 
-The subagent enumerates, live-probes, adversarially verifies, loops until the completeness critic is dry, merges the universal backbone, and returns a verified `sources_fragment` delta (it writes nothing — the dispatcher writes the file). If it returns `status: "partial"` with a `continuation_cursor`, re-dispatch with the cursor until `status: "ok"`. Parse the delta.
+Discovery is a **multi-round web loop**, not a single scoring batch — dispatch it with a budget well above the 200 default (`budget_lines: 800`). The subagent enumerates (seeded with the lane-matching curated seed), live-probes, adversarially verifies, loops until the completeness critic is dry, resolves the curated lane seed + merges the universal backbone, and returns a verified `sources_fragment` delta (it writes nothing — the dispatcher writes the file).
 
-### Step 3e: Present the registry for approval & persist
+**The dispatch is mandatory and the loop runs to `ok`:**
+- **You MUST call the `Agent` tool here.** Persisting a registry (Step 3e) without a parsed `_source-discovery` delta is a defect — see the Step 3e gate. (Only the documented `Agent`-unavailable fallback in `subagent-protocol.md` exempts this, and that fallback runs the same enumerate→probe→verify loop in-thread and is logged.)
+- If it returns `status: "partial"` with a `continuation_cursor`, **re-dispatch with the cursor until `status: "ok"`** — never persist a `partial`.
+- If it returns `status: "ok"` with an **empty confirmed-set after a single round**, or an `errors[]` carrying `tool_unavailable`, treat the probe lane as suspect: **re-probe (retry the dispatch, or run the probes on the main thread via the `WebFetch` carve-out) before persisting** — do not accept a clean-but-empty `ok` as a genuinely dry lane. Parse the delta only once it is a real, non-suspect `ok`.
 
-Present the discovered registry for approval before writing — a short table per source: name, category, access lane, `needs_key` / `needs_slug`, and any `errors[]` (dry lanes, unconfirmed user sources). Note inline which sources are **keyless** vs **keyed** (key handling is Step 5). On approval:
+### Step 3e: Gate, present for approval & persist
 
-1. Resolve the backbone bodies from `../shared-references/ultramode-sources.md` § Universal Backbone (the subagent named them in `backbone[]`), fill `{country}` from the confirmed `base_country` (skip national-board entries when `base_country` is null), and union with the verified discovered/user fragment.
-2. Write the merged registry to **`.job-scout/sources.json`** (write to `sources.json.tmp`, then `mv` it over `sources.json` — the atomic-rename recipe in `../shared-references/state-validators.md`), conforming to the `sources.json` schema in `../shared-references/canonical-schemas.md` (`base_country`/`target_geography` copied in, `priority_order[]`, `backbone[]`, `sources[]`).
-3. Set `user-profile.json` `ultramode.registry_built_at` to the build timestamp (merge, do not overwrite).
+**Persistence is gated on a real discovery result. Do NOT skip these gates — they are what stops a silent backbone-only registry (the Phase 13 failure).**
+
+**Gate 1 — parsed-delta gate (you must have actually run discovery).** If you did **not** call the `Agent` tool in Step 3d and parse a real `_source-discovery` delta envelope (or run the documented in-thread fallback), **you have NOT completed Step 3 — do not write `sources.json`.** Step 3e is not self-sufficient: resolving the backbone from the reference is **not** a substitute for discovery. Log the dispatch (and any fallback) in the run output so its presence is auditable.
+
+**Gate 2 — count invariant.** Build the merged registry, then assert before writing:
+
+```
+len(sources) == len(resolved backbone bodies) + len(fragment.sources) + len(retained user_sources)
+```
+
+A mismatch means the discovered fragment was dropped or mis-merged — **fail loudly, do not write.** This catches a fragment silently lost at merge time.
+
+**Gate 3 — known-rich-lane acceptance.** Count the **non-backbone** discovered sources and break them down by `category`. Apply the lane-conditional threshold:
+
+- **If `requirements.contract_type` includes `freelance`:** require **≥ 1 `freelance-marketplace` AND ≥ 1 `ats-provider`** among the discovered/seed sources (the two structurally-dark categories), plus **≥ 5 non-backbone sources total**.
+- **Otherwise (tech / professional / EU-remote lanes):** require **≥ 5 non-backbone sources total.**
+- **A genuinely thin niche lane** (the critic asked and `errors[]` legitimately carries `lane_dry` for the missing categories, with no `tool_unavailable`/`probe_failed`) may fall below threshold — but only **after** the dispatcher has confirmed discovery actually ran the loop (Gate 1 + a non-suspect `ok`).
+
+On a **below-threshold** result: do **not** silently write. **Warn**, show the shortfall + `errors[]` (which dry lanes, and whether any were `probe_failed`/`tool_unavailable` rather than truly `lane_dry`), and **offer an immediate `/ultramode sources` re-dispatch**. Write a below-threshold registry **only on explicit user acknowledgement**, and record `discovered_below_threshold` in the run output so the thin result is visible, never invisible.
+
+**Present for approval (transparent table).** Show a short table per source — name, category, access lane, `needs_key` / `needs_slug` — **headed by the discovered-source count and the per-category breakdown** (e.g. `Discovered: 23 non-backbone — ats-provider:9 · freelance-marketplace:6 · national-board:3 · remote-board:3 · community:2`) so a zero- or thin-discovered union is visible **before** write. Note inline which sources are **keyless** vs **keyed** (key handling is Step 5), and surface any `errors[]` (dry lanes, unconfirmed user sources, probe failures).
+
+**On approval, persist:**
+
+1. Resolve the backbone bodies from `../shared-references/ultramode-sources.md` § Universal Backbone (the subagent named them in `backbone[]`), fill `{country}` from the confirmed `base_country` (skip national-board entries when `base_country` is null), and union with the verified discovered/seed/user fragment. (The curated lane seed was already re-probed by discovery — its hits arrive inside the fragment with their own `verified_at`, not re-resolved here.)
+2. Re-assert the Gate 2 count invariant on the final object, then write the merged registry to **`.job-scout/sources.json`** (write to `sources.json.tmp`, then `mv` it over `sources.json` — the atomic-rename recipe in `../shared-references/state-validators.md`), conforming to the `sources.json` schema in `../shared-references/canonical-schemas.md` (`base_country`/`target_geography` copied in, `priority_order[]`, `backbone[]`, `sources[]`). Every `sources[]` entry carries a non-null `verified_at`.
+3. Set `user-profile.json` `ultramode.registry_built_at` to the build timestamp (merge, do not overwrite) — **only after a successful write that passed all three gates.** Never stamp `registry_built_at` for a run that did not actually persist a gated registry.
 
 The build is re-runnable any time via `/ultramode sources`; deleting `sources.json` triggers a fresh onboarding on the next run.
 
@@ -134,7 +172,7 @@ Load `.job-scout/sources.json`. Derive the poll order by applying `derive_priori
 - `known_ids[]` — every non-`rejected` entry's `id`.
 - `known_fingerprints[]` — each non-`rejected` entry's cross-source fingerprint `lower(company)|lower(title)|normalise_location(location)` (the rule in `../shared-references/ultramode-sources.md` § Cross-source dedupe).
 
-Also build, from this same read, the **ATS watchlist** for `ats-provider` sources: union (case-insensitive) of the tracker's distinct A/B-tier employers + `requirements.companies_to_target[]` + any manual additions (`_source-sweep` § ATS watchlist). Cold-start (fewer than 1 A/B-tier employer) seeds from `companies_to_target[]` only.
+Also build, from this same read, the **ATS watchlist** for `ats-provider` sources — the **four-source union** (case-insensitive) the contract in `_source-sweep` § ATS watchlist defines: (1) the tracker's distinct A/B-tier employers + (2) `requirements.companies_to_target[]` + (3) **the lane-matching entries of the `## Curated lane seed → ATS seed`** (`../shared-references/ultramode-sources.md` — only seeds whose `lane_tags` intersect this workspace's lane) + (4) any manual additions. **Cold-start** (fewer than 1 A/B-tier employer) seeds from `companies_to_target[]` **plus the lane-matching curated ATS seed**, emitting `ats_watchlist_coldstart` — so the ATS lane is non-empty on a fresh workspace (the central cold-start fix; never `companies_to_target[]` alone). Each watchlist company is still resolved live via `resolve_ats` (with its identity check) before it is swept.
 
 ### Step 4c: Fan out one `_source-sweep` per source
 

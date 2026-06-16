@@ -96,6 +96,17 @@ Task 3 (`_source-discovery`) ingests the JSON array below **verbatim** as the se
     "notes": "Keyless remote-board JSON feed."
   },
   {
+    "name": "Jobicy",
+    "url": "https://jobicy.com",
+    "category": "remote-board",
+    "access_lane": "api",
+    "endpoint": "https://jobicy.com/api/v2/remote-jobs?count=50",
+    "needs_key": false,
+    "needs_slug": false,
+    "poll_method": "GET the keyless v2 JSON feed (add &geo=<region>&tag=<occupation> to narrow); or the RSS at https://jobicy.com/feed/job_feed which DOES honour job_types=contract,freelance + search_region. Filter client-side over full text; most jobType values are Full-Time so contract filtering happens at sweep time. Rate ~1/hour.",
+    "notes": "Keyless remote-board JSON+RSS. Occupation-agnostic; verified live 2026-06-16."
+  },
+  {
     "name": "We Work Remotely",
     "url": "https://weworkremotely.com",
     "category": "remote-board",
@@ -153,9 +164,70 @@ Task 3 (`_source-discovery`) ingests the JSON array below **verbatim** as the se
 ]
 ```
 
+## Curated lane seed (provenance-from-file, re-probed on use)
+
+The Universal Backbone above is occupation-agnostic. The **curated lane seed** is the opposite: a small set of **lane-tagged**, version-controlled, already-verified sources that bootstrap the two categories a cold first-run cannot otherwise reach — `ats-provider` (no backbone entry; the ATS axis resolves *companies*, and `companies_to_target[]` is empty on a fresh workspace) and `freelance-marketplace` (no backbone entry; almost all login-walled). Full provenance for every entry lives in `../../docs/superpowers/specs/2026-06-16-phase-13-verified-sources-research.json` (each was probed live 2026-06-15/16).
+
+**The never-fabricate invariant is preserved — read this before using the seed.** A seed is a **candidate, not an admission**. It is re-probed live (the ATS seed via `resolve_ats` below; the marketplace/feed seed via the §2 gates in `discovery-protocol.md`) **before** it enters a workspace `sources.json`, and it is written only with a fresh probe-time `verified_at`. A version-controlled, periodically-reverified seed list is **provenance-from-file — exactly like the Universal Backbone — and is NOT a violation of the Hard invariant.** What the invariant forbids is admitting a source the model *recalled* but did not probe; a seed that fails its live re-probe is **skipped or extension-routed, never written**.
+
+**Genericity (CLAUDE.md hard rule).** Each seed carries `lane_tags`. A workspace resolves only the seeds whose `lane_tags` intersect its lane (from `segment` / `target_titles` / `cv_keywords`). The seed below covers the **Linux / platform / SRE / DevOps / IAM** lane; for any other lane (a doctor, a lawyer, a chef) the seed simply does not apply and discovery falls back to the live enumeration axes — chiefly the professional-body and web-search axes (`discovery-protocol.md` §1). The framework supports adding further lane seeds the same way (version-controlled + re-probed); it is not tech-only by design, only tech-seeded today.
+
+### ATS seed — keyless company boards (bootstrap the watchlist when `companies_to_target` is empty)
+
+Resolved through `resolve_ats` (below): the baked `slug` is the most-specific candidate, but the resolver still probes it live (`200 + jobs>0 + identity-check`) before admission. `freelance_friendly` is `false` across the ATS lane (employer boards are permanent-heavy); the value is **lane coverage**, and `contract_type` filtering happens at **sweep time**, not at admission.
+
+| company | provider | slug | lane_tags | verified_at |
+|---|---|---|---|---|
+| Canonical | greenhouse | `canonical` | linux, platform, sre, remote | 2026-06-16 |
+| Grafana Labs | greenhouse | `grafanalabs` | platform, sre, observability, remote | 2026-06-16 |
+| GitLab | greenhouse | `gitlab` | platform, sre, infra, remote | 2026-06-16 |
+| N26 | greenhouse | `n26` | iam, idm, sre, fintech | 2026-06-16 |
+| Datadog | greenhouse | `datadog` | platform, sre, observability | 2026-06-16 |
+| Adyen | greenhouse | `adyen` | platform, sre, infra, fintech, nl | 2026-06-16 |
+| Elastic | greenhouse | `elastic` | platform, infra, observability, remote | 2026-06-16 |
+| Catawiki | greenhouse | `catawiki` | platform, infra, nl | 2026-06-16 |
+| Trivago | greenhouse | `trivago` | devops, infra, dach | 2026-06-16 |
+| Vercel | greenhouse | `vercel` | platform, infra, remote | 2026-06-16 |
+| Mollie | ashby | `mollie` | platform, infra, nl | 2026-06-16 |
+| Bitvavo | ashby | `bitvavo` | platform, infra, nl | 2026-06-16 |
+| Recharge | ashby | `recharge` | infra, data | 2026-06-16 |
+| Wise | smartrecruiters | `Wise` | platform, infra, fintech, uk | 2026-06-16 |
+
+**Identity check (defeat slug collisions).** A `200 + jobs>0` is not enough — a generic slug can resolve to the wrong employer (e.g. greenhouse `bird`). On a hit, verify the board's identity: the company name in a posting's `company`/`location`/`absolute_url` host plausibly matches the seed company. Only then cache and admit; otherwise treat as a miss and continue.
+
+### Freelance-marketplace beachhead (applies when `contract_type` includes `freelance`)
+
+`extension` where login-walled (retained, never dropped — see the Gate A login-wall rule in `discovery-protocol.md` §2), `html` where the listings are publicly readable. Each is re-probed before admission.
+
+| name | url | access_lane | needs_key | lane_tags | verified_at |
+|---|---|---|---|---|---|
+| Malt | https://www.malt.com/ | extension | false | freelance, eu, devops, sre | 2026-06-16 |
+| YunoJuno | https://www.yunojuno.com/ | extension | false | freelance, uk, eu | 2026-06-16 |
+| Worksome | https://www.worksome.com/ | extension | false | freelance, uk, eu, nordics | 2026-06-16 |
+| Braintrust | https://www.usebraintrust.com/jobs | html | false | freelance, infra, devops | 2026-06-16 |
+| hackajob | https://hackajob.com/talent/devops-jobs | html | false | freelance, uk, eu, sre, platform | 2026-06-16 |
+| IT-Contracts.nl | https://www.it-contracts.nl/ | html | false | freelance, nl, zzp, devops | 2026-06-16 |
+| freelance.nl | https://www.freelance.nl/ | extension | false | freelance, nl, zzp, devops, linux | 2026-06-16 |
+| Freep.nl | https://www.freep.nl/ | extension | false | freelance, nl, zzp, iam, devops | 2026-06-16 |
+| freelancermap | https://www.freelancermap.com/it-projects.html | html | false | freelance, eu, infra, ci | 2026-06-16 |
+| Toptal | https://www.toptal.com/ | extension | false | freelance, global, devops | 2026-06-16 |
+| Lemon.io | https://lemon.io/ | extension | false | freelance, eu, devops | 2026-06-16 |
+
+### Lane-specific keyless-feed seed (tech lanes)
+
+Keyless feeds too niche to be occupation-agnostic backbone, but high-signal for this lane. Added as discovery candidates (still §2-probed):
+
+| name | category | access_lane | endpoint | lane_tags |
+|---|---|---|---|---|
+| JustJoin.it | national-board | api | `https://api.justjoin.it/v2/user-panel/offers/by-cursor?orderBy=DESC&sortBy=published&perPage=100` | devops, sre, eu, b2b-contract |
+| Landing.jobs | national-board | api | `https://landing.jobs/api/v1/jobs?type=remote` | platform, sre, eu, contractor |
+| kube.careers | community | html | `https://kube.careers/remote-kubernetes-jobs` | kubernetes, sre, platform |
+| Arc.dev | remote-board | html | `https://arc.dev/remote-jobs/devops` | devops, sre, freelance |
+| web3.career | aggregator | html | `https://web3.career/devops-jobs` | devops, sre, web3 |
+
 ## ATS slug resolver (probe-and-cache)
 
-ATS providers (Greenhouse, Lever, Ashby, Workable, Recruitee, Personio, SmartRecruiters, Workday) are **keyless but per-company** — each query needs a board **slug** identifying one employer. The watchlist of companies auto-seeds from the tracker's A/B-tier employers plus `requirements.companies_to_target[]` plus manual additions. For each company we must resolve `company → {provider, board}` by probing the keyless endpoints, then **cache the result** in `.job-scout/cache/ats-slugs.json`. On a miss, fall back to the extension lane (browse the company's careers page in the logged-in browser).
+ATS providers (Greenhouse, Lever, Ashby, Workable, Recruitee, Personio, SmartRecruiters, Workday) are **keyless but per-company** — each query needs a board **slug** identifying one employer. The watchlist of companies auto-seeds from the tracker's A/B-tier employers plus `requirements.companies_to_target[]` plus manual additions **plus the lane-matching entries of the § Curated lane seed → ATS seed** (so a cold first-run with an empty `companies_to_target` still resolves a real ATS lane instead of leaving the category dark). For each company we must resolve `company → {provider, board}` by probing the keyless endpoints, then **cache the result** in `.job-scout/cache/ats-slugs.json`. On a miss, fall back to the extension lane (browse the company's careers page in the logged-in browser). A curated-seed entry already names its `provider`/`slug`, so the resolver probes that pair **first** (still live, still identity-checked) before deriving candidates.
 
 ### Real keyless endpoint patterns (probe URLs)
 
@@ -216,15 +288,18 @@ function resolve_ats(company_name):
     #    Provider order follows canonical preference / market share.
     PROVIDERS = [greenhouse, lever, ashby, workable, recruitee,
                  personio, smartrecruiters, workday]
-    for slug in candidate_slugs(company_name):
-        for provider in PROVIDERS:
-            url = probe_url(provider, slug)            # table above
-            resp = WebFetch(url)                        # read-only HTTP GET, carve-out
-            if resp.status == 200 and hit_signal(provider, resp):
-                cache[key] = { provider: provider, board: slug,
-                               verified_at: now_iso() }
-                save_json(CACHE, cache)
-                return { provider: provider, board: slug }
+    #    A curated-seed company supplies its own (provider, slug) — probe that FIRST.
+    probe_list = seed_pair_first(company_name, candidate_slugs(company_name), PROVIDERS)
+    for (provider, slug) in probe_list:
+        url = probe_url(provider, slug)                # table above
+        resp = WebFetch(url)                            # read-only HTTP GET, carve-out
+        if resp.status == 200 and hit_signal(provider, resp):
+            if not identity_ok(company_name, resp):     # defeat slug collisions (e.g. greenhouse 'bird')
+                continue                                # wrong employer — keep probing, do not admit
+            cache[key] = { provider: provider, board: slug,
+                           verified_at: now_iso() }
+            save_json(CACHE, cache)
+            return { provider: provider, board: slug }
 
     # 4. Miss — record a negative entry (cooldown) and fall back to the extension.
     cache[key] = { miss: true, checked_at: now_iso() }
@@ -232,7 +307,7 @@ function resolve_ats(company_name):
     return EXTENSION_FALLBACK
 ```
 
-Notes for the implementer (Task 4): probe most-specific slug first to avoid a generic slug matching the wrong employer; stop at the first hit (do not enumerate all providers once one matches); honour each provider's rate limits and set a descriptive User-Agent; the negative-cache cooldown (30 days) keeps repeat sweeps cheap without permanently writing off a company that later adopts an ATS.
+Notes for the implementer: probe most-specific slug first to avoid a generic slug matching the wrong employer; stop at the first hit (do not enumerate all providers once one matches); honour each provider's rate limits and set a descriptive User-Agent; the negative-cache cooldown (30 days) keeps repeat sweeps cheap without permanently writing off a company that later adopts an ATS. **`seed_pair_first(company, slugs, providers)`** yields the curated seed's own `(provider, slug)` ahead of the derived `(slug × provider)` grid when the company is in the § Curated lane seed → ATS seed, else just the grid. **`identity_ok(company, resp)`** confirms a `200 + jobs>0` board actually belongs to the intended employer (company name appears in a posting's `company`/`location`/`absolute_url` host) — a hit that fails the identity check is **not** admitted; the resolver keeps probing. This is what keeps a baked seed slug honest: the slug is a candidate, the live probe + identity check is the admission.
 
 ## Adaptive priority order (Decision 5)
 

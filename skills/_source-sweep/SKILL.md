@@ -152,21 +152,24 @@ Return all delta entries in one envelope. The dispatcher merges them serially in
 
 For `html` sources, and for any `api`/`rss` feed whose server-side filters are unreliable, **filter to lane relevance client-side over the full text** — title + tags + description/snippet concatenated, matched against `lane_keywords[]` (a role is in-lane if it hits any lane keyword) with `not_terms[]` excluded. **Do NOT rely on the source's documented `category=` / `search=` query parameters** — verified discovery found those free-feed server-side filters return identical, unfiltered results for every term (RemoteOK's tag filter is loose; Remotive's `search`/`category` are no-ops). Trusting them ingests noise; client-side full-text filtering is the only robust narrowing. Also drop candidates outside `freshness_window_days` by posted date. This filter runs in **Stage 1** (on list-level text), so out-of-lane roles never reach a JD fetch.
 
+**Contract type is filtered HERE (and at scoring), not at discovery-time source admission.** Discovery deliberately admits a source that serves the occupation even when its current listings skew the "wrong" contract type (`discovery-protocol.md` Gate B) — a freelance-only workspace still has the source in its registry. The freelance/permanent cut happens per-**role**: the client-side filter excludes obvious mismatches via `not_terms[]`, and the `contract_type` deal-breaker is enforced by `_gate-engine` at scoring (§ Score) — a permanent role in a freelance-only workspace gets `tier: "D"` (gated), not silently dropped at the source. This is why a freelance lane must still keep permanent-heavy sources (remote-boards, ATS): the genuinely-freelance roles they do carry are exactly what would otherwise be missed.
+
 ## ATS watchlist auto-seed (Decision 9) + cold-start — `ats-provider` sources
 
 `ats-provider` sources are keyless but **per-company**: each query needs one employer's board slug. The dispatcher builds the **watchlist** and passes it in `ats_watchlist[]`; this subagent resolves each company to a board and sweeps it.
 
 ### Building the watchlist (the dispatcher does this; documented here for the contract)
 
-The watchlist auto-seeds from three sources, unioned and de-duplicated case-insensitively:
+The watchlist auto-seeds from four sources, unioned and de-duplicated case-insensitively:
 
 1. **The tracker's A/B-tier employers** — every distinct `company` on a non-`rejected` tracker entry whose `tier` is `A` or `B`. These are the employers this workspace already rates highly; their own boards are the highest-signal ATS lane.
-2. **`requirements.companies_to_target[]`** — the user's explicitly named target employers (from `user-profile.json`).
-3. **Manual additions** — any companies the user added to the watchlist directly.
+2. **`requirements.companies_to_target[]`** — the user's explicitly named target employers (from `user-profile.json`, seeded at onboarding Step 3c-bis).
+3. **The lane-matching `## Curated lane seed → ATS seed`** (`../shared-references/ultramode-sources.md`) — pre-verified employer boards whose `lane_tags` intersect this workspace's lane, so the ATS lane is populated even on a cold first run with an empty `companies_to_target`. Each is still resolved live via `resolve_ats` (with its identity check) before it is swept.
+4. **Manual additions** — any companies the user added to the watchlist directly.
 
 ### Cold-start
 
-With **fewer than 1 A/B-tier employer** in the tracker (a fresh workspace that has not yet run LinkedIn sweeps), there is nothing to harvest from tier history. In that case **seed the watchlist from `requirements.companies_to_target[]` only**, and note in `errors[]` (`code: "ats_watchlist_coldstart"`) that the watchlist will **enrich automatically after LinkedIn sweeps populate the tracker** with tiered employers. Do not block, and never fabricate target companies to pad an empty watchlist.
+With **fewer than 1 A/B-tier employer** in the tracker (a fresh workspace that has not yet run LinkedIn sweeps), there is nothing to harvest from tier history. In that case **seed the watchlist from `requirements.companies_to_target[]` plus the lane-matching curated ATS seed**, and note in `errors[]` (`code: "ats_watchlist_coldstart"`) that the watchlist will **enrich automatically after LinkedIn sweeps populate the tracker** with tiered employers. The curated seed ensures the ATS lane is non-empty on a cold start; do not block, and never fabricate target companies to pad the watchlist beyond the version-controlled seed.
 
 ### Resolving each watchlist company to a board
 
