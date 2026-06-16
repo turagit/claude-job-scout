@@ -8,6 +8,8 @@ Five dimensions. Each scored A/B/C/D with evidence quotes pulled from the JD. Th
 
 ### 1. Skills & technical fit
 
+`type: load-bearing`
+
 Does the JD's required skill set have demonstrable evidence in the candidate's CV — directly named or strongly adjacent?
 
 - **A:** Every required skill in the JD has direct or strong-adjacent evidence in the CV. CV shows depth (multi-year, multiple projects), not just exposure.
@@ -18,6 +20,8 @@ Does the JD's required skill set have demonstrable evidence in the candidate's C
 Evidence to quote: pair each required-skill from the JD with the CV bullet, project, or section that demonstrates it. Operate on `cv_summary.key_skills`, `cv_summary.technologies`, and the JD's stated requirements — never against a hardcoded skill list.
 
 ### 2. Role shape match
+
+`type: load-bearing`
 
 Does the role's level, scope, and function match the candidate's `target_titles` and stated `seniority` / `seniority_floor`?
 
@@ -30,6 +34,8 @@ Evidence: title, "function" or "remit" sentence, team-size or scope language in 
 
 ### 3. Domain & context
 
+`type: modifying`
+
 Does the company's industry, sector, stage, and methodology overlap with the candidate's experience and stated preferences (including `industries_to_avoid` and `cv_summary.industries`)?
 
 - **A:** Industry or sector directly matches the candidate's prior experience or `cv_summary.industries`. Company context (stage, ownership, methodology) suits the candidate's profile.
@@ -41,6 +47,8 @@ Evidence: company About section, sector keywords, "we are…" lines in the JD.
 
 ### 4. Engagement fit
 
+`type: load-bearing`
+
 Does the practical shape of the role — work arrangement, contract type, duration, hours, geography, commercial terms — work for the candidate, given that hard dealbreakers have already been caught by `_gate-engine`? This dimension scores the *soft* commercial and practical fit *after* gates pass.
 
 - **A:** All practical attributes (arrangement, contract type, duration, hours, location, rate/salary if disclosed) sit comfortably within the candidate's preferences. No friction.
@@ -51,6 +59,8 @@ Does the practical shape of the role — work arrangement, contract type, durati
 Evidence: work arrangement chip, contract-type line, duration/hours line, rate/salary line, location line.
 
 ### 5. Trajectory fit
+
+`type: modifying`
 
 How well does this opportunity advance the candidate's stated goals — visibility, growth, brand, learning, network, repeat-work potential, reputational upside?
 
@@ -71,9 +81,11 @@ Evidence: company brand signals, engineering culture indicators, named end clien
 | Any D in {Skills & technical fit, Role shape match, Engagement fit} | **D** |
 | Any D in {Domain & context, Trajectory fit} but rest ≥ B | **C** |
 
-The first three dimensions are *load-bearing*: a D in any of them produces an overall D. The last two are *modifying*: a D in either reduces the overall tier by one notch but does not auto-fail the job.
+The first three dimensions (Skills & technical fit, Role shape match, Engagement fit) are tagged `type: load-bearing`: a D in any of them produces an overall D. The last two (Domain & context, Trajectory fit) are tagged `type: modifying`: a D in either reduces the overall tier by one notch but does not auto-fail the job. These `type` tags are the same field a custom per-workspace `dimensions[]` declares (see `../../shared-references/canonical-schemas.md`); an entry with no `type` is treated as `load-bearing`.
 
 Hard gates are applied earlier in `_gate-engine`; any gated job is D before dimensions are computed.
+
+**The tier-derivation table above is the ONLY thing that decides the tier.** The parallel `competitiveness` judgement (Step 2 in `../SKILL.md`) and the deterministic `confidence` / `match_explanation_tag` derivation (Step 3, computed from these same `type` tags via `confidence-derivation-rules.json`) are *additive explanation signals*. They are read FROM the dimension tiers and the type tags — they never feed back INTO this table. Competitiveness in particular is computed only for jobs that are already overall A or B and has no path to changing the tier.
 
 ## How workspaces customise
 

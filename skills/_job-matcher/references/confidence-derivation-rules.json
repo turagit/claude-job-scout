@@ -1,0 +1,187 @@
+{
+  "_doc": "Deterministic decision table mapping a dimension-tier profile to {confidence, match_explanation_tag}. Read by _job-matcher AFTER the v1 tier-derivation table has produced the overall tier; computed with NO LLM call. It is ADDITIVE: it never alters the tier, the tier-derivation table, or the score-cache key (still job_id:cv_hash:profile_hash:v1). rubric_version stays v1.",
+  "version": "1.0.0",
+  "confidence_enum": ["high", "med", "low"],
+  "tag_enum": ["all-fit", "one-gap", "multiple-gaps", "overqualified", "underqualified", "trajectory-concern"],
+  "inputs": {
+    "_doc": "The deriver builds a per-job profile from the scored dimensions. Each dimension's `type` is read from the rubric (user-profile.dimensions[].type, or the default-rubric tags in dimensions-default.md). A dimension with NO `type` is treated as `load-bearing`. Counts are split by type.",
+    "load_bearing_counts": "object — {A, B, C, D}: how many load-bearing dimensions sit at each tier",
+    "modifying_counts": "object — {A, B, C, D}: how many modifying dimensions sit at each tier",
+    "competitiveness": "high | med | low | null — the Step-2 parallel signal; null for jobs scored below B. Only consulted for the `overqualified` tag, never for confidence and never for the tier."
+  },
+  "evaluation": {
+    "_doc": "Rules are evaluated top-to-bottom; the FIRST matching rule wins (ordered, mutually-resolved by priority). `match` predicates read the count buckets above. A predicate omitted means 'any'. This makes the mapping a pure function of the dimension-tier profile (plus competitiveness for one tag), so the same profile always yields the same {confidence, tag}.",
+    "order": "first-match-wins"
+  },
+  "rules": [
+    {
+      "id": "all-a",
+      "match": {"load_bearing": {"C": 0, "D": 0, "B": 0}, "modifying": {"C": 0, "D": 0, "B": 0}},
+      "confidence": "high",
+      "match_explanation_tag": "all-fit",
+      "note": "Every dimension (load-bearing and modifying) is A. No gaps anywhere."
+    },
+    {
+      "id": "overqualified",
+      "match": {"competitiveness": "high", "load_bearing": {"C": 0, "D": 0}, "modifying_demotion": true},
+      "confidence": "high",
+      "match_explanation_tag": "overqualified",
+      "note": "Candidate is a standout (competitiveness high) and load-bearing fit is clean, but a modifying dimension is demoted (B/C/D) — they exceed the role on the core bar while a context/trajectory dimension nudges down. Distinct from trajectory-concern: here the demotion reads as the candidate being too strong for the role, not the role being wrong for them."
+    },
+    {
+      "id": "trajectory-concern",
+      "match": {"load_bearing": {"C": 0, "D": 0}, "modifying": {"D_at_least": 1}},
+      "confidence": "med",
+      "match_explanation_tag": "trajectory-concern",
+      "note": "Core (load-bearing) fit holds — no C or D — but a modifying dimension (Domain & context or Trajectory fit) is a D. The match works on the essentials but a context/trajectory worry is flagged."
+    },
+    {
+      "id": "underqualified",
+      "match": {"load_bearing": {"D_at_least": 1}},
+      "confidence": "low",
+      "match_explanation_tag": "underqualified",
+      "note": "A load-bearing dimension is a D. (Overall tier is already D via the v1 table — this tag explains WHY: a core requirement is unmet.)"
+    },
+    {
+      "id": "any-c-multiple-gaps",
+      "match": {"total_C_at_least": 2},
+      "confidence": "low",
+      "match_explanation_tag": "multiple-gaps",
+      "note": "Two or more dimensions (load-bearing or modifying) sit at C. Any C drives confidence to low; two or more reads as multiple gaps."
+    },
+    {
+      "id": "any-c-single-gap",
+      "match": {"total_C_at_least": 1},
+      "confidence": "low",
+      "match_explanation_tag": "one-gap",
+      "note": "Exactly one dimension at C, none at D. Any C drives confidence to low per the rule; a single C reads as one gap."
+    },
+    {
+      "id": "two-plus-load-bearing-b",
+      "match": {"load_bearing": {"B_at_least": 2, "C": 0, "D": 0}},
+      "confidence": "med",
+      "match_explanation_tag": "multiple-gaps",
+      "note": "No C/D anywhere, but two or more load-bearing dimensions are only B — several soft gaps on the core bar."
+    },
+    {
+      "id": "one-load-bearing-b",
+      "match": {"load_bearing": {"B_exact": 1, "C": 0, "D": 0}},
+      "confidence": "med",
+      "match_explanation_tag": "one-gap",
+      "note": "Exactly one load-bearing dimension at B, the rest A, no C/D. One soft gap on the core bar."
+    },
+    {
+      "id": "modifying-b-only",
+      "match": {"load_bearing": {"B": 0, "C": 0, "D": 0}, "modifying": {"B_at_least": 1, "C": 0, "D": 0}},
+      "confidence": "high",
+      "match_explanation_tag": "one-gap",
+      "note": "All load-bearing dimensions are A; only a modifying dimension is B. The core fit is perfect, so confidence stays high; the single modifying B is surfaced as one-gap."
+    }
+  ],
+  "fallback": {
+    "_doc": "Defensive default if no rule above matches (should not occur for a well-formed profile). Keeps the deriver total.",
+    "confidence": "med",
+    "match_explanation_tag": "one-gap"
+  },
+  "test_cases": [
+    {
+      "name": "all dimensions A",
+      "dimensions": {
+        "load_bearing": {"A": 3, "B": 0, "C": 0, "D": 0},
+        "modifying": {"A": 2, "B": 0, "C": 0, "D": 0}
+      },
+      "competitiveness": "high",
+      "expected_confidence": "high",
+      "expected_tag": "all-fit",
+      "rule": "all-a"
+    },
+    {
+      "name": "one load-bearing B, rest A",
+      "dimensions": {
+        "load_bearing": {"A": 2, "B": 1, "C": 0, "D": 0},
+        "modifying": {"A": 2, "B": 0, "C": 0, "D": 0}
+      },
+      "competitiveness": "med",
+      "expected_confidence": "med",
+      "expected_tag": "one-gap",
+      "rule": "one-load-bearing-b"
+    },
+    {
+      "name": "two load-bearing B, rest A, no C/D",
+      "dimensions": {
+        "load_bearing": {"A": 1, "B": 2, "C": 0, "D": 0},
+        "modifying": {"A": 2, "B": 0, "C": 0, "D": 0}
+      },
+      "competitiveness": "med",
+      "expected_confidence": "med",
+      "expected_tag": "multiple-gaps",
+      "rule": "two-plus-load-bearing-b"
+    },
+    {
+      "name": "single C present (any C -> low)",
+      "dimensions": {
+        "load_bearing": {"A": 2, "B": 0, "C": 1, "D": 0},
+        "modifying": {"A": 2, "B": 0, "C": 0, "D": 0}
+      },
+      "competitiveness": null,
+      "expected_confidence": "low",
+      "expected_tag": "one-gap",
+      "rule": "any-c-single-gap"
+    },
+    {
+      "name": "two C present -> low, multiple-gaps",
+      "dimensions": {
+        "load_bearing": {"A": 1, "B": 0, "C": 2, "D": 0},
+        "modifying": {"A": 2, "B": 0, "C": 0, "D": 0}
+      },
+      "competitiveness": null,
+      "expected_confidence": "low",
+      "expected_tag": "multiple-gaps",
+      "rule": "any-c-multiple-gaps"
+    },
+    {
+      "name": "D in a modifying dimension, load-bearing clean -> trajectory-concern",
+      "dimensions": {
+        "load_bearing": {"A": 3, "B": 0, "C": 0, "D": 0},
+        "modifying": {"A": 1, "B": 0, "C": 0, "D": 1}
+      },
+      "competitiveness": "med",
+      "expected_confidence": "med",
+      "expected_tag": "trajectory-concern",
+      "rule": "trajectory-concern"
+    },
+    {
+      "name": "competitiveness high + modifying demotion, load-bearing clean -> overqualified",
+      "dimensions": {
+        "load_bearing": {"A": 3, "B": 0, "C": 0, "D": 0},
+        "modifying": {"A": 1, "B": 1, "C": 0, "D": 0}
+      },
+      "competitiveness": "high",
+      "expected_confidence": "high",
+      "expected_tag": "overqualified",
+      "rule": "overqualified"
+    },
+    {
+      "name": "D in a load-bearing dimension -> underqualified, low (overall tier already D)",
+      "dimensions": {
+        "load_bearing": {"A": 2, "B": 0, "C": 0, "D": 1},
+        "modifying": {"A": 2, "B": 0, "C": 0, "D": 0}
+      },
+      "competitiveness": null,
+      "expected_confidence": "low",
+      "expected_tag": "underqualified",
+      "rule": "underqualified"
+    },
+    {
+      "name": "all load-bearing A, one modifying B -> high, one-gap",
+      "dimensions": {
+        "load_bearing": {"A": 3, "B": 0, "C": 0, "D": 0},
+        "modifying": {"A": 1, "B": 1, "C": 0, "D": 0}
+      },
+      "competitiveness": "med",
+      "expected_confidence": "high",
+      "expected_tag": "one-gap",
+      "rule": "modifying-b-only"
+    }
+  ]
+}
