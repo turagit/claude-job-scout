@@ -2,6 +2,8 @@
 
 An all-in-one LinkedIn job search automation plugin for Claude Code / Cowork. Analyses your CV, runs crafted Boolean discovery sweeps for matching jobs, optimises your LinkedIn profile, manages recruiter conversations, and applies to jobs — all from one place.
 
+> **New here? Start with the [Quick Start guide](QUICKSTART.md)** — workspace setup, where to put your CV and supporting documents (certificates, talks, diplomas), and the commands to run in order.
+
 ## What It Does
 
 This plugin turns Claude into your personal job search assistant on LinkedIn. It handles the pipeline from CV optimisation to application submission, so you can focus on preparing for interviews instead of scrolling job boards.
