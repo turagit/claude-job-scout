@@ -50,6 +50,18 @@ These are model-auto-loaded playbooks used by the commands above. You don't invo
 
 ---
 
+### Sharper matching & wider recall (v0.12.0)
+
+The hardest part of a job search isn't scrolling — it's surfacing the roles you'd be a *great* fit for, especially when they're written in words you'd never have searched for. This release tackles both ends of that problem.
+
+**Wider recall — catches great-fit roles written in different words.** `/analyze-cv` now derives a **capability graph** from your CV — the functional and adjacent capabilities behind your stated skills, not just the tool names — and shows it to you for approval before it's used. Paired with a conservative **jargon and alias map** (high-confidence title and skill synonyms, grown from the job descriptions your sweeps already read), it feeds a new line of **capability queries** into your existing search plan. These find well-matched roles that were retitled, jargon-rebranded, or described at the function level ("scale, availability, observability") rather than the tool level ("Kubernetes") — the kind your title and skill searches quietly miss. The queries run on `/job-search`, `/deep-sweep`, and ultramode, are capped at a few per run, and ride the same learning loop as every other query: the ones that keep finding A/B-tier jobs graduate into your clusters, the ones that don't retire on their own.
+
+**Sharper ranking — shows where you're a genuine standout, best matches first.** A flat A/B/C list doesn't tell you where you're exceptional versus merely qualified. Now each A/B-tier match carries a **competitiveness** badge (are you a standout for this role?), a **confidence** badge (how sure is the match?), and a short **explanation tag** (`all-fit`, `one-gap`, `overqualified`, and so on). Reports sort **within each tier by confidence then recency**, so the bulletproof standout matches rise to the top of their tier instead of being buried.
+
+It's all additive: your existing tiers, scores, and cached results are untouched, and there's nothing to migrate.
+
+---
+
 ### Ultramode — sourcing beyond LinkedIn (v0.11.0+)
 
 LinkedIn is one market surface. Many of the roles you could actually land are posted elsewhere first — on employer ATS boards, on occupation- and geography-specific boards, on remote-native feeds, in freelance marketplaces, and in community channels. **Ultramode** is an opt-in sweep that widens your sourcing into those places and folds everything it finds into the same tracker, scoring, and report you already use.
