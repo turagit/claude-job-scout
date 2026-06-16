@@ -46,7 +46,7 @@ The keywords box supports `AND`, `OR`, `NOT`, quoted phrases, and parentheses. O
 
 ## 3. Query plan v2
 
-A query plan is an ordered list of entries: `{ query, family, location, params }` where `family` is `title | skill | synonym | explicit`.
+A query plan is an ordered list of entries: `{ query, family, location, params }` where `family` is `title | skill | synonym | explicit | capability`.
 
 ### 3a. Title queries (always)
 
@@ -83,6 +83,32 @@ When `requirements.location_preferences[]` names multiple markets (e.g. `["Unite
 
 When a title query yields <5 new (post-dedupe) IDs, LLM-generate 2–3 synonym variants (prompt in `job-search/SKILL.md`), run them as `family: "synonym"`. Cap 3 per thin query; never expand a synonym. **New:** record every variant in query-stats (§4); a variant that proves itself is promoted into its cluster rather than regenerated from scratch next run.
 
+### 3f. Capability queries (recall engine — Phase 12)
+
+Capability queries catch the great-fit roles written in a different vocabulary — the right job, worded around an *implied* capability rather than a literal CV keyword. Where the skill family (§3b) pairs literal CV skills, the capability family searches what the CV can **credibly speak to**: the `stated`, `latent`, and bridged `adjacent` bands of the approved capability graph, each widened by jargon aliases. It is built **by reference here** — the three sweep surfaces (`/job-search`, `/deep-sweep`, ultramode's keyword sweep via `_source-sweep`) all assemble it from this one section; none duplicate its construction.
+
+**The two inputs (combine them here):**
+
+1. **`.job-scout/cache/capability-graph.json`** — the approved capability graph (built and contracted in `capability-graph.md`; shape locked in `canonical-schemas.md`). Read it defensively per that file's read contract: absent or `cv_hash`-stale = cache miss → no capability queries this run, never an error; an `adjacent` entry missing its `domain_bridge` = malformed → rebuild rather than search an unbounded adjacency.
+2. **`.job-scout/cache/jargon-normalizer.json`** — the alias map (lifecycle in `jargon-normalizer.md`; shape in `canonical-schemas.md`). Read it expand-only: a canonical term with an empty alias list is valid (no high-confidence synonyms) — search the bare term.
+
+**Construction (per capability the family decides to search):**
+
+1. Take a capability term from the graph — a `stated`, `latent`, or `adjacent` `capability` string (the bands are searched in confidence order: `stated`, then `latent`, then bridged `adjacent` last, so a rate-limit interruption costs the least-evidenced capabilities).
+2. Fold in its surface forms from the jargon alias map — look the term up in `jargon-normalizer.json` `aliases` and OR-group it with every alias. So `kubernetes` becomes `("kubernetes" OR "k8s" OR "container orchestration")` when the alias map carries those forms.
+3. Anchor the group to the lane the way the skill family does (§3b) — a context term drawn from the `segment` or a cluster label — so a broad capability does not pull in off-lane roles: `("kubernetes" OR "k8s" OR "container orchestration") AND (<lane anchor>)`. Rendered in the §2 Boolean grammar like every other family.
+4. Skip any capability already represented by a non-retired query in query-stats (§4) — no duplicate searches.
+
+Each rendered entry is tagged `family: "capability"` (the value the `query-stats.json` `family` enum gained in `canonical-schemas.md` § Canonical enums) and recorded in query-stats like any other.
+
+**Cap — at most 3 capability entries per plan, enforced in the query-plan CONSTRUCTION step.** The cap lives in **plan assembly**, not in execution: when a surface builds its plan it appends **at most 3** capability entries (after applying the §3e ordering, so the best-evidenced/best-yielding survive the cap), and the plan that reaches the run loop already carries no more than three. This mirrors the skill family's "2–3 per run" bound and keeps the capability family from crowding out the title and skill families.
+
+**Recall-only — query-expansion only, no pre-scoring filter.** The capability family **only ever expands the query plan**: it widens what is searched, it never drops, filters, dedupes, or normalises-away a candidate job. There is **no pre-scoring filter** anywhere in this family — the **gate engine and the v1 rubric stay the only things that drop a job**. A capability-sourced candidate flows through the identical ID dedupe (§5), repost fingerprint (§5), gate, and rubric path as any other candidate.
+
+**Family-agnostic scoring.** A capability-sourced job is scored **exactly like any other job** — no family metadata is threaded into the matcher, and the rubric never knows or cares which family surfaced a job. `family: "capability"` lives only in the query plan and query-stats (for ordering, retirement, and promotion); it is never an input to the gate engine or the rubric. (`matched_query` on a tracker entry still records *which* query surfaced a job, as for every family — that is attribution for the report, not a scoring signal.)
+
+**Lifecycle — reuses the existing query-stats loop (§4), no new machinery.** Capability queries flow through the **same** retire/promote lifecycle as every other family: `consecutive_zero_new >= 3` → retired (its slot frees for a fresh capability or synonym entry); a capability query whose `new_tier_counts.A + new_tier_counts.B >= 3` is promoted and its term proposed for appending to the originating cluster (user confirms). They are ordered by the same recency-weighted yield (§3e). No bespoke memory, no separate counters — the capability family rides the loop that is already there.
+
 ### 3e. Plan ordering
 
 Run proven queries first: order by recency-weighted yield from query-stats (§4), cold-start entries last in declaration order. This way, a rate-limit interruption mid-run costs the least-proven queries, not the best ones.
@@ -96,7 +122,7 @@ A cache (deletable at any time; absence = cold start). Shape:
   "version": 1,
   "queries": {
     "<normalised query string>": {
-      "family": "title | skill | synonym | explicit",
+      "family": "title | skill | synonym | explicit | capability",
       "first_run": "YYYY-MM-DD",
       "last_run": "YYYY-MM-DD",
       "runs": 7,
@@ -115,7 +141,7 @@ A cache (deletable at any time; absence = cold start). Shape:
 
 **Retirement:** `consecutive_zero_new >= 3` → set `status: "retired"`. Retired queries leave the default plan; their slot goes to a fresh synonym variant. Mention retirements in the run summary (one line) so the user can revive by editing the file or re-running `/analyze-cv --rediscover`.
 
-**Promotion:** a `synonym` query whose `new_tier_counts.A + new_tier_counts.B >= 3` → set `status: "promoted"` and propose appending its title to the originating cluster in `query_clusters[]` (user confirms; write via the `state-validators.md` atomic pattern). Promoted queries run every time without regeneration.
+**Promotion:** a `synonym` or `capability` query whose `new_tier_counts.A + new_tier_counts.B >= 3` → set `status: "promoted"` and propose appending its term to the originating cluster in `query_clusters[]` (user confirms; write via the `state-validators.md` atomic pattern). Promoted queries run every time without regeneration. The `capability` family rides this same loop — a proven capability query is promoted exactly like a proven synonym variant.
 
 **Yield ordering metric (§3e):** `total_new / runs`, halved if `last_run` is more than 30 days old. No precision theatre — this only needs to sort a list of ~10 queries.
 
@@ -139,8 +165,9 @@ Sweep report payloads already carry `posted_at` and (when shown) `applicants`. T
 
 ## Consumers
 
-- `job-search/SKILL.md` — full plan (title + skill + geo + synonym rescue), stats writes.
-- `deep-sweep/SKILL.md` — full plan at deep settings (Past Week, pages 1–3), stats writes.
+- `job-search/SKILL.md` — full plan (title + skill + geo + synonym rescue + capability §3f), stats writes.
+- `deep-sweep/SKILL.md` — full plan at deep settings (Past Week, pages 1–3), including the capability family §3f, stats writes.
+- `_source-sweep/SKILL.md` — ultramode's keyword sweep folds the capability family §3f into the lane keywords it sweeps each external source with.
 - `check-job-notifications/SKILL.md` — not a query surface, but applies §5 repost dedupe and §6 freshness to everything it ingests.
 - `create-alerts/SKILL.md` — derives proposed alerts from clusters + top-performing queries.
-- `analyze-cv/SKILL.md` — Step 3d cluster discovery writes `query_clusters[]`.
+- `analyze-cv/SKILL.md` — Step 3d cluster discovery writes `query_clusters[]`; Step 3e writes `cache/capability-graph.json` (the graph §3f reads).

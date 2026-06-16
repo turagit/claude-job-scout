@@ -35,7 +35,7 @@ Follow `shared-references/cv-loading.md`. Read `user-profile.json` for `target_t
 
 ## Step 2: Query plan v2
 
-Build the plan per `../shared-references/linkedin-search.md` §3, exactly as `../job-search/SKILL.md` Step 2 (zero-arg branch): Boolean title-cluster queries from `query_clusters[]` (per-title fallback), 2–3 skill-combination queries when the keyword corpus has ≥10 source jobs, geo iteration across `location_preferences[]`, ordering from `.job-scout/cache/query-stats.json` (proven first, retired excluded). Synonym rescue happens reactively in Step 3 when a query is thin.
+Build the plan per `../shared-references/linkedin-search.md` §3, exactly as `../job-search/SKILL.md` Step 2 (zero-arg branch): Boolean title-cluster queries from `query_clusters[]` (per-title fallback), 2–3 skill-combination queries when the keyword corpus has ≥10 source jobs, the `capability` family per §3f (capability graph folded with jargon aliases, **at most 3 entries, capped here in plan construction**, both caches absent/stale → skip; recall-only, family-agnostic scoring), geo iteration across `location_preferences[]`, ordering from `.job-scout/cache/query-stats.json` (proven first, retired excluded). Do not duplicate the capability construction — follow §3f. Synonym rescue happens reactively in Step 3 when a query is thin.
 
 ## Step 3: Run all planned queries (Past Week, pages 1-3)
 

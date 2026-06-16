@@ -34,8 +34,9 @@ Follow `../shared-references/linkedin-search.md` §3.
 
 1. **Title queries:** one Boolean query per `query_clusters[]` entry — `("Title A" OR "Title B") NOT (term1 OR term2)`. If `query_clusters[]` is absent, one plain query per `target_titles[]` entry.
 2. **Skill queries:** if `.job-scout/cache/jd-keyword-corpus.json` has ≥10 source jobs, add 2–3 skill-pair queries per §3b (top co-occurring A/B-tier skills ∩ `cv_summary.key_skills`, with a context anchor).
-3. **Geo iteration:** each query runs once per market in `requirements.location_preferences[]` (a single "worldwide remote" preference is one pass with `f_WT=2`).
-4. **Ordering:** load `.job-scout/cache/query-stats.json` (treat missing as empty) and order per §3e — proven queries first, retired queries excluded, cold-start entries last.
+3. **Capability queries:** add the `capability` family per §3f — built from `.job-scout/cache/capability-graph.json` (stated/latent/adjacent bands, confidence-ordered) folded with `.job-scout/cache/jargon-normalizer.json` aliases, each anchored to the lane. Both caches absent/stale → cache miss, skip the family (never an error). **Cap: at most 3 capability entries per plan, enforced here in plan construction** — append no more than three after ordering. Skip any capability already covered by a non-retired query in query-stats. Recall-only: this only widens the plan; the gate engine and rubric stay the only droppers, and a capability-sourced job is scored exactly like any other (no family metadata reaches the matcher). Do not duplicate the construction — follow §3f.
+4. **Geo iteration:** each query (title, skill, capability) runs once per market in `requirements.location_preferences[]` (a single "worldwide remote" preference is one pass with `f_WT=2`).
+5. **Ordering:** load `.job-scout/cache/query-stats.json` (treat missing as empty) and order per §3e — proven queries first, retired queries excluded, cold-start entries last. The capability cap is applied against this ordering so the best-evidenced/best-yielding capability entries survive.
 
 ### Single-arg invocation
 
@@ -101,7 +102,7 @@ Construct a `data` payload for the render layer. Tiers come straight from the `_
 ```json
 {
   "title": "Search results — {{N_queries}} queries · {{N_results}} surfaced",
-  "subtitle": "{{N_title}} title + {{N_skill}} skill + {{N_synonym}} synonym · A:{{a}} B:{{b}} C:{{c}} · Filtered:{{gated}} · Reposts skipped:{{reposts}}",
+  "subtitle": "{{N_title}} title + {{N_skill}} skill + {{N_capability}} capability + {{N_synonym}} synonym · A:{{a}} B:{{b}} C:{{c}} · Filtered:{{gated}} · Reposts skipped:{{reposts}}",
   "generated_at": "<YYYY-MM-DD HH:MM>",
   "filename": "job-search-latest.html",
   "queries": ["<query1>", "<query2 (skill)>", "<query3 (synonym of query1)>"],

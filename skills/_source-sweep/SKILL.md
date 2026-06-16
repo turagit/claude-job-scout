@@ -67,7 +67,7 @@ The dispatcher passes a single JSON envelope (per `subagent-protocol.md`) descri
 ```
 
 - `source` is **one** `sources.json` entry verbatim (its `access_lane` and `poll_method` drive everything below).
-- `lane_keywords[]` + `not_terms[]` are the workspace lane's relevance terms (derived from `segment` / `target_titles` / `master_keyword_list`), used for the **client-side full-text filter** on `html`/feed lanes.
+- `lane_keywords[]` + `not_terms[]` are the workspace lane's relevance terms (derived from `segment` / `target_titles` / `master_keyword_list`, **plus the `capability` family per `../shared-references/linkedin-search.md` §3f** — the capability-graph bands folded with jargon aliases, so reworded great-fit roles surface in the keyword sweep too). The dispatcher assembles these terms by reference to §3f — it does not duplicate the construction — and respects the §3f cap (at most 3 capability entries, capped in plan construction) and query-stats ordering. They are used for the **client-side full-text filter** on `html`/feed lanes. Recall-only: these terms only **widen** what is swept; they never drop, filter, or normalise-away a role beyond the existing lane filter, and a capability-sourced role is scored exactly like any other (the gate engine and rubric stay the only droppers — § Score).
 - `known_ids[]` + `known_fingerprints[]` are the tracker snapshot the command loaded once (see § Tracker coordination). They are the dedupe set — **read-only** here.
 - `ats_watchlist[]` is supplied **only for `ats-provider` sources** (the seed companies; see § ATS watchlist).
 - `api_keys` carries any key this source's `needs_key` requires (looked up by the dispatcher from `user-profile.json` `ultramode.api_keys`); absent/empty for keyless sources.
@@ -199,7 +199,7 @@ This skill has no `allowed-tools` frontmatter for the slash-command surface and 
 - `../shared-references/subagent-protocol.md` — the universal subagent I/O contract (envelope, delta-return, budget) this skill conforms to.
 - `../shared-references/ultramode-sources.md` — access lanes + per-lane ingestion, the `resolve_ats` probe-and-cache resolver, the cross-source dedupe fingerprint + canonical preference (Decisions 6 & 9).
 - `../shared-references/canonical-schemas.md` — structured `source: {lane, provider, board}`, the `<provider>__<board>__<externalid>` namespaced id format, the slug charset, the `category`/`access_lane` enums.
-- `../shared-references/linkedin-search.md` — the existing dedupe-before-extract flow (§5 repost fingerprint) this skill mirrors for external sources.
+- `../shared-references/linkedin-search.md` — the existing dedupe-before-extract flow (§5 repost fingerprint) this skill mirrors for external sources, and the `capability` query family (§3f) whose terms fold into `lane_keywords[]` for the keyword sweep.
 - `../shared-references/jd-storage.md` — the `write_jd()` contract for `jds/<id>.txt` blobs.
 - `../shared-references/browser-policy.md` — the read-only `WebFetch` carve-out and the login-walled → extension-lane rule.
 - `../_job-matcher/SKILL.md` + `../_gate-engine/SKILL.md` — the scorer the dispatcher hands new roles to (unchanged by this skill).
