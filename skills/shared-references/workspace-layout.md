@@ -10,23 +10,25 @@ Every command in this plugin reads and writes state inside a single per-project 
   user-profile.json     # canonical v2 — see canonical-schemas.md (segment, requirements, tone, deal_breakers, ultramode)
   tracker.json          # canonical v2/v3 — see canonical-schemas.md (status/tier enums, dimensions, rubric_version, structured source)
   sources.json          # ultramode source registry (Phase 11) — see canonical-schemas.md; absent until ultramode discovery runs
-  jds/                  # per-job JD blobs — see jd-storage.md
-    <job_id>.txt
+  jds/                  # per-job JD blobs, one file per job named for the job id — see jd-storage.md
+    4012345678.txt          # example: JD text for job id 4012345678
   reports/              # YYYY-MM-DD-*.md and HTML run reports (notifications sweeps, match runs, CV analyses)
   archive/              # tracker-YYYY.json — aged seen-status jobs rotated out of tracker.json
   cache/
-    cv-<hash>.json          # parsed CV text + extracted keywords, keyed by file content hash
-    cv-analysis-<hash>.json # full _cv-optimizer scoring output, keyed by content hash
-    scores.json             # job scores keyed by (job_id, cv_hash, profile_hash, rubric_version)
+    cv-a1b2c3.json          # parsed CV text + extracted keywords, one file per CV content hash (cv- prefix)
+    cv-analysis-a1b2c3.json # full _cv-optimizer scoring output, one file per CV content hash (cv-analysis- prefix)
+    scores.json             # job scores keyed by (job_id, cv_hash, profile_hash, rubric_version); value object additionally carries optional Phase 12 fields (competitiveness, confidence, match_explanation_tag) — see canonical-schemas.md
     linkedin-profile.json   # last-seen snapshot of the user's LinkedIn profile
     supporting-docs.json    # index of non-CV workspace docs (see supporting-docs.md)
     jd-keyword-corpus.json  # learned keyword model from ingested JDs (see jd-keyword-extraction.md)
     query-stats.json        # per-query yield memory for the search plan (see linkedin-search.md §4)
+    capability-graph.json   # derived CV capability map keyed by cv_hash (stated/latent/adjacent) — regenerable, deletable; see canonical-schemas.md
+    jargon-normalizer.json  # persistent canonical-term to alias-list dictionary — regenerable, deletable; see canonical-schemas.md
   recruiters/
     threads.json        # canonical v2 — see canonical-schemas.md (lead_tier enum, notes[], last_seen_msg_id)
   cover-letters/        # per-job generated cover letters
-  .backup/              # atomic-write backups, retained ≥30 days
-    <filename>.<ISO8601>.json
+  .backup/              # atomic-write backups, retained ≥30 days; each is the original filename plus a UTC timestamp suffix
+    tracker.json.20260616T090000Z.json  # example: a backup of tracker.json taken at that instant
 ```
 
 > **Two version axes.** The `.job-scout/schema-version` file tracks the *workspace* version. Each state file (`user-profile.json`, `tracker.json`, `threads.json`) carries its own per-file `schema_version`. These are orthogonal: the workspace bumps when the *layout* changes (new directories, new files); per-file versions bump when the *file shape* changes. Phase 5 bumps both: workspace v2 → v3 (adds `jds/` and `.backup/`); per-file shapes → 2 (canonical contracts in `canonical-schemas.md`). Phase 11 bumps the workspace v3 → v4 (ultramode foundations; adds the optional `sources.json` registry and `user-profile` `ultramode` block) and lazily bumps the tracker file shape 2 → 3 (structured `source`).
@@ -139,7 +141,7 @@ Applies when the migration runner reads `version: 2` from `.job-scout/schema-ver
 2. **Lock canonical per-file schemas**. The three state files (`user-profile.json`, `tracker.json`, `recruiters/threads.json`) now declare their own `schema_version: 2` at the top. See `canonical-schemas.md`. All writes go through `state-validators.md` enum checks.
 
 3. **Migrate live state**:
-   - `tracker.json` — normalise non-canonical statuses/tiers; backfill `first_seen`; tag every entry `rubric_version: legacy`; remove inline `description` (move to `jds/<id>.txt` lazily on next access).
+   - `tracker.json` — normalise non-canonical statuses/tiers; backfill `first_seen`; tag every entry `rubric_version: legacy`; remove inline `description` (move to the per-job file under `jds/`, named for the id, lazily on next access).
    - `user-profile.json` — add `segment`, unify `requirements` shape, add empty `deal_breakers[]`, add `tone` block.
    - `recruiters/threads.json` — normalise `lead_tier` enum, rename `participant` → `recruiter_name`, add spec fields (`last_seen_msg_id`, `last_drafted_reply`, `notes[]`, `linked_job_ids[]`).
 
@@ -164,7 +166,7 @@ Applies when the migration runner reads `version: 3` from `.job-scout/schema-ver
 3. **Score-cache migration** (`cache/scores.json` — non-destructive):
    - LinkedIn entries keep their bare numeric keys unchanged — existing cached scores remain valid.
    - External (namespaced-ID) entries have no pre-existing cache entries, so they simply score fresh on first encounter; a cache miss is acceptable and expected.
-   - There is **no destructive rewrite** of `scores.json`. The cache is keyed on the tracker entry's `id` verbatim (numeric for LinkedIn, `<provider>__<board>__<externalid>` for external — see `canonical-schemas.md` § Namespaced external IDs).
+   - There is **no destructive rewrite** of `scores.json`. The cache is keyed on the tracker entry's `id` verbatim (numeric for LinkedIn, the namespaced `provider__board__externalid` form for external, e.g. `greenhouse__miro__4012345` — see `canonical-schemas.md` § Namespaced external IDs).
 
 4. **`sources.json`** is **not** created by this migration. Its absence is the signal that ultramode discovery has not yet run; the first `/ultramode` invocation builds it. A v3-workspace upgraded to v4 therefore has no `sources.json` and prompts onboarding on first `/ultramode`.
 

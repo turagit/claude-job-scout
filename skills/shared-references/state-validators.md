@@ -26,7 +26,7 @@ Contract:
 
 ```bash
 # jq implementation — emits the structured source for any legacy or structured input.
-# Usage: jq '.jobs["<id>"].source | <this filter>' tracker.json
+# Usage: jq '.jobs["4012345678"].source | (the filter below)' tracker.json
 tracker_read_source='
   if . == null then
     {lane: "linkedin", provider: "linkedin", board: "Search"}
@@ -78,6 +78,38 @@ validate_tracker() {
     map(.key + ":" + (.value.rubric_version // "null")) | join(",")' "$f")
   if [ -n "$bad_rv" ]; then
     echo "SCHEMA_VIOLATION: rubric_version $bad_rv" >&2; return 2
+  fi
+
+  # 3b. Optional Phase 12 scoring fields — validated ONLY when present (the fields
+  #     are additive and lazily written; absent is the normal not-yet-scored state,
+  #     never an error). A field set to null also passes. Readers must treat all
+  #     four as optionally-absent (jq `// empty`, Python `job.get(...)`); see
+  #     canonical-schemas.md § cache/scores.json reader contract.
+  local bad_comp
+  bad_comp=$(jq -r '.jobs | to_entries |
+    map(select(.value.competitiveness != null and (.value.competitiveness as $c |
+      ["high","med","low"] | index($c) | not))) |
+    map(.key + ":" + (.value.competitiveness | tostring)) | join(",")' "$f")
+  if [ -n "$bad_comp" ]; then
+    echo "SCHEMA_VIOLATION: competitiveness $bad_comp" >&2; return 2
+  fi
+
+  local bad_conf
+  bad_conf=$(jq -r '.jobs | to_entries |
+    map(select(.value.confidence != null and (.value.confidence as $c |
+      ["high","med","low"] | index($c) | not))) |
+    map(.key + ":" + (.value.confidence | tostring)) | join(",")' "$f")
+  if [ -n "$bad_conf" ]; then
+    echo "SCHEMA_VIOLATION: confidence $bad_conf" >&2; return 2
+  fi
+
+  local bad_tag
+  bad_tag=$(jq -r '.jobs | to_entries |
+    map(select(.value.match_explanation_tag != null and (.value.match_explanation_tag as $t |
+      ["all-fit","one-gap","multiple-gaps","overqualified","underqualified","trajectory-concern"] | index($t) | not))) |
+    map(.key + ":" + (.value.match_explanation_tag | tostring)) | join(",")' "$f")
+  if [ -n "$bad_tag" ]; then
+    echo "SCHEMA_VIOLATION: match_explanation_tag $bad_tag" >&2; return 2
   fi
 
   # 4. schema_version present and 2 or 3
@@ -137,6 +169,28 @@ validate_threads() {
     map(.key + ":" + (.value.lead_tier // "null")) | join(",")' "$f")
   if [ -n "$bad_lt" ]; then
     echo "SCHEMA_VIOLATION: lead_tier $bad_lt" >&2; return 2
+  fi
+
+  return 0
+}
+```
+
+### Validate a query-stats.json change
+
+The `family` enum gained `capability` in Phase 12 (a CV-capability-driven query family — see `canonical-schemas.md` § Canonical enums). Any query entry whose `family` falls outside the canonical set is rejected.
+
+```bash
+validate_query_stats() {
+  local f="$1"
+
+  # family enum check — accepts the Phase 12 "capability" family
+  local bad_fam
+  bad_fam=$(jq -r '[.. | objects | select(has("family")) | .family] |
+    map(select(. as $fam |
+      ["title","skill","synonym","explicit","capability"] | index($fam) | not)) |
+    unique | join(",")' "$f")
+  if [ -n "$bad_fam" ]; then
+    echo "SCHEMA_VIOLATION: query family $bad_fam" >&2; return 2
   fi
 
   return 0
