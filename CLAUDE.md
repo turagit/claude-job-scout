@@ -16,6 +16,7 @@ Automate the end-to-end LinkedIn job-seeking pipeline (CV → profile → search
 6. **Skills prefixed with `_` are internal.** User-invokable slash commands have no prefix (`analyze-cv`, `cover-letter`, etc.). Skills starting with `_` (`_cv-optimizer`, `_cover-letter-writer`, etc.) are capability engines loaded by orchestrators or subagents dispatched via the `Agent` tool — never invoke them directly as slash commands. When creating new skills, follow this convention: `_` prefix if the skill is loaded by another skill or dispatched via `Agent`; no prefix if the user types it as a slash command.
 7. **British English everywhere user-facing.** All plugin copy, report text, and generated drafts (recruiter replies, cover letters, profile copy, CV bullets) default to British English — spelling, idiom, `D Month YYYY` dates — unless the workspace `tone.dialect` says otherwise. See `skills/shared-references/voice-profile.md` for the avoid-list. Identifiers (command names, JSON keys, file paths, CSS classes) are exempt.
 8. **Tier 1 user-facing commands render via `_visualizer`, never inline.** Any skill that produces user-facing output for `/job-search`, `/match-jobs`, `/check-job-notifications`, `/funnel-report`, `/check-inbox`, or `/interview-prep` dispatches the `_visualizer` subagent through the `Agent` tool, following `skills/shared-references/render-orchestration.md`. Inline HTML production from these orchestrators is forbidden — the templating, theming, and asset embedding live in one place by design.
+9. **Mechanical pipeline operations go through `_ultra-engine` scripts.** Snapshots, fingerprints, external-ID minting, delta validation, tracker merges, extension-lane rotation, JD-fetch budgeting, checkpoints, scorecards, and render-payload assembly are script calls (see `skills/_ultra-engine/SKILL.md`), never re-implemented in prose or improvised at run time. The model's jobs in the sweep pipeline are relevance triage, gating judgement on JD text, scoring, and report prose — nothing mechanical.
 
 ## File layout
 
@@ -40,7 +41,7 @@ Automate the end-to-end LinkedIn job-seeking pipeline (CV → profile → search
 
 ## Testing / validation
 
-No automated test suite exists. Validation is manual: spot-checks via shell (`jq`, `grep`, `wc`) and end-to-end runs of the affected slash command in a scratch workspace. Each implementation task in `docs/superpowers/plans/` names the specific verification step.
+The deterministic spine has a real test suite: `bash skills/_ultra-engine/tests/run.sh` (bash + python3 unittest; expected final line `ALL PASS`). Run it before any commit that touches `skills/_ultra-engine/`. Everything else (skill prose, templates, live sweeps) is validated manually: spot-checks via shell (`jq`, `grep`, `wc`) and end-to-end runs of the affected slash command in a scratch workspace. Each implementation task in `docs/superpowers/plans/` names the specific verification step.
 
 ## Versioning policy
 

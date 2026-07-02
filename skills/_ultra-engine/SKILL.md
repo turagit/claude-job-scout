@@ -6,4 +6,23 @@ disable-model-invocation: true
 version: 0.1.0
 ---
 
-Scripts live in `scripts/`; every contract is documented here (Phase 14 Task 12 fills this file). Tests: `bash tests/run.sh` → `ALL PASS`.
+The deterministic spine of the ultramode pipeline (Phase 14, spec 2026-07-02). Orchestrator skills MUST call these scripts for every mechanical operation — hand-rolled snapshots, merges, ID minting, ordering, or budget accounting are defects, not style choices. Scripts print machine-readable output, exit non-zero on any violation, and never write state non-atomically.
+
+Resolve `SCRIPTS` as this skill's own `scripts/` directory (e.g. `skills/_ultra-engine/scripts` relative to the plugin root). `WS` is the workspace's `.job-scout` directory.
+
+| Script | Call | Contract |
+|---|---|---|
+| snapshot | `bash $SCRIPTS/snapshot.sh $WS/tracker.json $WS/cache/ultramode-snapshot.json` | Non-rejected ids + canonical fingerprints; subagents read the FILE (pass its path, never inline the lists). |
+| fingerprint | `bash $SCRIPTS/fingerprint.sh <company> <title> <location>` | THE fingerprint. Never re-derive in prose or a second implementation. |
+| namespace_id | `bash $SCRIPTS/namespace_id.sh <provider> <board> <ext-id>` (or `--from-url <provider> <board> <url>`) | Collision-proof external ids; slugs `[a-z0-9-]`. |
+| validate_delta | `python3 $SCRIPTS/validate_delta.py --ws $WS <delta.json>` | Rejects prose sources, malformed ids, undisclosed caps, missing JD blobs. Run on EVERY sweep return before merge. |
+| merge_tracker | `python3 $SCRIPTS/merge_tracker.py --ws $WS --tracker $WS/tracker.json --today <YYYY-MM-DD> <delta...>` | Serial merge, canonical selection + `also_seen_on`, URL upgrade, atomic write. All-or-nothing: any invalid delta aborts untouched. |
+| rotation | `bash $SCRIPTS/rotation.sh pick <sources.json> 4` / `mark <sources.json> <name> <date>` | Staleness-ordered extension-lane rotation (D8). |
+| jd_queue | `bash $SCRIPTS/jd_queue.sh push|pop|count $WS/cache/jd-queue.json ...` | Deferred JD-fetch queue; budget default 75 (D9). |
+| checkpoint | `bash $SCRIPTS/checkpoint.sh init|save|stage|find-incomplete ...` | Run-dir stage manifest under `$WS/cache/run/<id>/`; `find-incomplete` powers resume (D7). |
+| scorecard | `bash $SCRIPTS/scorecard.sh <run-dir> $WS/tracker.json <today>` | The per-run accounting incl. `disclosures[]` (D12). |
+| payload | `bash $SCRIPTS/payload.sh $WS/tracker.json <run-dir> <today> <n-sources>` | The ultramode render payload: ordering, near-miss rail, scorecard embed. |
+
+Single-entry tracker field updates (a score landing, a bend) use the atomic jq recipe in `../shared-references/state-validators.md`; multi-entry writes go through `merge_tracker.py` only.
+
+Tests: `bash skills/_ultra-engine/tests/run.sh` → `ALL PASS`. Any contract change lands with a test change in the same commit.
