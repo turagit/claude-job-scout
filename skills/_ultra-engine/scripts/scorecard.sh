@@ -24,7 +24,7 @@ jq -n --arg today "$today" --argjson sweeps "$sweeps" --argjson merge "$merge" \
               url_upgrades: ($merge.url_upgrades // 0), skipped_known: ($merge.skipped_known // 0)},
      jd_fetch: $jdf, rotation: $rot,
      gating: {gated: ([ $new[] | select(.tier == "D") ] | length),
-              by_kind: ([ $new[] | (.gate_violations // [])[] | .kind ] | group_by(.) | map({(.[0]): length}) | add // {}),
+              by_kind: ([ $new[] | (.gate_violations // [])[] | (.kind // "unknown") ] | group_by(.) | map({(.[0]): length}) | add // {}),
               near_miss: ([ $new[] | select(.near_miss == true) ] | length)},
      tiers: ([ $new[] | .tier // "untiered" ] | group_by(.) | map({(.[0]): length}) | add // {}
              | {A: (.A // 0), B: (.B // 0), C: (.C // 0), D: (.D // 0), untiered: (.untiered // 0)}),

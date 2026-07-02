@@ -1049,6 +1049,13 @@ assert_eq "2" "$(jq '.jd_fetch.deferred' "$rd/scorecard.json")" "jd fetch lifted
 assert_eq "1" "$(jq '.tiers.B' "$rd/scorecard.json")" "tiers over first_seen==today"
 assert_eq "true" "$(jq '[.disclosures[]|select(test("capped"))]|length > 0' "$rd/scorecard.json")" "cap disclosed"
 assert_eq "true" "$(jq '[.disclosures[]|select(test("Toptal"))]|length > 0' "$rd/scorecard.json")" "rotation disclosed"
+# a null-kind violation must fold to "unknown", never crash the scorecard
+tmp_tracker=$(mktemp)
+jq '.jobs["4001"].gate_violations = [{"kind": null, "detail": "malformed"}]' "$FXD/tracker-mini.json" > "$tmp_tracker"
+rd2=$(mktemp -d)
+bash "$SC" "$rd2" "$tmp_tracker" "2026-06-01" > /dev/null
+assert_eq "1" "$(jq '.gating.by_kind.unknown' "$rd2/scorecard.json")" "null kind folds to unknown"
+rm -f "$tmp_tracker"
 finish
 ```
 
@@ -1084,7 +1091,7 @@ jq -n --arg today "$today" --argjson sweeps "$sweeps" --argjson merge "$merge" \
               url_upgrades: ($merge.url_upgrades // 0), skipped_known: ($merge.skipped_known // 0)},
      jd_fetch: $jdf, rotation: $rot,
      gating: {gated: ([ $new[] | select(.tier == "D") ] | length),
-              by_kind: ([ $new[] | (.gate_violations // [])[] | .kind ] | group_by(.) | map({(.[0]): length}) | add // {}),
+              by_kind: ([ $new[] | (.gate_violations // [])[] | (.kind // "unknown") ] | group_by(.) | map({(.[0]): length}) | add // {}),
               near_miss: ([ $new[] | select(.near_miss == true) ] | length)},
      tiers: ([ $new[] | .tier // "untiered" ] | group_by(.) | map({(.[0]): length}) | add // {}
              | {A: (.A // 0), B: (.B // 0), C: (.C // 0), D: (.D // 0), untiered: (.untiered // 0)}),
