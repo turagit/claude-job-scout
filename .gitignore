@@ -5,3 +5,5 @@
 .superpowers/
 *.swp
 *.swo
+__pycache__/
+*.pyc

@@ -18,10 +18,12 @@ case "$cmd" in
     jq -r --arg s "$stage" '.stages[$s] // "absent"' "$rd/manifest.json";;
   find-incomplete)
     ws="$2"
-    for d in $(ls -1dr "$ws"/cache/run/*/ 2>/dev/null); do
+    while IFS= read -r d; do
+      [ -n "$d" ] || continue
       d="${d%/}"
       [ -f "$d/manifest.json" ] || continue
       if [ "$(jq -r '.stages.render // "absent"' "$d/manifest.json")" != "done" ]; then echo "$d"; break; fi
-    done;;
+    done < <(ls -1dr "$ws"/cache/run/*/ 2>/dev/null)
+    ;;
   *) echo "usage: checkpoint.sh init|save|stage|find-incomplete ..." >&2; exit 2;;
 esac
