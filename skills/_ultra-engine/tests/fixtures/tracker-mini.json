@@ -1,0 +1,9 @@
+{
+  "schema_version": 3, "version": 2,
+  "stats": {"total_seen": 3, "applied": 0, "rejected": 1, "last_run": null, "last_search": null, "last_archive_pass": null, "last_deep_sweep": null},
+  "jobs": {
+    "4001": {"id": "4001", "url": "https://l/4001", "title": "Senior SRE", "company": "Acme", "location": "Amsterdam", "source": {"lane": "linkedin", "provider": "linkedin", "board": "Search"}, "tier": "B", "status": "seen", "first_seen": "2026-06-01", "last_seen": "2026-06-28", "jd_path": null, "notes": ""},
+    "4002": {"id": "4002", "url": "https://l/4002", "title": "DevOps Engineer", "company": "Globex", "location": "Greater Berlin Area", "source": "ultramode 2026-06-16 [Search]", "tier": "C", "status": "rejected", "first_seen": "2026-06-01", "last_seen": "2026-06-01", "jd_path": null, "notes": ""},
+    "greenhouse__miro__7": {"id": "greenhouse__miro__7", "url": "https://g/7", "title": "Platform Engineer", "company": "Miro", "location": "Remote", "source": {"lane": "ats", "provider": "greenhouse", "board": "miro"}, "tier": "A", "status": "seen", "first_seen": "2026-06-10", "last_seen": "2026-06-28", "jd_path": "jds/greenhouse__miro__7.txt", "notes": ""}
+  }
+}
