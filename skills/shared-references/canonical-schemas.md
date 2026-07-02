@@ -276,6 +276,8 @@ The four scoring fields — `competitiveness` (`high`/`med`/`low` or null), `com
 
 The tracker file `schema_version` is **NOT** bumped for these additions (it stays at v3 / lazily-upgraded v3): the fields are optional and additive, matching the non-bumping rule in § When to bump `schema_version`.
 
+**Phase 14 additive entry fields (written lazily, omitted when absent — never null):** `posted_at` (`YYYY-MM-DD`, from the source when known), `also_seen_on[]` (`[{lane, provider, board}]` — sightings of the same fingerprint on other sources; the entry's own `source` never appears here), `near_miss` (`true` only when exactly one gate kind failed and the rubric's would-be tier is A/B), `near_miss_would_be_tier` (`"A"|"B"`), `bent` (`true` after `/bend` relaxed the failed gate one-off), `signals` (`{contract, remote, rate}` as swept, `unknown` marking what fetch-then-gate must resolve). `sources.json` entries gain `last_swept_at` (`YYYY-MM-DD`, rotation bookkeeping).
+
 ## `sources.json` (ultramode source registry)
 
 `.job-scout/sources.json` is the single per-workspace registry of verified job sources, written by ultramode discovery (Phase 11). One registry holds sources of mixed types, so there is **no top-level `lane`** field. Instead each source carries a `category` (its broad source type — which maps to the tracker entry's `source.lane` when a job is sourced) and an `access_lane` (its technical polling method). The file is regenerable and deletable: its absence triggers first-run discovery.
