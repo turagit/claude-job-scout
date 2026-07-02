@@ -1,0 +1,8 @@
+{
+  "status": "ok",
+  "counts": {"scanned": 40, "matched": 6, "dropped_explicit_violation": 3, "returned": 2, "capped": true},
+  "deltas": [
+    {"id": "remotive__remotive__555", "url": "https://r/555", "title": "Platform Engineer", "company": "Initech", "location": "Remote", "source": {"lane": "remote-board", "provider": "remotive", "board": "remotive"}, "fingerprint": "initech|platform engineer|remote", "posted_at": "2026-07-01", "jd_path": "jds/remotive__remotive__555.txt", "tags": ["kubernetes"]}
+  ],
+  "errors": [], "continuation_cursor": null
+}
