@@ -14,7 +14,8 @@ class T(unittest.TestCase):
         os.makedirs(os.path.join(self.ws, "jds"))
         with open(os.path.join(HERE, "fixtures", "delta-good.json")) as fh:
             self.good = json.load(fh)
-        open(os.path.join(self.ws, "jds", "remotive__remotive__555.txt"), "w").write("full jd text")
+        with open(os.path.join(self.ws, "jds", "remotive__remotive__555.txt"), "w") as jd:
+            jd.write("full jd text")
 
     def test_good_passes(self):
         self.assertEqual(run(self.ws, self.good).returncode, 0)
@@ -38,6 +39,17 @@ class T(unittest.TestCase):
     def test_missing_counts_rejected(self):
         bad = json.loads(json.dumps(self.good)); del bad["counts"]
         self.assertEqual(run(self.ws, bad).returncode, 1)
+
+    def test_missing_deltas_rejected(self):
+        bad = json.loads(json.dumps(self.good)); del bad["deltas"]
+        p = run(self.ws, bad); self.assertEqual(p.returncode, 1); self.assertIn("deltas", p.stderr)
+
+    def test_nonstring_posted_at_rejected_cleanly(self):
+        bad = json.loads(json.dumps(self.good)); bad["deltas"][0]["posted_at"] = 20260701
+        p = run(self.ws, bad)
+        self.assertEqual(p.returncode, 1)
+        self.assertNotIn("Traceback", p.stderr)
+        self.assertIn("posted_at", p.stderr)
 
 if __name__ == "__main__":
     unittest.main()

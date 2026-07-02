@@ -34,7 +34,11 @@ def main():
     if not isinstance(env.get("errors"), list):
         errs.append("envelope.errors: required list")
 
-    for i, d in enumerate(env.get("deltas") or []):
+    deltas = env.get("deltas")
+    if not isinstance(deltas, list):
+        errs.append("envelope.deltas: required list")
+        deltas = []
+    for i, d in enumerate(deltas):
         p = f"deltas[{i}]"
         for k in ("id", "url", "title", "company"):
             if not isinstance(d.get(k), str) or not d.get(k):
@@ -49,7 +53,10 @@ def main():
         fp = d.get("fingerprint", "")
         if not (isinstance(fp, str) and fp.count("|") == 2):
             errs.append(f"{p}.fingerprint: required 'company|title|location' form")
-        if not DATE_RE.match(d.get("posted_at", "") or ""):
+        pa = d.get("posted_at", "")
+        if pa is None:
+            pa = ""
+        if not isinstance(pa, str) or not DATE_RE.match(pa):
             errs.append(f"{p}.posted_at: YYYY-MM-DD or empty")
         jd = d.get("jd_path")
         if jd is not None:
