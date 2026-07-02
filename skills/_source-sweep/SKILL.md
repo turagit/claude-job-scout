@@ -33,6 +33,10 @@ This is why the subagent's `allowed_tools` grants `Write` (for JD blobs only) bu
 
 ## Input shape
 
+## Prompt templates (dispatcher contract — Phase 14)
+
+The dispatcher builds this subagent's prompt from the verbatim template matching the source's `access_lane` — `references/prompt-api.md`, `references/prompt-rss.md`, or `references/prompt-html.md` — substituting ONLY the `{{...}}` placeholders (`{{GATE_BLOCK}}` is built from `requirements.deal_breakers` as data: the allowed `values[]` per kind plus the drop-on-explicit-violation rule; `{{CAP}}` defaults to 40). Composing a sweep prompt from memory is a defect: the 2026-07-02 audit traced missing JD persistence, ad-hoc IDs, prose sources, and silent caps to exactly that. The `extension` lane has no template — it never runs in a subagent (§ extension_lane_deferred).
+
 The dispatcher passes a single JSON envelope (per `subagent-protocol.md`) describing exactly one source plus the tracker snapshot:
 
 ```json
