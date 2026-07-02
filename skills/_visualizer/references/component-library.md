@@ -273,3 +273,62 @@ The `ultramode` view is `match-jobs` with source awareness. It reuses every job-
 
 The dispatcher pre-sorts `data.results` tier A→B→C, freshest-first within tier, gated last; the template renders in order and collapses any `gate_violations[]` entry into the "Filtered out" group. Worked payloads: `../examples/ultramode-{multi-source,gated,empty,also-seen}.json`.
 
+## Near-miss rail (Phase 14)
+
+A collapsed `<details>` rail listing roles the gates filtered but the rubric would otherwise have scored A or B — the "would you bend?" prompt. Sits immediately after the results section (after the "Filtered out" group), so it renders whether or not `data.results` is empty. Driven by `data.near_misses[]` (see `SKILL.md` § "`ultramode` payload — additive fields"); renders nothing when the array is empty or absent.
+
+```html
+{% if data.near_misses %}
+<details class="near-miss-rail">
+  <summary>Near-misses — would you bend? ({{ data.near_misses|length }})</summary>
+  {% for j in data.near_misses %}
+  <div class="card near-miss">
+    <div class="card-head">
+      <span class="tier-pill tier-d">D</span>
+      <span class="would-be">would be {{ j.would_be_tier }}</span>
+      <strong>{{ j.title }}</strong> @ {{ j.company }} · {{ j.location }}
+    </div>
+    <div class="gate-line">Fails one gate: <code>{{ j.failed_gate.kind }}</code> — {{ j.failed_gate.detail }}</div>
+    <div class="bend-hint">Bend it: <code>{{ j.bend_hint }}</code> · <a href="{{ j.url }}">view role</a></div>
+  </div>
+  {% endfor %}
+</details>
+{% endif %}
+```
+
+Each card shows a `tier-d` pill (it was gated, so it never leaves D) alongside the `would_be_tier` it would have earned, the single `failed_gate` that blocked it, and the `bend_hint` — the `/bend <id>` command that re-scores it with that one gate relaxed. Markdown twin renders the same fields as a flat bullet list (no collapse — markdown has no native `<details>` styling to lean on):
+
+```jinja2
+{% if data.near_misses %}
+## Near-misses — would you bend? ({{ data.near_misses|length }})
+{% for j in data.near_misses %}
+- **{{ j.title }}** @ {{ j.company }} ({{ j.location }}) — would be **{{ j.would_be_tier }}**; fails `{{ j.failed_gate.kind }}`: {{ j.failed_gate.detail }} → `{{ j.bend_hint }}`
+{% endfor %}
+{% endif %}
+```
+
+## Scorecard strip (Phase 14)
+
+A collapsed `<details>` strip disclosing anything the run capped, skipped, or deferred — transparency for the "always-render" contract (`/ultramode` renders even on partial failure). Sits immediately after the near-miss rail. Driven by `data.scorecard` (see `SKILL.md` § "`ultramode` payload — additive fields"); the template reads only `.disclosures[]`.
+
+```html
+{% if data.scorecard %}
+<details class="scorecard"><summary>Run scorecard</summary>
+  <ul>
+  {% for d in data.scorecard.disclosures %}<li>{{ d }}</li>{% endfor %}
+  {% if not data.scorecard.disclosures %}<li>Nothing capped, skipped, or deferred this run.</li>{% endif %}
+  </ul>
+</details>
+{% endif %}
+```
+
+When `data.scorecard.disclosures` is empty, the HTML strip still renders (with a reassuring "Nothing capped, skipped, or deferred this run" line) since the strip itself is guarded on `data.scorecard` being present, not on the array being non-empty. The markdown twin is stricter — it guards on **both** `data.scorecard` and a non-empty `disclosures[]`, so a clean run omits the section entirely rather than printing an empty heading:
+
+```jinja2
+{% if data.scorecard and data.scorecard.disclosures %}
+## Run scorecard
+{% for d in data.scorecard.disclosures %}- {{ d }}
+{% endfor %}
+{% endif %}
+```
+

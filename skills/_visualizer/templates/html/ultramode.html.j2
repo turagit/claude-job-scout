@@ -102,3 +102,28 @@
   <div class="hint">Every source returned IDs already in your tracker, or your filters left nothing through. Try broadening your `target_titles`, relaxing a deal-breaker, or running `/ultramode` again later.</div>
 </div>
 {% endif %}
+
+{% if data.near_misses %}
+<details class="near-miss-rail">
+  <summary>Near-misses — would you bend? ({{ data.near_misses|length }})</summary>
+  {% for j in data.near_misses %}
+  <div class="card near-miss">
+    <div class="card-head">
+      <span class="tier-pill tier-d">D</span>
+      <span class="would-be">would be {{ j.would_be_tier }}</span>
+      <strong>{{ j.title }}</strong> @ {{ j.company }} · {{ j.location }}
+    </div>
+    <div class="gate-line">Fails one gate: <code>{{ j.failed_gate.kind }}</code> — {{ j.failed_gate.detail }}</div>
+    <div class="bend-hint">Bend it: <code>{{ j.bend_hint }}</code> · <a href="{{ j.url }}">view role</a></div>
+  </div>
+  {% endfor %}
+</details>
+{% endif %}
+{% if data.scorecard %}
+<details class="scorecard"><summary>Run scorecard</summary>
+  <ul>
+  {% for d in data.scorecard.disclosures %}<li>{{ d }}</li>{% endfor %}
+  {% if not data.scorecard.disclosures %}<li>Nothing capped, skipped, or deferred this run.</li>{% endif %}
+  </ul>
+</details>
+{% endif %}

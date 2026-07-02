@@ -31,6 +31,20 @@ The dispatcher passes a single JSON envelope as the prompt body:
 
 The full contract — including the `data` shape per view — is in `references/rendering-protocol.md`.
 
+### `ultramode` payload — additive fields (Phase 14)
+
+Alongside the universal fields and the `ultramode`-specific `tier_counts` / `source_breakdown` (see `../shared-references/render-orchestration.md` § "The `ultramode` view"), `data` carries two further additive, optional fields — both written by `_ultra-engine/scripts/payload.sh` and passed through **verbatim** by `/ultramode` Step 4g:
+
+- **`data.near_misses[]`** — roles the gates filtered but the rubric would otherwise have scored A or B. One entry per near-miss:
+  - `id`, `title`, `company`, `location`, `url` — same shape as a `results[]` entry.
+  - `would_be_tier` (`"A"` | `"B"`) — the tier the rubric assigned before the single gate failure.
+  - `failed_gate: {kind, detail}` — the one deal-breaker that gated it (near-misses fail exactly one gate kind by definition — see `_gate-engine` § near-miss).
+  - `bend_hint` — the `/bend <id>` command string that re-scores the role with that one gate relaxed.
+  - Absent or empty when the run surfaced no near-misses; templates render nothing in that case (no empty rail).
+- **`data.scorecard`** — an embedded run-disclosure object (see `_ultra-engine/scripts/scorecard.sh`). Templates read only `.disclosures[]`, an array of one-line strings describing anything capped, skipped, or deferred this run (e.g. `"sweep-x: results capped — 2 of 3 lane matches returned"`). When `disclosures` is empty, the HTML view shows a reassuring "Nothing capped, skipped, or deferred this run" line; the markdown view omits the section entirely.
+
+Both fields render **outside** the `data.results` empty/non-empty branch — a run can have near-misses or scorecard disclosures even when `data.results` is empty, so the rail and strip are never gated on `data.results` being truthy.
+
 ## Output shape
 
 ```json

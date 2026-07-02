@@ -58,3 +58,15 @@ _Source: {{ macros.source_chip(job.source) }}{% if job.also_seen_on and job.also
 {% else %}
 🌱 **No jobs surfaced across your sources.** Every source returned IDs already in your tracker, or your filters left nothing through. Try broadening your `target_titles`, relaxing a deal-breaker, or running `/ultramode` again later.
 {% endif %}
+
+{% if data.near_misses %}
+## Near-misses — would you bend? ({{ data.near_misses|length }})
+{% for j in data.near_misses %}
+- **{{ j.title }}** @ {{ j.company }} ({{ j.location }}) — would be **{{ j.would_be_tier }}**; fails `{{ j.failed_gate.kind }}`: {{ j.failed_gate.detail }} → `{{ j.bend_hint }}`
+{% endfor %}
+{% endif %}
+{% if data.scorecard and data.scorecard.disclosures %}
+## Run scorecard
+{% for d in data.scorecard.disclosures %}- {{ d }}
+{% endfor %}
+{% endif %}
