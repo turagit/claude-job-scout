@@ -4,6 +4,21 @@ All notable changes to the LinkedIn Job Hunter plugin are documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] — 2026-07-02
+
+### Added
+- **Deterministic engine spine (`_ultra-engine`)** — scripts for snapshots, fingerprints, namespaced IDs, delta validation, atomic tracker merges with canonical selection + `also_seen_on`, extension-lane rotation, JD-fetch budgeting, run checkpoints, per-run scorecard, and render-payload assembly — plus the repo's first automated test suite (`skills/_ultra-engine/tests/run.sh`).
+- **Near-miss rail + `/bend`** — strong-fit roles failing exactly one hard gate surface in a collapsed "would you bend?" report section; `/bend <id>` re-scores one with that gate relaxed.
+- **Per-run scorecard** — sources swept/skipped/rotated, dedupe accounting, JD-fetch budget use, gating by reason, tier yield, and explicit disclosure lines (no silent caps, ever).
+
+### Changed
+- `/ultramode` Step 4 now drives the engine: checkpointed stages with resume, marketplace rotation (4/run, staleness-ordered), sweep-time drop of explicit gate violations, fetch-then-gate for unconfirmed data (budget 75/run, deferred queue), scoring refuses roles without a persisted JD, and the report **always renders** — partial runs included.
+- `_source-sweep` prompts are verbatim templates (api/rss/html); improvised dispatch prompts are a named defect.
+- `_gate-engine` reads `deal_breakers[].values` as the allowed set (detachering-as-freelance honoured) and always persists structured `gate_violations[]`.
+
+### Fixed
+- The five 2026-07-02 audit defects: zero JD persistence, silent result caps, ad-hoc external IDs, prose `source` strings, and the never-rendered report/extension lane.
+
 ## [0.13.0] — 2026-06-16
 
 Phase 13 — Ultramode discovery hardening. A real first-run on a freelance Linux/Platform/SRE/EU-remote workspace surfaced the bug: `/ultramode` built a **backbone-only registry** — 10 always-on sources, **zero** discovered, two of them keyed-and-skipped — so only 8 were swept and every role gated out. The "170 sources" remembered from Phase 11 design were never shipped state; the plugin ships a 10-entry backbone plus a live discovery engine that is *supposed* to rebuild a large lane-specific registry per workspace, and for this lane it returned nothing. A parallel adversarial verification pass proved the market is rich, not thin: **58 real, live, lane-relevant sources** (14 keyless ATS company boards, ~16 freelance marketplaces, keyless national-board JSON APIs) versus the 0 the engine persisted. Root cause was a two-factor collapse — the dispatcher could write a complete-looking backbone-only registry and stamp `registry_built_at` **without ever asserting discovery ran**, and the two categories a freelance candidate most needs (`ats-provider`, `freelance-marketplace`) were **structurally dark** (no backbone seed; empty cold-start watchlist; login-walled marketplaces dropped by an over-strict gate). This release makes discovery enforce its own dispatch, fail **loudly** instead of silently, and seed the dark lanes from verified provenance. Additive and back-compatible: the scorer, the v1 tier rubric, and the score cache are untouched — **no `rubric_version` bump, no migration**; an existing backbone-only `sources.json` still loads and upgrades on re-run.

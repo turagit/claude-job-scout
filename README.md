@@ -84,6 +84,8 @@ LinkedIn is one market surface. Many of the roles you could actually land are po
 
 **The results** come back as one unified, tier-ranked report — every job from every source in a single list, ranked A→B→C and freshest-first, with the **source shown only as a chip**, never as the organising axis. Each role carries a direct **apply-at-source** link to the canonical, direct-to-employer listing (employer ATS is preferred over LinkedIn, aggregators, and marketplaces), plus an "also seen on N sources" line. Dealbreaker-gated jobs collapse into the same "Filtered out" group as everywhere else.
 
+**A near-miss rail surfaces close calls.** A strong-fit role that fails exactly one hard gate collapses into its own "would you bend?" section instead of dropping out of sight — `/bend <id>` re-scores it with that gate relaxed and shows a one-line before/after. The report **always renders**, even on a partial or interrupted run, and carries a **scorecard**: what was swept, skipped, or gated and why, dedupe accounting, and any truncation, disclosed rather than silently capped. Login-walled marketplaces rotate through the sweep so every one gets checked **at least fortnightly**.
+
 Set `/config ultramode.default on` to have your existing `/job-search` and `/deep-sweep` sweeps widen to the external registry automatically.
 
 ---
