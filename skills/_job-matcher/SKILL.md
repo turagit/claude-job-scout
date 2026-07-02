@@ -19,6 +19,9 @@ For each candidate job:
        tier_reason = "gated: <kinds>"
        dimensions = {}
        — write to cache and return.
+       EXCEPTION: if `gate_violations` carries exactly ONE distinct `kind`, do not return here — continue to the
+       rubric per § Near-miss rubric pass (tier stays "D"; the dispatcher persists `near_miss` +
+       `near_miss_would_be_tier` from the would-be result).
   3. Load the dimension set:
        - If user-profile.json carries a non-empty `dimensions[]` array, use it. This is the per-workspace
          rubric, typically populated by `/analyze-cv` discovery against the user's CV, target_titles,
@@ -179,7 +182,7 @@ Cost is paid lazily as the user opens reports. Most legacy entries are below B-t
 
 - **`.job-scout/user-profile.json`** — supplies `cv_hash`, `profile_hash`, `segment`, `requirements`, `tone`, `master_keyword_list`, and the per-workspace `dimensions[]` rubric (if discovered).
 - **`.job-scout/tracker.json`** — supplies metadata; rubric output is persisted back here via `validate_tracker`.
-- **`.job-scout/jds/<id>.txt`** — supplies the full JD text for evidence-quote extraction. If missing (legacy entry, `jd_path: null`), trigger fresh extraction via the Chrome extension before scoring.
+- **`.job-scout/jds/<id>.txt`** — supplies the full JD text for evidence-quote extraction. If missing (legacy entry, `jd_path: null`), trigger fresh extraction via the Chrome extension before scoring; if extraction fails or is unavailable, refuse to score and return `{id, skipped: "jd_missing"}` per § JD required — never score from partial text.
 - **`.job-scout/cache/scores.json`** — the score cache.
 
 ## JD required (Phase 14)

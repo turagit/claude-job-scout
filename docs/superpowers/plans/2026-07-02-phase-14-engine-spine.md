@@ -1382,6 +1382,8 @@ When dispatched for a single-gate-failure role (`_gate-engine` § near-miss), ru
 
 - [ ] **Step 4: Commit** — `git add skills/_gate-engine skills/_job-matcher && git commit -m "Phase 14 Task 14: gate-as-data, structured violations, near-miss rule, jd_path requirement"`
 
+- [ ] **Step 5 (added post-review): reconcile pre-existing text** — the gate's unconditional skip-scoring sentence, the matcher's rubric-flow short-circuit step, and the matcher's legacy jd_path extraction bullet each gain the single-kind-exception / refusal-fallback cross-references so old and new text compose without ambiguity.
+
 ---
 
 ### Task 15: rewrite `/ultramode` Step 4 to drive the engine

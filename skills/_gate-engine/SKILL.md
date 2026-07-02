@@ -47,7 +47,7 @@ If any check fails, append the violation and continue evaluating remaining check
 
 ## Behaviour
 
-- If `gate_violations` is non-empty, the consumer (`_job-matcher`) sets `tier: D`, `tier_reason: "gated: <kinds>"`, `gate_violations: [...]`, and skips dimension scoring.
+- If `gate_violations` is non-empty, the consumer (`_job-matcher`) sets `tier: D`, `tier_reason: "gated: <kinds>"`, `gate_violations: [...]`, and skips dimension scoring — with one exception: when exactly one distinct kind failed, the role still gets a full rubric pass for near-miss detection (see § Structured violations + the near-miss flag below); its tier stays "D" either way.
 - If `gate_violations` is empty, the consumer proceeds with dimension scoring.
 
 ## Caching
