@@ -150,13 +150,10 @@ git commit -m "Phase 14 Task 1: _ultra-engine skeleton + test harness"
 FP="$(dirname "$0")/../scripts/fingerprint.sh"
 assert_eq "acme gmbh|senior platform engineer|berlin" "$(bash "$FP" "Acme GmbH" "Senior Platform Engineer" "Berlin")" "basic"
 assert_eq "acme|sre|amsterdam" "$(bash "$FP" "ACME" "SRE" "Greater Amsterdam Area")" "strips greater/area"
-assert_eq "n26|iam engineer|berlin metropolitan" "$(bash "$FP" "N26" "IAM  Engineer" "Berlin, Metropolitan-Region!")" "punctuation + collapse; keeps non-listed words"
-assert_eq "globex|devops|" "$(bash "$FP" "Globex" "DevOps" "")" "empty location"
-finish
-```
-Note the third case: `metropolitan` is a listed strip-word — expected is `berlin metropolitan`? No — listed words are stripped, so expected must be `n26|iam engineer|berlin`. Use exactly:
-```bash
 assert_eq "n26|iam engineer|berlin" "$(bash "$FP" "N26" "IAM  Engineer" "Berlin, Metropolitan-Region!")" "punctuation + collapse + strip-words"
+assert_eq "globex|devops|" "$(bash "$FP" "Globex" "DevOps" "")" "empty location"
+assert_eq "malmo ab|senior sre|zurich" "$(bash "$FP" "Malmö AB" "Senior SRE" "Zürich")" "diacritics fold to base letters"
+finish
 ```
 
 - [ ] **Step 2: Run to verify it fails**
@@ -171,13 +168,18 @@ Expected: FAIL lines (script not found → empty output).
 # THE canonical cross-source fingerprint. Single implementation — every
 # consumer (snapshot, validator, merge) calls these, never re-derives.
 def squeeze: gsub("\\s+"; " ") | sub("^ "; "") | sub(" $"; "");
+def fold_diacritics:
+  gsub("[äÄàÀáÁâÂãÃ]"; "a") | gsub("[ëËèÈéÉêÊ]"; "e") | gsub("[ïÏìÌíÍîÎ]"; "i")
+  | gsub("[öÖòÒóÓôÔõÕøØ]"; "o") | gsub("[üÜùÙúÚûÛ]"; "u") | gsub("[çÇ]"; "c")
+  | gsub("[ñÑ]"; "n") | gsub("ß"; "ss") | gsub("[æÆ]"; "ae") | gsub("[åÅ]"; "a");
 def norm_loc:
   ascii_downcase
+  | fold_diacritics
   | gsub("[^a-z0-9 ]"; " ")
   | gsub("\\b(area|region|greater|metropolitan)\\b"; " ")
   | squeeze;
 def fp($c; $t; $l):
-  ($c | ascii_downcase | squeeze) + "|" + ($t | ascii_downcase | squeeze) + "|" + ($l | norm_loc);
+  ($c | ascii_downcase | fold_diacritics | squeeze) + "|" + ($t | ascii_downcase | fold_diacritics | squeeze) + "|" + ($l | norm_loc);
 ```
 
 `skills/_ultra-engine/scripts/fingerprint.sh`:
@@ -191,7 +193,7 @@ jq -nr -L "$d/lib" --arg c "${1-}" --arg t "${2-}" --arg l "${3-}" 'include "fin
 
 - [ ] **Step 4: Run to verify it passes**
 
-Run: `bash skills/_ultra-engine/tests/test_fingerprint.sh` → `checks=4 fails=0`. Then `bash skills/_ultra-engine/tests/run.sh` → `ALL PASS`.
+Run: `bash skills/_ultra-engine/tests/test_fingerprint.sh` → `checks=5 fails=0`. Then `bash skills/_ultra-engine/tests/run.sh` → `ALL PASS`.
 
 - [ ] **Step 5: Commit**
 
