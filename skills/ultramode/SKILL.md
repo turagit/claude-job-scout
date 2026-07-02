@@ -161,116 +161,32 @@ The build is re-runnable any time via `/ultramode sources`; deleting `sources.js
 
 ## Step 4: Sweep flow (the multi-source pass)
 
-### Step 4a: Load the registry & derive the poll order
+Resolve `SCRIPTS` = `../_ultra-engine/scripts` (this plugin's engine — see `../_ultra-engine/SKILL.md` for every contract) and `WS` = `.job-scout`. Mechanical work below is script calls; composing them from memory is a defect (CLAUDE.md hard rule #9).
 
-Load `.job-scout/sources.json`. Derive the poll order by applying `derive_priority_order(requirements, sources)` from `../shared-references/ultramode-sources.md` § Adaptive priority order (Decision 5) against this workspace's `requirements` — freelance+remote demotes ATS below remote-boards/marketplaces; permanent is ATS-first; mixed keeps discovery's canonical-preference default. **This ordering is a reference-level rule — read it from `ultramode-sources.md`; do not hardcode either ordering here.** The result is the source NAMES in fan-out order.
+### Step 4a: Resume or start a run
+`rd=$(bash $SCRIPTS/checkpoint.sh find-incomplete $WS)`. If non-empty and its manifest `started_at` is within 48h, announce **resuming** and skip every stage whose checkpoint says `done`. Otherwise `rd=$(bash $SCRIPTS/checkpoint.sh init $WS $(date +%F-%H%M))`.
 
-### Step 4b: Load the tracker ONCE & derive the fingerprint set
+### Step 4b: Registry, rotation, snapshot
+Load `sources.json`; derive poll order per `ultramode-sources.md` § Adaptive priority order. Pick this run's extension-lane subset: `bash $SCRIPTS/rotation.sh pick $WS/sources.json 4`; write `{picked, rotated_out}` (rotated_out = extension sources not picked) to `$rd/rotation.json`. Build the snapshot: `bash $SCRIPTS/snapshot.sh $WS/tracker.json $WS/cache/ultramode-snapshot.json`, then `checkpoint.sh save $rd snapshot $WS/cache/ultramode-snapshot.json`. The ATS watchlist derives exactly as before (four-source union, cold-start rule).
 
-**Load `.job-scout/tracker.json` exactly once**, here, before any sweep is dispatched (Hard Rule #2; the single-writer contract in `_source-sweep` § Tracker coordination). From that one read derive the **candidate-fingerprint set** passed into every sweep:
+### Step 4c: Fan out subagent sweeps (api/rss/html lanes)
+For each non-extension source in poll order: load the template matching its `access_lane` from `../_source-sweep/references/prompt-<lane>.md`, substitute ONLY the placeholders ({{SOURCE_JSON}} = the registry entry verbatim; {{SNAPSHOT_PATH}} = the snapshot file; {{GATE_BLOCK}} = the drop-on-explicit-violation rules built from `requirements.deal_breakers` values[]/free_text as data; {{CAP}} = 40), and dispatch via the Agent tool per `subagent-protocol.md` (parallel across sources is fine — they never write the tracker). Save each return: write it to a temp file, `python3 $SCRIPTS/validate_delta.py --ws $WS <file>`; on failure re-dispatch that source once with the validator's stderr appended under a "## Previous attempt was rejected because" line; on second failure record the source as failed in `errors` and move on. On success: `checkpoint.sh save $rd sweep-<name-slug> <file>`.
 
-- `known_ids[]` — every non-`rejected` entry's `id`.
-- `known_fingerprints[]` — each non-`rejected` entry's cross-source fingerprint `lower(company)|lower(title)|normalise_location(location)` (the rule in `../shared-references/ultramode-sources.md` § Cross-source dedupe).
+### Step 4d: Extension lane — main thread, rotation subset only
+For each `rotation.json .picked` source: sweep it in the logged-in session via the Chrome extension (dedupe-before-extract against the snapshot; collect candidate ids on the listing page; open only new ones; write each full JD to `jds/<namespaced-id>.txt` minted with `namespace_id.sh`; build the SAME envelope shape including `counts` + `signals`). Validate + checkpoint exactly as 4c, then `bash $SCRIPTS/rotation.sh mark $WS/sources.json <name> $(date +%F)`. A source that cannot be swept (login expired, layout dead) records an `errors[]` envelope — never silence.
 
-Also build, from this same read, the **ATS watchlist** for `ats-provider` sources — the **four-source union** (case-insensitive) the contract in `_source-sweep` § ATS watchlist defines: (1) the tracker's distinct A/B-tier employers + (2) `requirements.companies_to_target[]` + (3) **the lane-matching entries of the `## Curated lane seed → ATS seed`** (`../shared-references/ultramode-sources.md` — only seeds whose `lane_tags` intersect this workspace's lane) + (4) any manual additions. **Cold-start** (fewer than 1 A/B-tier employer) seeds from `companies_to_target[]` **plus the lane-matching curated ATS seed**, emitting `ats_watchlist_coldstart` — so the ATS lane is non-empty on a fresh workspace (the central cold-start fix; never `companies_to_target[]` alone). Each watchlist company is still resolved live via `resolve_ats` (with its identity check) before it is swept.
+### Step 4e: Merge (all-or-nothing, serial, atomic)
+`python3 $SCRIPTS/merge_tracker.py --ws $WS --tracker $WS/tracker.json --today $(date +%F) $rd/sweep-*.json` — save its stdout to `$rd/merge.json` and `checkpoint.sh save $rd merge $rd/merge.json`. On non-zero exit: STOP the pipeline, show the validator output, and still proceed to Steps 4g–4h with whatever previous stages completed (always-render).
 
-### Step 4c: Fan out one `_source-sweep` per source
+### Step 4f: Fetch-then-gate (D2), then gate + score
+1. Queue: every merged entry from this run with `jd_path: null` OR any load-bearing `signals` value `unknown` (contract/remote/rate when a matching deal-breaker exists) → `jd_queue.sh push $WS/cache/jd-queue.json <entries>`. Pop the budget: `jd_queue.sh pop $WS/cache/jd-queue.json 75` — and CHECK its exit status: on non-zero exit the rewrite failed and nothing was dequeued, so discard the printed output and skip the fetch stage this run (fetches are idempotent, so a rare double-serve is harmless — but never treat failed-pop output as consumed). For each popped entry fetch the full JD (WebFetch for public urls; the extension for login-walled sources), write `jds/<id>.txt`, set `jd_path` on the entry via the atomic single-entry recipe (state-validators.md). Write `{"budget": 75, "used": <n>, "deferred": $(jd_queue.sh count ...)}` to `$rd/jd-fetch.json`; checkpoint `jd-fetch`.
+2. Gate + score every this-run entry **with a jd_path**, batched ≤5 per `subagent-protocol.md`: `_gate-engine` first (violations as structured data; single-kind failures continue to the rubric per its § near-miss), `_job-matcher` rubric second (refuses jd-missing). Persist per entry atomically: `tier`, `tier_reason`, `gate_violations[]`, `dimensions`, `rubric_version: "v1"`, and when applicable `near_miss` + `near_miss_would_be_tier`; scores into `cache/scores.json` under the usual key. Checkpoint `scoring` when the batch set completes.
 
-For each source in poll order, dispatch one `_source-sweep` via the `Agent` tool per `../shared-references/subagent-protocol.md`, passing that one source verbatim plus the fingerprint snapshot:
+### Step 4g: Scorecard + payload
+`bash $SCRIPTS/scorecard.sh $rd $WS/tracker.json $(date +%F)` then `bash $SCRIPTS/payload.sh $WS/tracker.json $rd $(date +%F) <n-sources-swept> > $rd/payload.json`; checkpoint both. The payload is the render input verbatim — do not hand-assemble or re-sort it.
 
-```json
-{
-  "task": "sweep-source",
-  "inputs": {
-    "source": { /* one sources.json entry verbatim */ },
-    "lane_keywords": ["<from Step 1 corpus>"],
-    "not_terms": ["<from requirements.deal_breakers>"],
-    "freshness_window_days": 7,
-    "known_ids": ["<the snapshot from Step 4b>"],
-    "known_fingerprints": ["<the snapshot from Step 4b>"],
-    "ats_watchlist": [ { "company": "Miro", "tier": "A" } ],
-    "api_keys": { "<provider>": "<token from ultramode.api_keys>" }
-  },
-  "budget_lines": 200,
-  "allowed_tools": ["Read", "Grep", "Write", "WebFetch"]
-}
-```
-
-- `ats_watchlist[]` is supplied **only for `ats-provider` sources**.
-- `api_keys` carries only the key this source's `needs_key` requires, looked up from `user-profile.json` `ultramode.api_keys` (Step 5). Omit/empty for keyless sources; if a needed key is absent, gracefully skip the source (Step 5).
-- The independent `api`/`rss`/`html` sweeps can be dispatched in **parallel** (per `subagent-protocol.md`). They never write the tracker — they dedupe-before-extract against the snapshot, write only JD blobs, and return delta-only genuinely-new roles. If a sweep returns `status: "partial"` with a `continuation_cursor`, re-dispatch with the cursor.
-- **Fallback:** if the `Agent` tool is unavailable, run the sweeps sequentially in-thread on the same dedupe-before-extract framework, and log the fallback (per `subagent-protocol.md`).
-
-### Step 4d: Extension lane — run on the MAIN THREAD
-
-Subagents have no browser tools, so **`extension`-lane sources cannot be swept inside a subagent**. The dispatched `_source-sweep` returns `status: "ok"` with empty `deltas` and an `errors[]` note (`code: "extension_lane_deferred"`, or `ats_unresolved` for an ATS company whose slug did not resolve). For every such deferred source, the dispatcher sweeps it **on the main thread** via the Claude Chrome extension, following dedupe-before-extract in the logged-in session: load the same fingerprint snapshot, collect candidate IDs on the listing page, drop everything already in `known_ids`/`known_fingerprints`, open only the genuinely-new roles, persist each JD to `jds/<namespaced-id>.txt`, and produce the same delta shape as a subagent sweep. This is the only browser work in the command (Hard Rule #1).
-
-### Step 4e: Merge deltas serially — canonical selection + `also_seen_on[]`
-
-Merge the per-source deltas (from the subagent sweeps **and** the main-thread extension sweeps) into the single in-memory tracker **serially — one source's deltas at a time, no concurrent writes**. For each incoming delta apply the merge-time algorithm `merge_delta_into_tracker(delta, tracker)` from `../shared-references/ultramode-sources.md` § Where canonical selection runs — dispatcher merge time:
-
-- A delta whose fingerprint is **new** is added as canonical (first sighting).
-- A delta whose fingerprint **collides** with an already-merged entry resolves to one canonical "apply here" winner by the `ATS > LinkedIn > aggregator > marketplace` preference; the loser is recorded as a **sighting on the winner's `also_seen_on[]`** (`{lane, provider, board}` — the loser's structured `source`, rendered by the view's `source_chip()` macro), never re-fetched or re-scored. This is why the dispatcher — not the subagent — picks the canonical winner: only the dispatcher sees deltas from all sources at merge time (a single sweep sees only its own source).
-- **ATS-backed JD enrichment:** when a non-ATS source wins a collision whose role resolves to an employer ATS, prefer the ATS's full JD for scoring (per § ATS-backed JD enrichment) so the scorer is not starved by truncated aggregator text.
-
-Because the merge is serial and the loser is retained (not dropped, not re-fetched), this is single-writer-safe and costs no extra tokens.
-
-### Step 4f: Gate + score the genuinely-new roles (unchanged scorer)
-
-The accumulated genuinely-new roles join the **existing** scoring path, unchanged — exactly as `/job-search` Step 4 and `/match-jobs` Step 4 do:
-
-1. `_gate-engine` runs first on each new role against `requirements` (`deal_breakers[]` etc.). Non-empty `gate_violations` → set `tier: "D"`, `tier_reason: "gated: <kinds>"`, persist the violations, skip dimension scoring.
-2. Otherwise `_job-matcher` runs the v1 rubric, reading the JD from each role's `jd_path`. It loads `user-profile.json.dimensions[]` if present, else `../_job-matcher/references/dimensions-default.md`. Persist `tier`, `dimensions`, `tier_reason`, `rubric_version: "v1"`.
-
-Scoring is **batched per `../shared-references/subagent-protocol.md`** (batches of ≤5 by similarity), the same fan-out `/match-jobs` uses — multi-source roles take no special path. Write each score into `.job-scout/cache/scores.json` under the `(job_id, cv_hash, profile_hash, rubric_version)` key. Then merge the scored roles into `.job-scout/tracker.json` with status `"seen"` and **write the tracker once** (atomic-rename per `../shared-references/state-validators.md`). The structured `source: {lane, provider, board}` and namespaced ids the sweeps produced are carried through.
-
-### Step 4g: Build the unified results payload
-
-Build the `data` payload for the `ultramode` view per `../shared-references/render-orchestration.md` § "The `ultramode` view". It mirrors `match-jobs` — same tier pills, per-dimension table, "⚡ apply early" chip, "Filtered out" gated group — plus source-aware fields:
-
-```json
-{
-  "title": "Ultramode — {{N_sources}} sources · {{N_new}} new roles",
-  "subtitle": "A:{{a}} B:{{b}} C:{{c}} · Filtered:{{gated}} · deduped across sources",
-  "generated_at": "<YYYY-MM-DD HH:MM>",
-  "filename": "ultramode-<YYYY-MM-DD>.html",
-  "tier_counts": { "a": <a>, "b": <b>, "c": <c>, "d": <gated>, "total": <total> },
-  "source_breakdown": { "<source label>": <count> },
-  "results": [
-    {
-      "title": "<job title>", "company": "<company>", "location": "<location>",
-      "salary": "<salary or empty>", "posted_at": "<YYYY-MM-DD>",
-      "applicants": "<count or empty>", "fresh": true,
-      "tier": "A | B | C | D", "tier_reason": "string|null",
-      "dimensions": { "<dim>": {"tier": "A|B|C|D", "evidence": ["..."]} },
-      "gate_violations": [{"kind": "...", "detail": "..."}],
-      "rubric_version": "v1", "rationale": "<A-tier / top-B only>",
-      "competitiveness": "high | med | low — OPTIONAL; omit when not yet derived (never null)",
-      "competitiveness_evidence": "<short supporting note — OPTIONAL; omit when absent>",
-      "confidence": "high | med | low — OPTIONAL; omit when not yet derived (never null)",
-      "match_explanation_tag": "all-fit | one-gap | multiple-gaps | overqualified | underqualified | trajectory-concern — OPTIONAL; omit when absent",
-      "url": "<canonical apply-at-source URL>",
-      "source": { "lane": "...", "provider": "...", "board": "..." },
-      "also_seen_on": [ { "lane": "...", "provider": "...", "board": "..." } ],
-      "tags": ["<tag1>", "<tag2>"]
-    }
-  ]
-}
-```
-
-- **Source is a chip, not a grouping axis** — the list is **one unified, source-agnostic ranking**, never bucketed by source. `url` is the canonical "apply at source" link; mirrors go on `also_seen_on[]` ("also seen on N sources").
-- **Ordering is the dispatcher's responsibility:** pre-sort `results[]` to tier A → B → C, gated (D-tier) entries last. **Within-tier (Phase 12):** order by `confidence` high → med → low (absent `confidence` sorts after any explicit value, treated as lowest), then `posted_at` descending (freshest-first) as the tie-breaker. The COMMAND applies this here in the payload-build; the template does not re-sort. The four optional scoring fields (`competitiveness`, `competitiveness_evidence`, `confidence`, `match_explanation_tag`) pass through verbatim from the tracker / score cache when present and are **omitted entirely when absent** — never `null` (see `../shared-references/canonical-schemas.md` § "Written lazily").
-- `source_breakdown` is an optional name→count strip (e.g. `Greenhouse · Miro`). Include any `Skipped <provider> (no API key)` line from Step 5 in the subtitle or a notes strip so the candidate sees what was not searched.
-
-### Step 4h: Render via `_visualizer` (never inline)
-
-Follow `../shared-references/render-orchestration.md` end-to-end (Step G already ran in Step 0), with `view: "ultramode"`:
-
-1. Step A — payload built in Step 4g.
-2. Steps B–F — read render config, dispatch `_visualizer` through the `Agent` tool, open in Chrome (or fall back), handle errors. **Inline HTML production is forbidden (Hard Rule #8)** — the `ultramode` template/theming/asset embedding live in `_visualizer`.
-3. Step E — print the `ultramode` summary line: `✓ Ultramode — {{N_sources}} sources · {{N_new}} new jobs — A:{{a}} B:{{b}} C:{{c}} · Filtered:{{gated}} — opened report in Chrome` (or `…rendered as markdown above` when falling back). Append any `Skipped <provider> (no API key)` notes on a following line.
-
-If the `Agent` tool is unavailable, fall back to a terminal markdown table (tier, title, company, location, posted_at, source chip; dimension breakdowns + rationale for A-tier), per the same fallback `/match-jobs` uses.
+### Step 4h: Render — ALWAYS
+Follow `render-orchestration.md` with `view: "ultramode"` and `$rd/payload.json` (Hard Rule #8 — via `_visualizer`, never inline). This step runs even when 4c–4f partially failed: the report states what completed and the scorecard's disclosures name what didn't. `checkpoint.sh save $rd render` only after the report file exists. Summary line: `✓ Ultramode — {{N_sources}} sources · {{N_new}} new roles — A:{{a}} B:{{b}} C:{{c}} · Filtered:{{gated}} · Near-misses:{{nm}} — opened report in Chrome`, followed by every scorecard disclosure line.
 
 ## Step 5: Key handling (keyless-first) + `/config`
 
