@@ -13,7 +13,7 @@ jq -n --arg today "$today" --argjson nsrc "$nsrc" \
   [ $t[0].jobs | to_entries[] | .value | select(.first_seen == $today) ] as $new
   | [ $new[] | select(.near_miss == true) ] as $nm
   | [ $new[] | select(.near_miss != true) ] | sort_by([tier_rank, conf_rank, (0 - date_num)]) as $results
-  | ([ $new[] | .tier ] | group_by(.) | map({(.[0]): length}) | add // {}) as $tc
+  | ([ $new[] | (.tier // "untiered") ] | group_by(.) | map({(.[0]): length}) | add // {}) as $tc
   | { title: "Ultramode — \($nsrc) sources · \($new | length) new roles",
       subtitle: "A:\($tc.A // 0) B:\($tc.B // 0) C:\($tc.C // 0) · Filtered:\($tc.D // 0) · deduped across sources",
       generated_at: $today, filename: "ultramode-\($today).html",
@@ -23,6 +23,6 @@ jq -n --arg today "$today" --argjson nsrc "$nsrc" \
       results: $results,
       near_misses: [ $nm[] | . + {
         would_be_tier: (.near_miss_would_be_tier // "B"),
-        failed_gate: ((.gate_violations // [{"kind": "unknown", "detail": ""}])[0]),
+        failed_gate: (((.gate_violations // [])[0]) // {"kind": "unknown", "detail": ""}),
         bend_hint: "/bend \(.id)" } ] }
 '

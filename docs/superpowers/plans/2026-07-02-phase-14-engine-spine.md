@@ -1154,6 +1154,13 @@ assert_eq "1" "$(echo "$out" | jq '.tier_counts.a')" "tier counts"
 assert_eq "false" "$(echo "$out" | jq '.results[0]|has("confidence")')" "omit-when-absent (no null injection)"
 assert_eq "ultramode-2026-07-02.html" "$(echo "$out" | jq -r '.filename')" "filename"
 assert_eq "2026-07-02" "$(echo "$out" | jq -r '.scorecard.date')" "scorecard embedded"
+# malformed entries must never crash the payload (always-render path)
+tmp_t=$(mktemp)
+jq '.jobs["a__a__6"] = {"id": "a__a__6", "url": "u6", "title": "Mystery", "company": "Six", "location": "Remote", "source": {"lane": "aggregator", "provider": "x", "board": "x"}, "status": "seen", "first_seen": "2026-07-02", "last_seen": "2026-07-02", "notes": ""} | .jobs["a__a__4"].gate_violations = []' "$FXD/tracker-payload.json" > "$tmp_t"
+out2=$(bash "$P" "$tmp_t" "$rd" "2026-07-02" 12)
+assert_eq "6" "$(echo "$out2" | jq '.tier_counts.total')" "null-tier entry counted, no crash"
+assert_eq "unknown" "$(echo "$out2" | jq -r '.near_misses[0].failed_gate.kind')" "empty violations fall back to unknown"
+rm -f "$tmp_t"
 finish
 ```
 
@@ -1178,7 +1185,7 @@ jq -n --arg today "$today" --argjson nsrc "$nsrc" \
   [ $t[0].jobs | to_entries[] | .value | select(.first_seen == $today) ] as $new
   | [ $new[] | select(.near_miss == true) ] as $nm
   | [ $new[] | select(.near_miss != true) ] | sort_by([tier_rank, conf_rank, (0 - date_num)]) as $results
-  | ([ $new[] | .tier ] | group_by(.) | map({(.[0]): length}) | add // {}) as $tc
+  | ([ $new[] | (.tier // "untiered") ] | group_by(.) | map({(.[0]): length}) | add // {}) as $tc
   | { title: "Ultramode — \($nsrc) sources · \($new | length) new roles",
       subtitle: "A:\($tc.A // 0) B:\($tc.B // 0) C:\($tc.C // 0) · Filtered:\($tc.D // 0) · deduped across sources",
       generated_at: $today, filename: "ultramode-\($today).html",
@@ -1188,7 +1195,7 @@ jq -n --arg today "$today" --argjson nsrc "$nsrc" \
       results: $results,
       near_misses: [ $nm[] | . + {
         would_be_tier: (.near_miss_would_be_tier // "B"),
-        failed_gate: ((.gate_violations // [{"kind": "unknown", "detail": ""}])[0]),
+        failed_gate: (((.gate_violations // [])[0]) // {"kind": "unknown", "detail": ""}),
         bend_hint: "/bend \(.id)" } ] }
 '
 ```
