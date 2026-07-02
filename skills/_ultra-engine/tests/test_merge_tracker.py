@@ -71,6 +71,7 @@ class T(unittest.TestCase):
         self.assertEqual(j["url"], "https://x/greenhouse__acme__5")
         self.assertIn("canonical upgraded to greenhouse", j["notes"])
         self.assertNotIn("greenhouse__acme__5", t["jobs"])
+        self.assertEqual(j["jd_path"], "jds/greenhouse__acme__5.txt")
 
     def test_invalid_delta_aborts_untouched(self):
         e = entry("x__y__1"); e["source"] = "prose string"; self.jd("x__y__1")
@@ -78,6 +79,30 @@ class T(unittest.TestCase):
         p = self.run_merge(delta([e]))
         self.assertEqual(p.returncode, 1)
         self.assertEqual(before, open(self.tracker).read())
+
+    def test_location_variant_upgrades_not_duplicates(self):
+        # naive producer fingerprint ("...amsterdam area") must NOT defeat dedupe:
+        # the merge recomputes via jq, matching incumbent 4001 ("Amsterdam")
+        e = entry("greenhouse__acme__9", company="Acme", title="Senior SRE", loc="Amsterdam Area",
+                  lane="ats", prov="greenhouse", board="acme")
+        self.jd(e["id"])
+        p = self.run_merge(delta([e]))
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertEqual(json.loads(p.stdout.strip()),
+                         {"merged": 0, "collisions_also_seen": 1, "url_upgrades": 1, "skipped_known": 0})
+        t = self.load()
+        self.assertNotIn("greenhouse__acme__9", t["jobs"])
+        self.assertEqual(t["jobs"]["4001"]["url"], "https://x/greenhouse__acme__9")
+
+    def test_rejected_fingerprint_does_not_block_new_entry(self):
+        # 4002 (rejected) shares this fingerprint after normalisation; rejected entries
+        # are excluded from the live set, so the role merges as genuinely new
+        e = entry("jobicy__jobicy__7", company="Globex", title="DevOps Engineer", loc="Berlin",
+                  lane="remote-board", prov="jobicy", board="jobicy")
+        self.jd(e["id"])
+        p = self.run_merge(delta([e]))
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertIn("jobicy__jobicy__7", self.load()["jobs"])
 
 if __name__ == "__main__":
     unittest.main()

@@ -508,6 +508,7 @@ if __name__ == "__main__":
   - **canonical URL upgrade:** when an incoming delta collides with an *existing incumbent* and the incoming ranks strictly better (e.g. ATS vs aggregator), keep the incumbent entry (IDs immutable) but set its `url` to the incoming apply-URL, set its `jd_path` to the incoming one when the incumbent's is null, append a note `canonical upgraded to <provider> (<date>)`, and count it in `url_upgrades`.
   - existing entries: only `also_seen_on`, `last_seen`, `url`, `jd_path`(null→value), `notes` may change. `schema_version` set to 3. `stats.total_seen = len(jobs)`; `stats.last_run = today`.
   - atomic: write `.tmp`, re-validate (status/tier enums, keys == entry ids, every non-null jd_path file exists), `mv`.
+  - The merge recomputes every fingerprint authoritatively via the jq lib — a delta's declared fingerprint is only the sweep's snapshot-dedupe aid and is never trusted at merge time.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -586,6 +587,7 @@ class T(unittest.TestCase):
         self.assertEqual(j["url"], "https://x/greenhouse__acme__5")
         self.assertIn("canonical upgraded to greenhouse", j["notes"])
         self.assertNotIn("greenhouse__acme__5", t["jobs"])
+        self.assertEqual(j["jd_path"], "jds/greenhouse__acme__5.txt")
 
     def test_invalid_delta_aborts_untouched(self):
         e = entry("x__y__1"); e["source"] = "prose string"; self.jd("x__y__1")
@@ -593,6 +595,30 @@ class T(unittest.TestCase):
         p = self.run_merge(delta([e]))
         self.assertEqual(p.returncode, 1)
         self.assertEqual(before, open(self.tracker).read())
+
+    def test_location_variant_upgrades_not_duplicates(self):
+        # naive producer fingerprint ("...amsterdam area") must NOT defeat dedupe:
+        # the merge recomputes via jq, matching incumbent 4001 ("Amsterdam")
+        e = entry("greenhouse__acme__9", company="Acme", title="Senior SRE", loc="Amsterdam Area",
+                  lane="ats", prov="greenhouse", board="acme")
+        self.jd(e["id"])
+        p = self.run_merge(delta([e]))
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertEqual(json.loads(p.stdout.strip()),
+                         {"merged": 0, "collisions_also_seen": 1, "url_upgrades": 1, "skipped_known": 0})
+        t = self.load()
+        self.assertNotIn("greenhouse__acme__9", t["jobs"])
+        self.assertEqual(t["jobs"]["4001"]["url"], "https://x/greenhouse__acme__9")
+
+    def test_rejected_fingerprint_does_not_block_new_entry(self):
+        # 4002 (rejected) shares this fingerprint after normalisation; rejected entries
+        # are excluded from the live set, so the role merges as genuinely new
+        e = entry("jobicy__jobicy__7", company="Globex", title="DevOps Engineer", loc="Berlin",
+                  lane="remote-board", prov="jobicy", board="jobicy")
+        self.jd(e["id"])
+        p = self.run_merge(delta([e]))
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertIn("jobicy__jobicy__7", self.load()["jobs"])
 
 if __name__ == "__main__":
     unittest.main()
@@ -626,6 +652,18 @@ def fp_of(company, title, location):
                           'include "fingerprint"; fp($c; $t; $l)'],
                          capture_output=True, text=True, check=True)
     return out.stdout.strip()
+
+def live_fp_map(tracker_path):
+    """One jq pass over the tracker: fingerprint -> first non-rejected entry id."""
+    prog = ('include "fingerprint"; [.jobs | to_entries[] | .value '
+            '| select((.status // "seen") != "rejected") '
+            '| {id: .id, fp: fp((.company // ""); (.title // ""); (.location // ""))}]')
+    out = subprocess.run(["jq", "-c", "-L", os.path.join(HERE, "lib"), prog, tracker_path],
+                         capture_output=True, text=True, check=True)
+    m = {}
+    for row in json.loads(out.stdout):
+        m.setdefault(row["fp"], row["id"])
+    return m
 
 def read_source(v):
     """The tracker_read_source shim: tolerate legacy prose strings on read.
@@ -666,10 +704,7 @@ def main():
 
     t = json.load(open(a.tracker))
     jobs = t["jobs"]
-    live_fp = {}
-    for k, j in jobs.items():
-        if (j.get("status") or "seen") != "rejected":
-            live_fp.setdefault(fp_of(j.get("company"), j.get("title"), j.get("location")), k)
+    live_fp = live_fp_map(a.tracker)
 
     merged = seen_known = upgrades = collisions = 0
     merged_this_run = set()
@@ -687,7 +722,8 @@ def main():
     for d in a.deltas:
         env = json.load(open(d))
         for e in env.get("deltas") or []:
-            fp = e["fingerprint"]
+            # authoritative recompute — the declared fingerprint is only a sweep-side dedupe aid
+            fp = fp_of(e.get("company", ""), e.get("title", ""), e.get("location") or "")
             if e["id"] in jobs:  # known id: sighting only
                 sighting(jobs[e["id"]], e["source"]); jobs[e["id"]]["last_seen"] = a.today
                 seen_known += 1; continue
@@ -733,7 +769,7 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 4: Run to verify it passes** — `python3 -m unittest test_merge_tracker -v` → 5 pass; `bash run.sh` → `ALL PASS`.
+- [ ] **Step 4: Run to verify it passes** — `python3 -m unittest test_merge_tracker -v` → 7 pass; `bash run.sh` → `ALL PASS`.
 
 - [ ] **Step 5: Commit** — `git add skills/_ultra-engine && git commit -m "Phase 14 Task 6: atomic schema-validating tracker merge with canonical selection"`
 

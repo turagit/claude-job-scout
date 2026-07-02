@@ -21,6 +21,18 @@ def fp_of(company, title, location):
                          capture_output=True, text=True, check=True)
     return out.stdout.strip()
 
+def live_fp_map(tracker_path):
+    """One jq pass over the tracker: fingerprint -> first non-rejected entry id."""
+    prog = ('include "fingerprint"; [.jobs | to_entries[] | .value '
+            '| select((.status // "seen") != "rejected") '
+            '| {id: .id, fp: fp((.company // ""); (.title // ""); (.location // ""))}]')
+    out = subprocess.run(["jq", "-c", "-L", os.path.join(HERE, "lib"), prog, tracker_path],
+                         capture_output=True, text=True, check=True)
+    m = {}
+    for row in json.loads(out.stdout):
+        m.setdefault(row["fp"], row["id"])
+    return m
+
 def read_source(v):
     """The tracker_read_source shim: tolerate legacy prose strings on read.
     Every legacy string in live trackers is a LinkedIn surface (or a pre-Phase-14
@@ -60,10 +72,7 @@ def main():
 
     t = json.load(open(a.tracker))
     jobs = t["jobs"]
-    live_fp = {}
-    for k, j in jobs.items():
-        if (j.get("status") or "seen") != "rejected":
-            live_fp.setdefault(fp_of(j.get("company"), j.get("title"), j.get("location")), k)
+    live_fp = live_fp_map(a.tracker)
 
     merged = seen_known = upgrades = collisions = 0
     merged_this_run = set()
@@ -81,7 +90,8 @@ def main():
     for d in a.deltas:
         env = json.load(open(d))
         for e in env.get("deltas") or []:
-            fp = e["fingerprint"]
+            # authoritative recompute — the declared fingerprint is only a sweep-side dedupe aid
+            fp = fp_of(e.get("company", ""), e.get("title", ""), e.get("location") or "")
             if e["id"] in jobs:  # known id: sighting only
                 sighting(jobs[e["id"]], e["source"]); jobs[e["id"]]["last_seen"] = a.today
                 seen_known += 1; continue
