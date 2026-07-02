@@ -1334,7 +1334,7 @@ GET the feed URL (read-only public HTTP — the WebFetch carve-out). Parse the X
 GET the source's `endpoint` (its listing/search page). Parse the listing HTML into role cards. **Never trust the source's `category=`/`search=` query parameters** — free-feed server-side filters are unreliable (Decision 9); apply the lane filter client-side over title + tags + visible body text. If the page is JS-only or empty, record `{"code": "js_only", ...}` in `errors[]` and stop (one retry max).
 ```
 
-- [ ] **Step 3: Wire into `_source-sweep/SKILL.md`** — add directly under the "## Input shape" heading:
+- [ ] **Step 3: Wire into `_source-sweep/SKILL.md`** — add immediately after the full "## Input shape" section (before the next `##` heading):
 
 ```markdown
 ## Prompt templates (dispatcher contract — Phase 14)

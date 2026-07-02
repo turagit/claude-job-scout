@@ -1,4 +1,4 @@
-# Verbatim sweep prompt — `api` lane
+# Verbatim sweep prompt — `html` lane
 
 > Dispatcher contract: load this file, substitute ONLY the `{{...}}` placeholders, send as the subagent prompt. Do not paraphrase, reorder, or drop sections — the 2026-07-02 audit traced five defects to improvised prompts.
 
