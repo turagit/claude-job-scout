@@ -368,6 +368,9 @@ Both caches are **regenerable and deletable** — they hold no source-of-truth s
 | `tracker.jobs.*.confidence` / `scores.*.confidence` | `high`, `med`, `low`, or absent/null |
 | `tracker.jobs.*.match_explanation_tag` / `scores.*.match_explanation_tag` | `all-fit`, `one-gap`, `multiple-gaps`, `overqualified`, `underqualified`, `trajectory-concern`, or absent/null |
 | `user-profile.dimensions[].type` | `load-bearing`, `modifying`, or absent (treated as `load-bearing`) |
+| `tracker.jobs.*.signals.contract` | `freelance`, `permanent`, `detachering`, `contract`, `unknown` |
+| `tracker.jobs.*.signals.remote` | `remote`, `hybrid`, `onsite`, `unknown` |
+| `tracker.jobs.*.near_miss_would_be_tier` | `A`, `B` |
 
 ### Discovery / sweep `errors[]` codes
 

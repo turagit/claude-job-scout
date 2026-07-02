@@ -1440,10 +1440,10 @@ Follow `render-orchestration.md` with `view: "ultramode"` and `$rd/payload.json`
 - [ ] **Step 1: Add the near-miss rail block** to `ultramode.html.j2`, inserted immediately AFTER the existing gated/"Filtered out" group block (locate it by searching the template for the gated-group marker; the inserted block is self-contained):
 
 ```jinja2
-{% if near_misses %}
+{% if data.near_misses %}
 <details class="near-miss-rail">
-  <summary>Near-misses — would you bend? ({{ near_misses|length }})</summary>
-  {% for j in near_misses %}
+  <summary>Near-misses — would you bend? ({{ data.near_misses|length }})</summary>
+  {% for j in data.near_misses %}
   <div class="card near-miss">
     <div class="card-head">
       <span class="tier-pill tier-d">D</span>
@@ -1456,11 +1456,11 @@ Follow `render-orchestration.md` with `view: "ultramode"` and `$rd/payload.json`
   {% endfor %}
 </details>
 {% endif %}
-{% if scorecard %}
+{% if data.scorecard %}
 <details class="scorecard"><summary>Run scorecard</summary>
   <ul>
-  {% for d in scorecard.disclosures %}<li>{{ d }}</li>{% endfor %}
-  {% if not scorecard.disclosures %}<li>Nothing capped, skipped, or deferred this run.</li>{% endif %}
+  {% for d in data.scorecard.disclosures %}<li>{{ d }}</li>{% endfor %}
+  {% if not data.scorecard.disclosures %}<li>Nothing capped, skipped, or deferred this run.</li>{% endif %}
   </ul>
 </details>
 {% endif %}
@@ -1469,16 +1469,18 @@ Follow `render-orchestration.md` with `view: "ultramode"` and `$rd/payload.json`
 And the markdown twin in `ultramode.md.j2` (same position):
 
 ```jinja2
-{% if near_misses %}
-## Near-misses — would you bend? ({{ near_misses|length }})
-{% for j in near_misses %}
+{% if data.near_misses %}
+## Near-misses — would you bend? ({{ data.near_misses|length }})
+{% for j in data.near_misses %}
 - **{{ j.title }}** @ {{ j.company }} ({{ j.location }}) — would be **{{ j.would_be_tier }}**; fails `{{ j.failed_gate.kind }}`: {{ j.failed_gate.detail }} → `{{ j.bend_hint }}`
 {% endfor %}
 {% endif %}
-{% if scorecard and scorecard.disclosures %}
+{% if data.scorecard %}
 ## Run scorecard
-{% for d in scorecard.disclosures %}- {{ d }}
+{% for d in data.scorecard.disclosures %}- {{ d }}
 {% endfor %}
+{% if not data.scorecard.disclosures %}- Nothing capped, skipped, or deferred this run.
+{% endif %}
 {% endif %}
 ```
 
@@ -1494,9 +1496,9 @@ payload = {"title": "T", "subtitle": "s", "generated_at": "2026-07-02", "tier_co
   "source_breakdown": {"greenhouse": 1}, "results": [], "scorecard": {"date": "2026-07-02", "disclosures": ["sweep-x: results capped — 2 of 3 lane matches returned"]},
   "near_misses": [{"id": "a__b__4", "title": "IAM Engineer", "company": "Four", "location": "Remote", "url": "u4",
                    "would_be_tier": "A", "failed_gate": {"kind": "contract_type", "detail": "permanent"}, "bend_hint": "/bend a__b__4"}]}
-env = Environment(loader=FileSystemLoader("templates"))
+env = Environment(loader=FileSystemLoader(["templates", "templates/html", "templates/markdown"]))
 for t in ("html/ultramode.html.j2", "markdown/ultramode.md.j2"):
-    out = env.get_template(t).render(**payload)
+    out = env.get_template(t).render(data=payload)
     assert "would you bend" in out.lower() and "/bend a__b__4" in out and "capped" in out, t
     print("render ok:", t)
 EOF
@@ -1527,13 +1529,17 @@ version: 0.1.0
 
 Bend exactly one near-miss. `/bend <tracker-id>` takes a role the gates filtered but the rubric loved (`near_miss: true` in `tracker.json`) and re-evaluates it with its single failed gate relaxed, so you can judge it on merit. Bending never changes your deal-breakers — it is a one-shot exception, recorded on the entry. (Learning from repeated bends is a later phase.)
 
+## Browser policy (read first)
+
+Any browser work here (fetching a login-walled JD in Step 3) uses **the Claude Chrome extension exclusively**; public URLs use the read-only `WebFetch` carve-out. See `../shared-references/browser-policy.md`.
+
 ## Steps
 
 1. Load `.job-scout/tracker.json`; find the entry by id. Not found → say so and stop. Found but `near_miss` is not `true` → explain that `/bend` only applies to near-misses (point at the report's rail) and stop.
 2. Read the failed gate: `gate_violations[0].kind` (near-misses have exactly one distinct kind by definition — `_gate-engine` § near-miss).
 3. Re-run the evaluation with that kind excluded: `_gate-engine` over the remaining deal-breakers (must still pass), then `_job-matcher` on `jd_path` (it refuses a missing JD — if the JD is missing, fetch it first via WebFetch or the extension per the source's lane, persist to `jds/<id>.txt`, set `jd_path`).
 4. Update the entry atomically (single-entry recipe in `../shared-references/state-validators.md`): `tier` = the rubric tier, `tier_reason` = `"bent: <kind> relaxed on <YYYY-MM-DD> — was gated: <detail>"`, `bent: true`, keep `gate_violations[]` and `near_miss` untouched. Write the score into `cache/scores.json` under the usual key.
-5. Report one line before/after in British English: `Bent <id>: D (gated: contract_type) → A. Apply link: <url>` and suggest `/apply <id>` or `/cover-letter <id>` as next steps.
+5. Report one line before/after in British English: `Bent <id>: D (gated: contract_type) → A. Apply link: <url>` and suggest `/cover-letter <id>` as the next step, or approving the role so `/apply` picks it up in its next batch (`/apply` works the approved queue — it does not take an id).
 ```
 
 - [ ] **Step 2: canonical-schemas.md** — in the tracker-entry section, after the Phase-12 "written lazily" note, add:

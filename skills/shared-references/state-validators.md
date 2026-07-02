@@ -224,6 +224,19 @@ write_state_file() {
 }
 ```
 
+## Single-entry atomic update (Phase 14)
+
+This is the single-entry recipe `/bend` and `/ultramode` reference: updating ONE tracker entry's fields (a score landing, a bend, a jd_path set) without a full merge:
+
+```bash
+# Given $WS/.job-scout/tracker.json, an entry id, and a jq assignment:
+jq --arg id "<entry-id>" '.jobs[$id] += {<fields to set>}' "$WS/tracker.json" > "$WS/tracker.json.tmp" \
+  && jq -e '.jobs | type == "object"' "$WS/tracker.json.tmp" >/dev/null \
+  && mv "$WS/tracker.json.tmp" "$WS/tracker.json"
+```
+
+Rules: `+=` merge only (never rebuild the entry — IDs and unlisted fields are immutable); validate before `mv`; on jq failure the original file is untouched. Multi-entry writes never use this recipe — they go through `merge_tracker.py` (CLAUDE.md hard rule #9).
+
 ## When to skip validators
 
 Never. The only exceptions are:

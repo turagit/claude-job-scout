@@ -322,13 +322,15 @@ A collapsed `<details>` strip disclosing anything the run capped, skipped, or de
 {% endif %}
 ```
 
-When `data.scorecard.disclosures` is empty, the HTML strip still renders (with a reassuring "Nothing capped, skipped, or deferred this run" line) since the strip itself is guarded on `data.scorecard` being present, not on the array being non-empty. The markdown twin is stricter — it guards on **both** `data.scorecard` and a non-empty `disclosures[]`, so a clean run omits the section entirely rather than printing an empty heading:
+When `data.scorecard.disclosures` is empty, the strip still renders (with a reassuring "Nothing capped, skipped, or deferred this run" line) since it is guarded on `data.scorecard` being present, not on the array being non-empty. The markdown twin matches this exactly — same guard, same fallback line:
 
 ```jinja2
-{% if data.scorecard and data.scorecard.disclosures %}
+{% if data.scorecard %}
 ## Run scorecard
 {% for d in data.scorecard.disclosures %}- {{ d }}
 {% endfor %}
+{% if not data.scorecard.disclosures %}- Nothing capped, skipped, or deferred this run.
+{% endif %}
 {% endif %}
 ```
 

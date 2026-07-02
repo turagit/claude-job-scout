@@ -65,8 +65,10 @@ _Source: {{ macros.source_chip(job.source) }}{% if job.also_seen_on and job.also
 - **{{ j.title }}** @ {{ j.company }} ({{ j.location }}) — would be **{{ j.would_be_tier }}**; fails `{{ j.failed_gate.kind }}`: {{ j.failed_gate.detail }} → `{{ j.bend_hint }}`
 {% endfor %}
 {% endif %}
-{% if data.scorecard and data.scorecard.disclosures %}
+{% if data.scorecard %}
 ## Run scorecard
 {% for d in data.scorecard.disclosures %}- {{ d }}
 {% endfor %}
+{% if not data.scorecard.disclosures %}- Nothing capped, skipped, or deferred this run.
+{% endif %}
 {% endif %}

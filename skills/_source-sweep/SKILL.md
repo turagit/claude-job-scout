@@ -160,7 +160,7 @@ For `html` sources, and for any `api`/`rss` feed whose server-side filters are u
 
 ## ATS watchlist auto-seed (Decision 9) + cold-start — `ats-provider` sources
 
-`ats-provider` sources are keyless but **per-company**: each query needs one employer's board slug. The dispatcher builds the **watchlist** and passes it in `ats_watchlist[]`; this subagent resolves each company to a board and sweeps it.
+`ats-provider` sources are keyless but **per-company**: each query needs one employer's board slug. The dispatcher builds the **watchlist** and passes it in `ats_watchlist[]`; this subagent resolves each company to a board and sweeps it. Phase 14 note: the weekly `/ultramode` sweep does not rebuild this watchlist — it is applied at registry-(re)build time; Phase 15's `/sources` command takes ownership of refreshing it.
 
 ### Building the watchlist (the dispatcher does this; documented here for the contract)
 

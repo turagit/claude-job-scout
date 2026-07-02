@@ -407,3 +407,12 @@ footer {
     print-color-adjust: exact;
   }
 }
+
+/* Phase 14 — near-miss rail + scorecard strip */
+.near-miss-rail, .scorecard { margin: 1.25rem 0; }
+.near-miss-rail summary, .scorecard summary { cursor: pointer; font-weight: 600; }
+.near-miss .card-head { display: flex; gap: 0.5rem; align-items: baseline; flex-wrap: wrap; }
+.near-miss .would-be { font-size: 0.85em; font-weight: 600; color: var(--accent-from, #6b5bd2); }
+.near-miss .gate-line, .near-miss .bend-hint { font-size: 0.9em; opacity: 0.85; margin-top: 0.25rem; }
+.tier-pill { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.8em; font-weight: 700; }
+.tier-pill.tier-d { background: var(--tier-d-bg, #f3d4d4); color: var(--tier-d-fg, #7a2e2e); }
