@@ -74,7 +74,12 @@ _report() { CHECKS=$((CHECKS+1)); if [ "$1" -ne 0 ]; then FAILS=$((FAILS+1)); ec
 assert_eq()  { [ "$1" = "$2" ]; _report $? "${3:-expected [$1] got [$2]} (want='$1' got='$2')"; }
 assert_ok()  { "$@" >/dev/null 2>&1; _report $? "exit0: $*"; }
 assert_fail(){ "$@" >/dev/null 2>&1; [ $? -ne 0 ]; _report $? "nonzero-exit: $*"; }
-assert_json_eq() { local got; got=$(echo "$2" | jq -S .); local want; want=$(echo "$1" | jq -S .); [ "$want" = "$got" ]; _report $? "${3:-json mismatch}"; }
+assert_json_eq() {
+  local want got
+  want=$(printf '%s' "$1" | jq -Se . 2>/dev/null) || { _report 1 "${3:-json}: want side unparseable"; return; }
+  got=$(printf '%s' "$2" | jq -Se . 2>/dev/null) || { _report 1 "${3:-json}: got side unparseable"; return; }
+  [ "$want" = "$got" ]; _report $? "${3:-json mismatch}"
+}
 finish() { echo "checks=$CHECKS fails=$FAILS"; [ "$FAILS" -eq 0 ]; }
 ```
 
