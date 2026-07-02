@@ -54,6 +54,15 @@ If any check fails, append the violation and continue evaluating remaining check
 
 Gate results are part of the score cache (see `_job-matcher` SKILL.md § Score Caching Contract). Same key (`job_id × cv_hash × profile_hash × rubric_version`). Profile changes invalidate via `profile_hash` bump (`/analyze-cv` recomputes the hash when `requirements` changes).
 
+## Gate semantics are data, not taxonomy (Phase 14, D4)
+
+The gate reads each `deal_breakers[]` entry's `values[]` as the workspace's **allowed set** (for `contract_type`/`work_arrangement`/`location`) or threshold (`rate_floor`/`salary_floor`), refined by its `free_text`. Never apply a built-in idea of what a term includes: if `values` is `["freelance", "detachering"]`, a detachering/secondment role passes the contract gate (this exact case was mis-gated on 2026-07-02). Unknown evidence is NOT a violation — a gate may only fail on text that states or clearly implies the violation; "not stated" is handled upstream by fetch-then-gate (D2), and by the time this engine runs, every role carries its full JD.
+
+## Structured violations + the near-miss flag (Phase 14, D3)
+
+- Always persist `gate_violations[]` as `[{kind, detail}]` — `kind` from the deal-breaker enum, `detail` a short quote/paraphrase of the violating evidence. `tier_reason` remains the human-readable summary; it never replaces the structured field.
+- When **exactly one distinct `kind`** fails and every other gate passes, do NOT stop at `tier: "D"`: hand the role to `_job-matcher` for a full rubric pass anyway. If the rubric result (ignoring the gate) is A or B, set `near_miss: true` and `near_miss_would_be_tier: "A"|"B"` on the entry. Tier stays `"D"` (a gate is a gate — the rail, not the ranking, is where near-misses surface). Two or more failed kinds is honest D-tier: no rubric pass, no flag.
+
 ## Reference Materials
 
 - `references/gate-rules.md` — full rules table, seniority ordering, location-match logic, currency handling.

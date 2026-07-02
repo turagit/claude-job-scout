@@ -182,6 +182,14 @@ Cost is paid lazily as the user opens reports. Most legacy entries are below B-t
 - **`.job-scout/jds/<id>.txt`** — supplies the full JD text for evidence-quote extraction. If missing (legacy entry, `jd_path: null`), trigger fresh extraction via the Chrome extension before scoring.
 - **`.job-scout/cache/scores.json`** — the score cache.
 
+## JD required (Phase 14)
+
+Scoring reads the JD from `jd_path`. **Refuse to score an entry whose `jd_path` is null or whose file is missing** — return it as `{id, skipped: "jd_missing"}` so the dispatcher records it in the scorecard's disclosures. Scoring from a listing excerpt is the 2026-07-02 defect ("remote not confirmed" gates on absent data) and is never acceptable.
+
+## Near-miss rubric pass (Phase 14, D3)
+
+When dispatched for a single-gate-failure role (`_gate-engine` § near-miss), run the rubric exactly as normal and return the would-be tier and dimensions. The dispatcher persists `near_miss`/`near_miss_would_be_tier` alongside the D tier; dimension evidence renders in the near-miss rail.
+
 ## Reference materials
 
 - `../_gate-engine/SKILL.md` — hard-gate evaluator, runs before this skill.
