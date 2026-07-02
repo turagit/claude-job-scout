@@ -10,7 +10,7 @@ case "$cmd" in
     echo "$rd";;
   save)
     rd="$2"; stage="$3"; art="${4-}"
-    if [ -n "$art" ]; then cp "$art" "$rd/$stage.json"; fi
+    if [ -n "$art" ] && ! [ "$art" -ef "$rd/$stage.json" ]; then cp "$art" "$rd/$stage.json"; fi
     jq --arg s "$stage" '.stages[$s] = "done"' "$rd/manifest.json" > "$rd/manifest.json.tmp" \
       && mv "$rd/manifest.json.tmp" "$rd/manifest.json";;
   stage)

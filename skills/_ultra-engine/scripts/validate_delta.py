@@ -25,7 +25,7 @@ def main():
         errs.append("envelope.counts: required object {scanned,matched,dropped_explicit_violation,returned,capped}")
     else:
         for k in ("scanned", "matched", "dropped_explicit_violation", "returned"):
-            if not isinstance(c.get(k), int): errs.append(f"counts.{k}: required int")
+            if not isinstance(c.get(k), int) or isinstance(c.get(k), bool): errs.append(f"counts.{k}: required int")
         if isinstance(c.get("returned"), int) and isinstance(c.get("matched"), int) \
            and isinstance(c.get("dropped_explicit_violation"), int):
             truncated = c["returned"] < (c["matched"] - c["dropped_explicit_violation"])
@@ -66,6 +66,9 @@ def main():
                 rel = jd[len(".job-scout/"):] if jd.startswith(".job-scout/") else jd
                 if not os.path.isfile(os.path.join(a.ws, rel)):
                     errs.append(f"{p}.jd_path: file not found under workspace: {jd}")
+        sig = d.get("signals")
+        if sig is not None and not (isinstance(sig, dict) and all(isinstance(v, str) for v in sig.values())):
+            errs.append(f"{p}.signals: object of string values when present")
     if errs:
         for e in errs: print(e, file=sys.stderr)
         sys.exit(1)

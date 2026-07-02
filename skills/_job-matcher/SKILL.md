@@ -2,7 +2,7 @@
 name: _job-matcher
 description: >
   [Internal — loaded by /match-jobs and /check-job-notifications] This skill should be used when the user asks to "match jobs to my CV", "score these jobs", "rank job listings", "find best matches", "analyse job alerts", "which jobs should I apply to", "compare jobs against my profile", or needs to evaluate job listings against their CV and stated requirements.
-version: 0.3.0
+version: 0.4.0
 ---
 
 # Job Matcher (rubric v1)

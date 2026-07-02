@@ -46,9 +46,16 @@ def sighting(entry, src):
     seen = entry.setdefault("also_seen_on", [])
     if tri != own and tri not in seen: seen.append(tri)
 
-def validate_final(t, ws):
+def validate_final(t, ws, touched):
+    """Validate only entries this run actually touched (created/replaced/sighted/upgraded).
+    Live trackers accumulate legacy id!=key entries and dead jd_path values that pre-date
+    Phase 14; auditing the whole tracker on every merge would abort on THOSE, not on
+    anything this run wrote. Untouched legacy entries are never judged."""
     errs = []
-    for k, j in t["jobs"].items():
+    for k in touched:
+        j = t["jobs"].get(k)
+        if j is None:
+            continue  # deleted by a within-run replacement — nothing left to validate
         if j.get("id") != k: errs.append(f"jobs[{k}].id mismatch")
         if j.get("status") not in STATUSES: errs.append(f"jobs[{k}].status {j.get('status')!r}")
         if j.get("tier") not in TIERS: errs.append(f"jobs[{k}].tier {j.get('tier')!r}")
@@ -76,6 +83,7 @@ def main():
 
     merged = seen_known = upgrades = collisions = 0
     merged_this_run = set()
+    touched = set()  # every id created, replaced, sighted, or upgraded this run — the only ids validate_final judges
 
     def new_entry(e):
         j = {"id": e["id"], "url": e["url"], "title": e["title"], "company": e["company"],
@@ -94,6 +102,7 @@ def main():
             fp = fp_of(e.get("company", ""), e.get("title", ""), e.get("location") or "")
             if e["id"] in jobs:  # known id: sighting only
                 sighting(jobs[e["id"]], e["source"]); jobs[e["id"]]["last_seen"] = a.today
+                touched.add(e["id"])
                 seen_known += 1; continue
             if fp in live_fp:  # fingerprint collision
                 inc_id = live_fp[fp]; inc = jobs[inc_id]
@@ -106,6 +115,7 @@ def main():
                     sighting(j, read_source(inc.get("source")))
                     del jobs[inc_id]; merged_this_run.discard(inc_id)
                     jobs[e["id"]] = j; merged_this_run.add(e["id"]); live_fp[fp] = e["id"]
+                    touched.add(e["id"])
                 elif better:
                     # pre-existing incumbent: ids are immutable — upgrade the apply URL only
                     inc["url"] = e["url"]
@@ -114,17 +124,20 @@ def main():
                     inc["notes"] = ((inc.get("notes") or "") + ("; " if inc.get("notes") else "") + note)
                     upgrades += 1
                     sighting(inc, e["source"]); inc["last_seen"] = a.today
+                    touched.add(inc_id)
                 else:
                     sighting(inc, e["source"]); inc["last_seen"] = a.today
+                    touched.add(inc_id)
                 collisions += 1; continue
             jobs[e["id"]] = new_entry(e)  # genuinely new
             live_fp[fp] = e["id"]; merged_this_run.add(e["id"]); merged += 1
+            touched.add(e["id"])
 
     t["schema_version"] = 3
     t.setdefault("stats", {})["total_seen"] = len(jobs)
     t["stats"]["last_run"] = a.today
 
-    errs = validate_final(t, a.ws)
+    errs = validate_final(t, a.ws, touched)
     if errs:
         sys.stderr.write("MERGE ABORTED (validation):\n" + "\n".join(errs) + "\n"); sys.exit(1)
     fd, tmp = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(a.tracker)), suffix=".tmp")

@@ -2,7 +2,7 @@
 name: _gate-engine
 description: >
   [Internal — loaded by _job-matcher and the orchestrators of /match-jobs and /check-job-notifications] Evaluates a job listing against the user's declared deal_breakers in user-profile.json. Returns a list of gate_violations and an overall gated flag. Any non-empty violation list forces the job to tier D with no further scoring. This is the primary false-positive defence in v0.8.0.
-version: 0.1.0
+version: 0.2.0
 ---
 
 # Gate Engine

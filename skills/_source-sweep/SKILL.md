@@ -11,7 +11,7 @@ description: >
   the new entry, and returns delta-only new roles for the dispatcher to score and
   merge. Honours the source's access lane (api / rss / html / extension) and
   poll method. Never re-fetches a known role. Not user-invocable.
-version: 0.1.0
+version: 0.2.0
 ---
 
 # Source Sweep (Subagent)
@@ -84,6 +84,7 @@ A single JSON envelope. `deltas` carry **only genuinely-new** roles — already 
 ```json
 {
   "status": "ok",
+  "counts": { "scanned": 0, "matched": 0, "dropped_explicit_violation": 0, "returned": 0, "capped": false },
   "deltas": [
     {
       "id": "remoteok__remoteok__998877",
@@ -95,6 +96,7 @@ A single JSON envelope. `deltas` carry **only genuinely-new** roles — already 
       "jd_path": "jds/remoteok__remoteok__998877.txt",
       "posted_at": "2026-06-14",
       "fingerprint": "globex|senior platform engineer|remote",
+      "signals": { "contract": "freelance", "remote": "remote", "rate": "unknown" },
       "tags": ["kubernetes", "terraform", "aws"]
     }
   ],
@@ -104,6 +106,8 @@ A single JSON envelope. `deltas` carry **only genuinely-new** roles — already 
   "continuation_cursor": null
 }
 ```
+
+Definitions: 'scanned' = every posting examined; 'matched' = lane-relevant AND genuinely-new (after snapshot dedupe and the freshness window) — known/stale roles count in 'scanned' only, so 'returned < matched − dropped_explicit_violation' means real truncation and requires 'capped': true.
 
 - Every delta entry is a **new** role only. A role whose `id` is in `known_ids`, or whose `fingerprint` is in `known_fingerprints`, is **never** in `deltas` (it was filtered before any JD fetch). No prose outside the JSON envelope; no re-emission of input data.
 - `id` is the **namespaced external id** `<provider>__<board>__<externalid>` (LinkedIn IDs stay bare, but this subagent never sweeps LinkedIn — that is the extension/`/job-search` surface). `jd_path` is `jds/<namespaced-id>.txt`, the blob this subagent already wrote.

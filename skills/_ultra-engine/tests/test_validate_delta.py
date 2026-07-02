@@ -51,5 +51,13 @@ class T(unittest.TestCase):
         self.assertNotIn("Traceback", p.stderr)
         self.assertIn("posted_at", p.stderr)
 
+    def test_bool_counts_rejected(self):
+        bad = json.loads(json.dumps(self.good)); bad["counts"]["scanned"] = True
+        p = run(self.ws, bad); self.assertEqual(p.returncode, 1); self.assertIn("counts.scanned", p.stderr)
+
+    def test_nonstring_signals_value_rejected(self):
+        bad = json.loads(json.dumps(self.good)); bad["deltas"][0]["signals"] = {"contract": 123}
+        p = run(self.ws, bad); self.assertEqual(p.returncode, 1); self.assertIn("signals", p.stderr)
+
 if __name__ == "__main__":
     unittest.main()

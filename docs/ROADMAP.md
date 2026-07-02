@@ -205,7 +205,7 @@ Engine correctness. The 2026-07-02 live audit proved prose contracts drift at ru
 - [x] **`/bend <id>` command** (D13) — one-shot re-gate/re-score with the failed gate relaxed; `bent: true` audit trail; never edits `deal_breakers`.
 - [x] **Extension-lane rotation, actually swept** (D8) — staleness-ordered N=4/run; `last_swept_at` bookkeeping; checkpoint per source.
 - [x] **Checkpoints + always-render + resume** (D7) — kill-test: interrupt mid-scoring → resume → report still ships.
-- [x] **Per-run scorecard** (D12) — swept/skipped/rotated, seen/new/gated-by-reason/near-miss, fetch used vs deferred, tier yield, stage timings; embedded in report.
+- [x] **Per-run scorecard** (D12) — swept/skipped/rotated, seen/new/gated-by-reason/near-miss, fetch used vs deferred, tier yield; embedded in report (per-stage timings deferred to Phase 15).
 - [x] **Migration/back-compat** — IDs immutable; `source` normalised on read; additive fields only.
 - [x] **Release v0.14.0** — version bump, CHANGELOG, README notes, this section ticked.
 

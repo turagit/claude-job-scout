@@ -20,4 +20,8 @@ bash "$C" save "$rd2" snapshot /tmp/cp2.$$
 assert_eq "$rd2" "$(bash "$C" find-incomplete "$ws2")" "find-incomplete under space-containing ws"
 rm -f /tmp/cp2.$$
 
+echo '{"x": 1}' > "$rd/merge.json"
+assert_ok bash "$C" save "$rd" merge "$rd/merge.json"
+assert_eq "done" "$(bash "$C" stage "$rd" merge)" "save idempotent when artifact already in run dir"
+
 rm -f /tmp/snap.$$; finish

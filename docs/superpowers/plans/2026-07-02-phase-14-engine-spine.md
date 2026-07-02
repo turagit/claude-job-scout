@@ -401,6 +401,14 @@ class T(unittest.TestCase):
         self.assertNotIn("Traceback", p.stderr)
         self.assertIn("posted_at", p.stderr)
 
+    def test_bool_counts_rejected(self):
+        bad = json.loads(json.dumps(self.good)); bad["counts"]["scanned"] = True
+        p = run(self.ws, bad); self.assertEqual(p.returncode, 1); self.assertIn("counts.scanned", p.stderr)
+
+    def test_nonstring_signals_value_rejected(self):
+        bad = json.loads(json.dumps(self.good)); bad["deltas"][0]["signals"] = {"contract": 123}
+        p = run(self.ws, bad); self.assertEqual(p.returncode, 1); self.assertIn("signals", p.stderr)
+
 if __name__ == "__main__":
     unittest.main()
 ```
@@ -438,7 +446,7 @@ def main():
         errs.append("envelope.counts: required object {scanned,matched,dropped_explicit_violation,returned,capped}")
     else:
         for k in ("scanned", "matched", "dropped_explicit_violation", "returned"):
-            if not isinstance(c.get(k), int): errs.append(f"counts.{k}: required int")
+            if not isinstance(c.get(k), int) or isinstance(c.get(k), bool): errs.append(f"counts.{k}: required int")
         if isinstance(c.get("returned"), int) and isinstance(c.get("matched"), int) \
            and isinstance(c.get("dropped_explicit_violation"), int):
             truncated = c["returned"] < (c["matched"] - c["dropped_explicit_violation"])
@@ -479,6 +487,9 @@ def main():
                 rel = jd[len(".job-scout/"):] if jd.startswith(".job-scout/") else jd
                 if not os.path.isfile(os.path.join(a.ws, rel)):
                     errs.append(f"{p}.jd_path: file not found under workspace: {jd}")
+        sig = d.get("signals")
+        if sig is not None and not (isinstance(sig, dict) and all(isinstance(v, str) for v in sig.values())):
+            errs.append(f"{p}.signals: object of string values when present")
     if errs:
         for e in errs: print(e, file=sys.stderr)
         sys.exit(1)
@@ -620,6 +631,20 @@ class T(unittest.TestCase):
         self.assertEqual(p.returncode, 0, p.stderr)
         self.assertIn("jobicy__jobicy__7", self.load()["jobs"])
 
+    def test_legacy_dirty_entries_do_not_block_merge(self):
+        # live trackers carry legacy entries with id != key and dead jd_path values;
+        # merging a NEW role must not audit them
+        t = json.load(open(self.tracker))
+        t["jobs"]["9999"] = {"url": "u", "title": "Old", "company": "Legacy Co", "location": "X",
+                             "source": "Job Alert", "tier": "B", "status": "seen",
+                             "first_seen": "2026-01-01", "last_seen": "2026-01-01",
+                             "jd_path": "jds/long-gone.txt", "notes": ""}   # no id field, dead jd
+        json.dump(t, open(self.tracker, "w"))
+        e = entry("remotive__remotive__42"); self.jd(e["id"])
+        p = self.run_merge(delta([e]))
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertIn("remotive__remotive__42", self.load()["jobs"])
+
 if __name__ == "__main__":
     unittest.main()
 ```
@@ -678,9 +703,16 @@ def sighting(entry, src):
     seen = entry.setdefault("also_seen_on", [])
     if tri != own and tri not in seen: seen.append(tri)
 
-def validate_final(t, ws):
+def validate_final(t, ws, touched):
+    """Validate only entries this run actually touched (created/replaced/sighted/upgraded).
+    Live trackers accumulate legacy id!=key entries and dead jd_path values that pre-date
+    Phase 14; auditing the whole tracker on every merge would abort on THOSE, not on
+    anything this run wrote. Untouched legacy entries are never judged."""
     errs = []
-    for k, j in t["jobs"].items():
+    for k in touched:
+        j = t["jobs"].get(k)
+        if j is None:
+            continue  # deleted by a within-run replacement — nothing left to validate
         if j.get("id") != k: errs.append(f"jobs[{k}].id mismatch")
         if j.get("status") not in STATUSES: errs.append(f"jobs[{k}].status {j.get('status')!r}")
         if j.get("tier") not in TIERS: errs.append(f"jobs[{k}].tier {j.get('tier')!r}")
@@ -708,6 +740,7 @@ def main():
 
     merged = seen_known = upgrades = collisions = 0
     merged_this_run = set()
+    touched = set()  # every id created, replaced, sighted, or upgraded this run — the only ids validate_final judges
 
     def new_entry(e):
         j = {"id": e["id"], "url": e["url"], "title": e["title"], "company": e["company"],
@@ -726,6 +759,7 @@ def main():
             fp = fp_of(e.get("company", ""), e.get("title", ""), e.get("location") or "")
             if e["id"] in jobs:  # known id: sighting only
                 sighting(jobs[e["id"]], e["source"]); jobs[e["id"]]["last_seen"] = a.today
+                touched.add(e["id"])
                 seen_known += 1; continue
             if fp in live_fp:  # fingerprint collision
                 inc_id = live_fp[fp]; inc = jobs[inc_id]
@@ -738,6 +772,7 @@ def main():
                     sighting(j, read_source(inc.get("source")))
                     del jobs[inc_id]; merged_this_run.discard(inc_id)
                     jobs[e["id"]] = j; merged_this_run.add(e["id"]); live_fp[fp] = e["id"]
+                    touched.add(e["id"])
                 elif better:
                     # pre-existing incumbent: ids are immutable — upgrade the apply URL only
                     inc["url"] = e["url"]
@@ -746,17 +781,20 @@ def main():
                     inc["notes"] = ((inc.get("notes") or "") + ("; " if inc.get("notes") else "") + note)
                     upgrades += 1
                     sighting(inc, e["source"]); inc["last_seen"] = a.today
+                    touched.add(inc_id)
                 else:
                     sighting(inc, e["source"]); inc["last_seen"] = a.today
+                    touched.add(inc_id)
                 collisions += 1; continue
             jobs[e["id"]] = new_entry(e)  # genuinely new
             live_fp[fp] = e["id"]; merged_this_run.add(e["id"]); merged += 1
+            touched.add(e["id"])
 
     t["schema_version"] = 3
     t.setdefault("stats", {})["total_seen"] = len(jobs)
     t["stats"]["last_run"] = a.today
 
-    errs = validate_final(t, a.ws)
+    errs = validate_final(t, a.ws, touched)
     if errs:
         sys.stderr.write("MERGE ABORTED (validation):\n" + "\n".join(errs) + "\n"); sys.exit(1)
     fd, tmp = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(a.tracker)), suffix=".tmp")
@@ -959,6 +997,10 @@ bash "$C" save "$rd2" snapshot /tmp/cp2.$$
 assert_eq "$rd2" "$(bash "$C" find-incomplete "$ws2")" "find-incomplete under space-containing ws"
 rm -f /tmp/cp2.$$
 
+echo '{"x": 1}' > "$rd/merge.json"
+assert_ok bash "$C" save "$rd" merge "$rd/merge.json"
+assert_eq "done" "$(bash "$C" stage "$rd" merge)" "save idempotent when artifact already in run dir"
+
 rm -f /tmp/snap.$$; finish
 ```
 
@@ -980,7 +1022,7 @@ case "$cmd" in
     echo "$rd";;
   save)
     rd="$2"; stage="$3"; art="${4-}"
-    if [ -n "$art" ]; then cp "$art" "$rd/$stage.json"; fi
+    if [ -n "$art" ] && ! [ "$art" -ef "$rd/$stage.json" ]; then cp "$art" "$rd/$stage.json"; fi
     jq --arg s "$stage" '.stages[$s] = "done"' "$rd/manifest.json" > "$rd/manifest.json.tmp" \
       && mv "$rd/manifest.json.tmp" "$rd/manifest.json";;
   stage)
@@ -1038,9 +1080,11 @@ esac
 SC="$(dirname "$0")/../scripts/scorecard.sh"; FXD="$(dirname "$0")/fixtures"
 rd=$(mktemp -d)
 cp "$FXD/delta-good.json" "$rd/sweep-remotive.json"
+echo '{"status": "ok", "counts": {"scanned": 0, "matched": 0, "dropped_explicit_violation": 0, "returned": 0, "capped": false}, "deltas": [], "errors": [{"code": "no_api_key", "message": "Skipped adzuna (no API key)"}], "continuation_cursor": null}' > "$rd/sweep-failed.json"
 echo '{"merged": 1, "collisions_also_seen": 0, "url_upgrades": 0, "skipped_known": 2}' > "$rd/merge.json"
 echo '{"budget": 75, "used": 3, "deferred": 2}' > "$rd/jd-fetch.json"
 echo '{"picked": ["Malt"], "rotated_out": ["Toptal", "Worksome"]}' > "$rd/rotation.json"
+echo '{"errors": [{"stage": "merge", "message": "MERGE ABORTED (validation): jobs[4001].tier bad"}]}' > "$rd/pipeline-errors.json"
 bash "$SC" "$rd" "$FXD/tracker-mini.json" "2026-06-01" > /dev/null
 assert_ok test -f "$rd/scorecard.json"
 assert_eq "6" "$(jq '.sources["remotive"].matched' "$rd/scorecard.json")" "source counts lifted"
@@ -1049,6 +1093,8 @@ assert_eq "2" "$(jq '.jd_fetch.deferred' "$rd/scorecard.json")" "jd fetch lifted
 assert_eq "1" "$(jq '.tiers.B' "$rd/scorecard.json")" "tiers over first_seen==today"
 assert_eq "true" "$(jq '[.disclosures[]|select(test("capped"))]|length > 0' "$rd/scorecard.json")" "cap disclosed"
 assert_eq "true" "$(jq '[.disclosures[]|select(test("Toptal"))]|length > 0' "$rd/scorecard.json")" "rotation disclosed"
+assert_eq "true" "$(jq '[.disclosures[]|select(test("no API key"))]|length > 0' "$rd/scorecard.json")" "sweep failure message disclosed"
+assert_eq "true" "$(jq '[.disclosures[]|select(test("pipeline merge"))]|length > 0' "$rd/scorecard.json")" "pipeline error disclosed"
 # a null-kind violation must fold to "unknown", never crash the scorecard
 tmp_tracker=$(mktemp)
 jq '.jobs["4001"].gate_violations = [{"kind": null, "detail": "malformed"}]' "$FXD/tracker-mini.json" > "$tmp_tracker"
@@ -1077,13 +1123,15 @@ for f in "$rd"/sweep-*.json; do
     '$acc + [{key: $n, value: {scanned: ($e[0].counts.scanned // 0), matched: ($e[0].counts.matched // 0),
       dropped_explicit_violation: ($e[0].counts.dropped_explicit_violation // 0),
       returned: ($e[0].counts.returned // 0), capped: ($e[0].counts.capped // false),
-      errors: ($e[0].errors | length)}}]')
+      errors: ($e[0].errors | length),
+      messages: ([ $e[0].errors[]? | (.message // "error") ])}}]')
 done
 merge='{}'; [ -f "$rd/merge.json" ] && merge=$(cat "$rd/merge.json")
 jdf='{"budget": 0, "used": 0, "deferred": 0}'; [ -f "$rd/jd-fetch.json" ] && jdf=$(cat "$rd/jd-fetch.json")
 rot='{"picked": [], "rotated_out": []}'; [ -f "$rd/rotation.json" ] && rot=$(cat "$rd/rotation.json")
+pipe='{"errors": []}'; [ -f "$rd/pipeline-errors.json" ] && pipe=$(cat "$rd/pipeline-errors.json")
 jq -n --arg today "$today" --argjson sweeps "$sweeps" --argjson merge "$merge" \
-      --argjson jdf "$jdf" --argjson rot "$rot" --slurpfile t "$tracker" '
+      --argjson jdf "$jdf" --argjson rot "$rot" --argjson pipe "$pipe" --slurpfile t "$tracker" '
   [ $t[0].jobs | to_entries[] | .value | select(.first_seen == $today) ] as $new
   | {date: $today,
      sources: ($sweeps | from_entries),
@@ -1097,9 +1145,10 @@ jq -n --arg today "$today" --argjson sweeps "$sweeps" --argjson merge "$merge" \
              | {A: (.A // 0), B: (.B // 0), C: (.C // 0), D: (.D // 0), untiered: (.untiered // 0)}),
      disclosures:
        ( [ $sweeps[] | select(.value.capped) | "\(.key): results capped — \(.value.returned) of \(.value.matched - .value.dropped_explicit_violation) lane matches returned" ]
-       + [ $sweeps[] | select(.value.errors > 0) | "\(.key): \(.value.errors) sweep error(s) — see envelope" ]
+       + [ $sweeps[] | .key as $k | .value.messages[] | "\($k): \(.)" ]
        + (if ($jdf.deferred // 0) > 0 then ["JD fetches: \($jdf.used) of budget \($jdf.budget) used — \($jdf.deferred) deferred to next run"] else [] end)
-       + [ $rot.rotated_out[]? | "rotated out this run: \(.) (swept on its next rotation slot)" ] ) }
+       + [ $rot.rotated_out[]? | "rotated out this run: \(.) (swept on its next rotation slot)" ]
+       + [ $pipe.errors[]? | "pipeline \(.stage): \(.message)" ] ) }
 ' > "$rd/scorecard.json.tmp" && jq -e . "$rd/scorecard.json.tmp" >/dev/null && mv "$rd/scorecard.json.tmp" "$rd/scorecard.json"
 cat "$rd/scorecard.json"
 ```
@@ -1156,8 +1205,9 @@ assert_eq "ultramode-2026-07-02.html" "$(echo "$out" | jq -r '.filename')" "file
 assert_eq "2026-07-02" "$(echo "$out" | jq -r '.scorecard.date')" "scorecard embedded"
 # malformed entries must never crash the payload (always-render path)
 tmp_t=$(mktemp)
-jq '.jobs["a__a__6"] = {"id": "a__a__6", "url": "u6", "title": "Mystery", "company": "Six", "location": "Remote", "source": {"lane": "aggregator", "provider": "x", "board": "x"}, "status": "seen", "first_seen": "2026-07-02", "last_seen": "2026-07-02", "notes": ""} | .jobs["a__a__4"].gate_violations = []' "$FXD/tracker-payload.json" > "$tmp_t"
-out2=$(bash "$P" "$tmp_t" "$rd" "2026-07-02" 12)
+jq '.jobs["a__a__6"] = {"id": "a__a__6", "url": "u6", "title": "Mystery", "company": "Six", "location": "Remote", "source": {"lane": "aggregator", "provider": "x", "board": "x"}, "status": "seen", "first_seen": "2026-07-02", "last_seen": "2026-07-02", "notes": "", "confidence": null, "posted_at": ""} | .jobs["a__a__4"].gate_violations = []' "$FXD/tracker-payload.json" > "$tmp_t"
+out2=$(bash "$P" "$tmp_t" "$rd" "2026-07-02" 12); rc2=$?
+assert_eq "0" "$rc2" "null confidence + empty posted_at do not crash the always-render path"
 assert_eq "6" "$(echo "$out2" | jq '.tier_counts.total')" "null-tier entry counted, no crash"
 assert_eq "unknown" "$(echo "$out2" | jq -r '.near_misses[0].failed_gate.kind')" "empty violations fall back to unknown"
 rm -f "$tmp_t"
@@ -1177,8 +1227,8 @@ tracker="$1"; rd="$2"; today="$3"; nsrc="$4"
 jq -n --arg today "$today" --argjson nsrc "$nsrc" \
       --slurpfile t "$tracker" --slurpfile sc "$rd/scorecard.json" '
   def tier_rank: {"A": 0, "B": 1, "C": 2, "D": 3, "untiered": 4}[.tier // "untiered"] // 4;
-  def conf_rank: if has("confidence") then ({"high": 0, "med": 1, "low": 2}[.confidence] // 3) else 3 end;
-  def date_num: (.posted_at // "0000-00-00") | gsub("-"; "") | tonumber;
+  def conf_rank: {"high": 0, "med": 1, "low": 2}[.confidence // "absent"] // 3;
+  def date_num: ((.posted_at // "") | if . == "" then "0000-00-00" else . end) | gsub("-"; "") | tonumber;
   def src_label: if (.source | type) == "object"
       then (if .source.provider == .source.board then .source.provider else "\(.source.provider) · \(.source.board)" end)
       else (.source | tostring) end;
@@ -1282,7 +1332,7 @@ You are a `_source-sweep` subagent for a job-hunter plugin. Sweep exactly ONE so
 {{API_KEY_LINE}}
 
 ## Dedup snapshot — READ THIS FILE FIRST
-Read `{{SNAPSHOT_PATH}}`: `known_ids[]` + `known_fingerprints[]`. A role is ALREADY KNOWN when its id is in known_ids OR its fingerprint `lower(company)|lower(title)|normalise_location(location)` is in known_fingerprints (normalise_location = lowercase, strip the words area/region/greater/metropolitan, strip punctuation, collapse spaces). Known roles are dropped BUT counted (they cost no fetch).
+Read `{{SNAPSHOT_PATH}}`: `known_ids[]` + `known_fingerprints[]`. A role is ALREADY KNOWN when its id is in known_ids OR its fingerprint `lower(company)|lower(title)|normalise_location(location)` is in known_fingerprints (normalise_location = lowercase, strip the words area/region/greater/metropolitan, strip punctuation, collapse spaces). Compute fingerprints with the canonical implementation — `bash {{SCRIPTS}}/fingerprint.sh "<company>" "<title>" "<location>"` — never re-derive by hand (the lib also folds diacritics: Zürich ≡ Zurich). Known roles are dropped BUT counted (they cost no fetch).
 
 ## Lane relevance (occupation-level — keep if title/body plausibly matches ANY)
 {{LANE_KEYWORDS}}
@@ -1304,6 +1354,7 @@ GET the source's `endpoint` (read-only public HTTP — the documented WebFetch c
 3. Compute the fingerprint exactly as the snapshot rule above.
 
 ## Return EXACTLY this envelope (JSON only; cap {{CAP}} newest — when you truncate, `capped` MUST be true)
+Definitions: 'scanned' = every posting examined; 'matched' = lane-relevant AND genuinely-new (after snapshot dedupe and the freshness window) — known/stale roles count in 'scanned' only, so 'returned < matched − dropped_explicit_violation' means real truncation and requires 'capped': true.
 {
   "status": "ok",
   "counts": {"scanned": 0, "matched": 0, "dropped_explicit_violation": 0, "returned": 0, "capped": false},
@@ -1400,26 +1451,26 @@ When dispatched for a single-gate-failure role (`_gate-engine` § near-miss), ru
 Resolve `SCRIPTS` = `../_ultra-engine/scripts` (this plugin's engine — see `../_ultra-engine/SKILL.md` for every contract) and `WS` = `.job-scout`. Mechanical work below is script calls; composing them from memory is a defect (CLAUDE.md hard rule #9).
 
 ### Step 4a: Resume or start a run
-`rd=$(bash $SCRIPTS/checkpoint.sh find-incomplete $WS)`. If non-empty and its manifest `started_at` is within 48h, announce **resuming** and skip every stage whose checkpoint says `done`. Otherwise `rd=$(bash $SCRIPTS/checkpoint.sh init $WS $(date +%F-%H%M))`.
+`rd=$(bash $SCRIPTS/checkpoint.sh find-incomplete $WS)`. If non-empty and its manifest `started_at` is within 48h, announce **resuming** and skip every stage whose checkpoint says `done`. Otherwise `rd=$(bash $SCRIPTS/checkpoint.sh init $WS $(date +%F-%H%M))`. Set `TODAY` = the run id's date component (`TODAY=$(basename "$rd" | cut -c1-10)` — so a resumed run keeps its original date); every `date +%F` in Steps 4e–4g uses `$TODAY`.
 
 ### Step 4b: Registry, rotation, snapshot
 Load `sources.json`; derive poll order per `ultramode-sources.md` § Adaptive priority order. Pick this run's extension-lane subset: `bash $SCRIPTS/rotation.sh pick $WS/sources.json 4`; write `{picked, rotated_out}` (rotated_out = extension sources not picked) to `$rd/rotation.json`. Build the snapshot: `bash $SCRIPTS/snapshot.sh $WS/tracker.json $WS/cache/ultramode-snapshot.json`, then `bash $SCRIPTS/checkpoint.sh save $rd snapshot $WS/cache/ultramode-snapshot.json`. ATS coverage in the sweep is the registry's `ats-provider` sources themselves; the dynamic watchlist union (tracker A/B-tier employers + `companies_to_target[]` + curated seed + manual additions, per `../_source-sweep/SKILL.md` § ATS watchlist) is applied when the registry is (re)built — Step 3 / `/ultramode sources` — not per sweep.
 
 ### Step 4c: Fan out subagent sweeps (api/rss/html lanes)
-For each non-extension source in poll order: load the template matching its `access_lane` from `../_source-sweep/references/prompt-<lane>.md`, substitute ONLY the placeholders (all ten, nothing else: {{SOURCE_JSON}} = the registry entry verbatim · {{SNAPSHOT_PATH}} = $WS/cache/ultramode-snapshot.json · {{WS_DIR}} = .job-scout · {{SCRIPTS}} = the resolved ../_ultra-engine/scripts path · {{LANE_KEYWORDS}} / {{NOT_TERMS}} = the Step 1 lane corpus · {{GATE_BLOCK}} = the drop-on-explicit-violation rules built from requirements.deal_breakers values[]/free_text as data · {{FRESHNESS_DAYS}} = 7 · {{CAP}} = 40 · {{API_KEY_LINE}} = for a needs_key source, the token line looked up from ultramode.api_keys per Step 5, else an empty line — and if a needed key is ABSENT, do not dispatch that source at all: record `Skipped <provider> (no API key)` in its errors envelope so the scorecard's disclosures surface it), and dispatch via the Agent tool per `subagent-protocol.md` (parallel across sources is fine — they never write the tracker). Save each return: write it to a temp file, `python3 $SCRIPTS/validate_delta.py --ws $WS <file>`; on failure re-dispatch that source once with the validator's stderr appended under a "## Previous attempt was rejected because" line; on second failure record the source as failed in `errors` and move on. On success: `bash $SCRIPTS/checkpoint.sh save $rd sweep-<name-slug> <file>`.
+For each non-extension source in poll order: load the template matching its `access_lane` from `../_source-sweep/references/prompt-<lane>.md`, substitute ONLY the placeholders (all ten, nothing else: {{SOURCE_JSON}} = the registry entry verbatim · {{SNAPSHOT_PATH}} = $WS/cache/ultramode-snapshot.json · {{WS_DIR}} = .job-scout · {{SCRIPTS}} = the resolved ../_ultra-engine/scripts path · {{LANE_KEYWORDS}} / {{NOT_TERMS}} = the Step 1 lane corpus · {{GATE_BLOCK}} = the drop-on-explicit-violation rules built from requirements.deal_breakers values[]/free_text as data · {{FRESHNESS_DAYS}} = 7 · {{CAP}} = 40 · {{API_KEY_LINE}} = for a needs_key source, the token line looked up from ultramode.api_keys per Step 5, else an empty line — and if a needed key is ABSENT, do not dispatch that source at all), and dispatch via the Agent tool per `subagent-protocol.md` (parallel across sources is fine — they never write the tracker). Save each return: write it to a temp file, `python3 $SCRIPTS/validate_delta.py --ws $WS <file>`; on failure re-dispatch that source once with the validator's stderr appended under a "## Previous attempt was rejected because" line. **On a source's second validation failure, or an absent API key (the ABSENT case above), the failure must still reach the scorecard:** write a minimal valid envelope in its place — `{"status": "ok", "counts": {"scanned": 0, "matched": 0, "dropped_explicit_violation": 0, "returned": 0, "capped": false}, "deltas": [], "errors": [{"code": "<sweep_failed|no_api_key>", "message": "<detail — e.g. Skipped <provider> (no API key)>"}], "continuation_cursor": null}` and checkpoint IT as `sweep-<slug>` exactly as a successful sweep would be, so the scorecard's disclosures surface it. On success: `bash $SCRIPTS/checkpoint.sh save $rd sweep-<name-slug> <file>`.
 
 ### Step 4d: Extension lane — main thread, rotation subset only
 For each `rotation.json .picked` source: sweep it in the logged-in session via the Chrome extension (dedupe-before-extract against the snapshot; collect candidate ids on the listing page; open only new ones; write each full JD to `jds/<namespaced-id>.txt` minted with `namespace_id.sh`; build the SAME envelope shape including `counts` + `signals`). Validate + checkpoint exactly as 4c, then `bash $SCRIPTS/rotation.sh mark $WS/sources.json <name> $(date +%F)`. A source that cannot be swept (login expired, layout dead) records an `errors[]` envelope — never silence.
 
 ### Step 4e: Merge (all-or-nothing, serial, atomic)
-`python3 $SCRIPTS/merge_tracker.py --ws $WS --tracker $WS/tracker.json --today $(date +%F) $rd/sweep-*.json` — save its stdout to `$rd/merge.json` and `bash $SCRIPTS/checkpoint.sh save $rd merge $rd/merge.json`. On non-zero exit: STOP the pipeline, show the validator output, and still proceed to Steps 4g–4h with whatever previous stages completed (always-render).
+`python3 $SCRIPTS/merge_tracker.py --ws $WS --tracker $WS/tracker.json --today $TODAY $rd/sweep-*.json` — save its stdout to `$rd/merge.json` and `bash $SCRIPTS/checkpoint.sh save $rd merge $rd/merge.json`. On non-zero exit: STOP the pipeline, show the validator output, append `{"stage": "merge", "message": "<first line of stderr>"}` to `$rd/pipeline-errors.json` (create it as `{"errors": []}` first if absent), and still proceed to Steps 4g–4h with whatever previous stages completed (always-render).
 
 ### Step 4f: Fetch-then-gate (D2), then gate + score
-1. Queue: every merged entry from this run with `jd_path: null` OR any load-bearing `signals` value `unknown` (contract/remote/rate when a matching deal-breaker exists) → `bash $SCRIPTS/jd_queue.sh push $WS/cache/jd-queue.json <entries>`. Pop the budget: `bash $SCRIPTS/jd_queue.sh pop $WS/cache/jd-queue.json 75` — and CHECK its exit status: on non-zero exit the rewrite failed and nothing was dequeued, so discard the printed output and skip the fetch stage this run (fetches are idempotent, so a rare double-serve is harmless — but never treat failed-pop output as consumed). For each popped entry fetch the full JD (WebFetch for public urls; the extension for login-walled sources), write `jds/<id>.txt`, set `jd_path` on the entry via the atomic single-entry recipe (state-validators.md). Write `{"budget": 75, "used": <n>, "deferred": $(bash $SCRIPTS/jd_queue.sh count ...)}` to `$rd/jd-fetch.json`; checkpoint `jd-fetch`.
+1. Queue: every merged entry from this run with `jd_path: null` → `bash $SCRIPTS/jd_queue.sh push $WS/cache/jd-queue.json <entries>` (an entry whose JD is already on disk but carries an `unknown` load-bearing `signals` value is NOT queued — it goes straight to gate + score in 4f.2, since the gate reads the full JD text; re-fetching a JD that already exists on disk is the exact economics inversion this phase fixes). Pop the budget: `bash $SCRIPTS/jd_queue.sh pop $WS/cache/jd-queue.json 75` — and CHECK its exit status: on non-zero exit the rewrite failed and nothing was dequeued, so discard the printed output and skip the fetch stage this run (fetches are idempotent, so a rare double-serve is harmless — but never treat failed-pop output as consumed). For each popped entry fetch the full JD (WebFetch for public urls; the extension for login-walled sources), write `jds/<id>.txt`, set `jd_path` on the entry via the atomic single-entry recipe (state-validators.md). Re-push any popped entry whose fetch failed back onto the queue before writing jd-fetch.json — a failed fetch defers, never strands. Write `{"budget": 75, "used": <n>, "deferred": $(bash $SCRIPTS/jd_queue.sh count ...)}` to `$rd/jd-fetch.json`; checkpoint `jd-fetch`.
 2. Gate + score every this-run entry **with a jd_path**, batched ≤5 per `subagent-protocol.md`: `_gate-engine` first (violations as structured data; single-kind failures continue to the rubric per its § near-miss), `_job-matcher` rubric second (refuses jd-missing). Persist per entry atomically: `tier`, `tier_reason`, `gate_violations[]`, `dimensions`, `rubric_version: "v1"`, and when applicable `near_miss` + `near_miss_would_be_tier`; scores into `cache/scores.json` under the usual key. Checkpoint `scoring` when the batch set completes.
 
 ### Step 4g: Scorecard + payload
-`bash $SCRIPTS/scorecard.sh $rd $WS/tracker.json $(date +%F)` then `bash $SCRIPTS/payload.sh $WS/tracker.json $rd $(date +%F) <n-sources-swept> > $rd/payload.json`; checkpoint both. The payload is the render input verbatim — do not hand-assemble or re-sort it.
+`bash $SCRIPTS/scorecard.sh $rd $WS/tracker.json $TODAY` then `bash $SCRIPTS/payload.sh $WS/tracker.json $rd $TODAY <n-sources-swept> > $rd/payload.json`; checkpoint both. The payload is the render input verbatim — do not hand-assemble or re-sort it.
 
 ### Step 4h: Render — ALWAYS
 Follow `render-orchestration.md` with `view: "ultramode"` and `$rd/payload.json` (Hard Rule #8 — via `_visualizer`, never inline). This step runs even when 4c–4f partially failed: the report states what completed and the scorecard's disclosures name what didn't. `bash $SCRIPTS/checkpoint.sh save $rd render` only after the report file exists. Summary line: `✓ Ultramode — {{N_sources}} sources · {{N_new}} new roles — A:{{a}} B:{{b}} C:{{c}} · Filtered:{{gated}} · Near-misses:{{nm}} — opened report in Chrome`, followed by every scorecard disclosure line.

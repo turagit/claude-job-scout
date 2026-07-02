@@ -5,8 +5,8 @@ tracker="$1"; rd="$2"; today="$3"; nsrc="$4"
 jq -n --arg today "$today" --argjson nsrc "$nsrc" \
       --slurpfile t "$tracker" --slurpfile sc "$rd/scorecard.json" '
   def tier_rank: {"A": 0, "B": 1, "C": 2, "D": 3, "untiered": 4}[.tier // "untiered"] // 4;
-  def conf_rank: if has("confidence") then ({"high": 0, "med": 1, "low": 2}[.confidence] // 3) else 3 end;
-  def date_num: (.posted_at // "0000-00-00") | gsub("-"; "") | tonumber;
+  def conf_rank: {"high": 0, "med": 1, "low": 2}[.confidence // "absent"] // 3;
+  def date_num: ((.posted_at // "") | if . == "" then "0000-00-00" else . end) | gsub("-"; "") | tonumber;
   def src_label: if (.source | type) == "object"
       then (if .source.provider == .source.board then .source.provider else "\(.source.provider) · \(.source.board)" end)
       else (.source | tostring) end;

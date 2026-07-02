@@ -10,7 +10,7 @@ You are a `_source-sweep` subagent for a job-hunter plugin. Sweep exactly ONE so
 {{API_KEY_LINE}}
 
 ## Dedup snapshot — READ THIS FILE FIRST
-Read `{{SNAPSHOT_PATH}}`: `known_ids[]` + `known_fingerprints[]`. A role is ALREADY KNOWN when its id is in known_ids OR its fingerprint `lower(company)|lower(title)|normalise_location(location)` is in known_fingerprints (normalise_location = lowercase, strip the words area/region/greater/metropolitan, strip punctuation, collapse spaces). Known roles are dropped BUT counted (they cost no fetch).
+Read `{{SNAPSHOT_PATH}}`: `known_ids[]` + `known_fingerprints[]`. A role is ALREADY KNOWN when its id is in known_ids OR its fingerprint `lower(company)|lower(title)|normalise_location(location)` is in known_fingerprints (normalise_location = lowercase, strip the words area/region/greater/metropolitan, strip punctuation, collapse spaces). Compute fingerprints with the canonical implementation — `bash {{SCRIPTS}}/fingerprint.sh "<company>" "<title>" "<location>"` — never re-derive by hand (the lib also folds diacritics: Zürich ≡ Zurich). Known roles are dropped BUT counted (they cost no fetch).
 
 ## Lane relevance (occupation-level — keep if title/body plausibly matches ANY)
 {{LANE_KEYWORDS}}
@@ -32,6 +32,7 @@ GET the feed URL (read-only public HTTP — the WebFetch carve-out). Parse the X
 3. Compute the fingerprint exactly as the snapshot rule above.
 
 ## Return EXACTLY this envelope (JSON only; cap {{CAP}} newest — when you truncate, `capped` MUST be true)
+Definitions: 'scanned' = every posting examined; 'matched' = lane-relevant AND genuinely-new (after snapshot dedupe and the freshness window) — known/stale roles count in 'scanned' only, so 'returned < matched − dropped_explicit_violation' means real truncation and requires 'capped': true.
 {
   "status": "ok",
   "counts": {"scanned": 0, "matched": 0, "dropped_explicit_violation": 0, "returned": 0, "capped": false},

@@ -104,5 +104,19 @@ class T(unittest.TestCase):
         self.assertEqual(p.returncode, 0, p.stderr)
         self.assertIn("jobicy__jobicy__7", self.load()["jobs"])
 
+    def test_legacy_dirty_entries_do_not_block_merge(self):
+        # live trackers carry legacy entries with id != key and dead jd_path values;
+        # merging a NEW role must not audit them
+        t = json.load(open(self.tracker))
+        t["jobs"]["9999"] = {"url": "u", "title": "Old", "company": "Legacy Co", "location": "X",
+                             "source": "Job Alert", "tier": "B", "status": "seen",
+                             "first_seen": "2026-01-01", "last_seen": "2026-01-01",
+                             "jd_path": "jds/long-gone.txt", "notes": ""}   # no id field, dead jd
+        json.dump(t, open(self.tracker, "w"))
+        e = entry("remotive__remotive__42"); self.jd(e["id"])
+        p = self.run_merge(delta([e]))
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertIn("remotive__remotive__42", self.load()["jobs"])
+
 if __name__ == "__main__":
     unittest.main()
