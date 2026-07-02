@@ -7,8 +7,8 @@ assert_ok()  { "$@" >/dev/null 2>&1; _report $? "exit0: $*"; }
 assert_fail(){ "$@" >/dev/null 2>&1; [ $? -ne 0 ]; _report $? "nonzero-exit: $*"; }
 assert_json_eq() {
   local want got
-  want=$(printf '%s' "$1" | jq -Se . 2>/dev/null) || { _report 1 "${3:-json}: want side unparseable"; return; }
-  got=$(printf '%s' "$2" | jq -Se . 2>/dev/null) || { _report 1 "${3:-json}: got side unparseable"; return; }
+  want=$(printf '%s' "$1" | jq -S . 2>/dev/null) || { _report 1 "${3:-json}: want side unparseable"; return; }
+  got=$(printf '%s' "$2" | jq -S . 2>/dev/null) || { _report 1 "${3:-json}: got side unparseable"; return; }
   [ "$want" = "$got" ]; _report $? "${3:-json mismatch}"
 }
 finish() { echo "checks=$CHECKS fails=$FAILS"; [ "$FAILS" -eq 0 ]; }
