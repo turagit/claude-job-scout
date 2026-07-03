@@ -18,11 +18,14 @@ assert_eq "true" "$(jq '[.disclosures[]|select(test("capped"))]|length > 0' "$rd
 assert_eq "true" "$(jq '[.disclosures[]|select(test("Toptal"))]|length > 0' "$rd/scorecard.json")" "rotation disclosed"
 assert_eq "true" "$(jq '[.disclosures[]|select(test("no API key"))]|length > 0' "$rd/scorecard.json")" "sweep failure message disclosed"
 assert_eq "true" "$(jq '[.disclosures[]|select(test("pipeline merge"))]|length > 0' "$rd/scorecard.json")" "pipeline error disclosed"
-# a null-kind violation must fold to "unknown", never crash the scorecard
+# malformed violations must never crash the scorecard: null kind folds to
+# "unknown", and a plain-string violation (legacy writer shape, seen live
+# 2026-07-03) counts under its own label
 tmp_tracker=$(mktemp)
-jq '.jobs["4001"].gate_violations = [{"kind": null, "detail": "malformed"}]' "$FXD/tracker-mini.json" > "$tmp_tracker"
+jq '.jobs["4001"].gate_violations = [{"kind": null, "detail": "malformed"}, "legacy-string-reason"]' "$FXD/tracker-mini.json" > "$tmp_tracker"
 rd2=$(mktemp -d)
 bash "$SC" "$rd2" "$tmp_tracker" "2026-06-01" > /dev/null
 assert_eq "1" "$(jq '.gating.by_kind.unknown' "$rd2/scorecard.json")" "null kind folds to unknown"
+assert_eq "1" "$(jq '.gating.by_kind["legacy-string-reason"]' "$rd2/scorecard.json")" "string violation counts under its own label"
 rm -f "$tmp_tracker"
 finish

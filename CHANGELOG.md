@@ -4,6 +4,13 @@ All notable changes to the LinkedIn Job Hunter plugin are documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.1] — 2026-07-03
+
+### Fixed
+- **Scorecard survives legacy-shaped gate violations** — a plain-string violation entry (written by pre-Phase-14 surfaces) crashed the `by_kind` aggregation; it now counts under its own label. Found by the first live acceptance run, whose executing model correctly patched its run-dir copy — the fix is now upstream with a regression test.
+- **Fetch-stage bookkeeping is unconditional** — `/ultramode` Step 4f now always writes `jd-fetch.json` with the real queue count and discloses via the scorecard when the stage fetched nothing (the acceptance run reported zeros while 54 candidates sat queued).
+- **Acceptance test plan gates G1/G2 scoped correctly** — to structured-source (ultramode) entries; explicit-violation D-tiers legitimately carry no JD, and the daily driver still writes legacy source strings by design until Phase 15.
+
 ## [0.14.0] — 2026-07-02
 
 ### Added

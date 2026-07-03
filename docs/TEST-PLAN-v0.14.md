@@ -33,12 +33,14 @@ $ TODAY=$(date +%F); WS=.job-scout; echo "$TODAY"
 ### Pass gates (run after it finishes)
 
 ```bash
-# G1 — every scored entry from this run has a persisted JD (the 2 July defect):
-$ jq --arg t "$TODAY" '[.jobs[] | select(.first_seen==$t and .tier!="untiered" and .jd_path==null)] | length' $WS/tracker.json
+# G1 — no rubric-scored or near-miss ultramode role without a persisted JD (the 2 July defect).
+# Scope: structured-source entries only; a D-tier gated on an EXPLICIT stated violation needs no JD by design.
+$ jq --arg t "$TODAY" '[.jobs[] | select(.first_seen==$t and (.source|type)=="object" and .jd_path==null and (.tier=="A" or .tier=="B" or .tier=="C" or .near_miss==true))] | length' $WS/tracker.json
 # expect: 0
 
-# G2 — zero prose source strings among this run's entries:
-$ jq --arg t "$TODAY" '[.jobs[] | select(.first_seen==$t) | select((.source|type)=="string")] | length' $WS/tracker.json
+# G2 — zero prose source strings among this run's ULTRAMODE entries.
+# (The /check-job-notifications daily driver still writes legacy "Job Alert:"-style strings by design until Phase 15.)
+$ jq --arg t "$TODAY" '[.jobs[] | select(.first_seen==$t) | select((.source|type)=="string") | select(.source | test("^(Job Alert|Top Picks|Saved|Search|Similar|Inbox)") | not)] | length' $WS/tracker.json
 # expect: 0
 
 # G3 — all new external ids are namespaced provider__board__id:

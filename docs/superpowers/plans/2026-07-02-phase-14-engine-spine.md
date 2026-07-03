@@ -1095,12 +1095,15 @@ assert_eq "true" "$(jq '[.disclosures[]|select(test("capped"))]|length > 0' "$rd
 assert_eq "true" "$(jq '[.disclosures[]|select(test("Toptal"))]|length > 0' "$rd/scorecard.json")" "rotation disclosed"
 assert_eq "true" "$(jq '[.disclosures[]|select(test("no API key"))]|length > 0' "$rd/scorecard.json")" "sweep failure message disclosed"
 assert_eq "true" "$(jq '[.disclosures[]|select(test("pipeline merge"))]|length > 0' "$rd/scorecard.json")" "pipeline error disclosed"
-# a null-kind violation must fold to "unknown", never crash the scorecard
+# malformed violations must never crash the scorecard: null kind folds to
+# "unknown", and a plain-string violation (legacy writer shape, seen live
+# 2026-07-03) counts under its own label
 tmp_tracker=$(mktemp)
-jq '.jobs["4001"].gate_violations = [{"kind": null, "detail": "malformed"}]' "$FXD/tracker-mini.json" > "$tmp_tracker"
+jq '.jobs["4001"].gate_violations = [{"kind": null, "detail": "malformed"}, "legacy-string-reason"]' "$FXD/tracker-mini.json" > "$tmp_tracker"
 rd2=$(mktemp -d)
 bash "$SC" "$rd2" "$tmp_tracker" "2026-06-01" > /dev/null
 assert_eq "1" "$(jq '.gating.by_kind.unknown' "$rd2/scorecard.json")" "null kind folds to unknown"
+assert_eq "1" "$(jq '.gating.by_kind["legacy-string-reason"]' "$rd2/scorecard.json")" "string violation counts under its own label"
 rm -f "$tmp_tracker"
 finish
 ```
@@ -1139,7 +1142,7 @@ jq -n --arg today "$today" --argjson sweeps "$sweeps" --argjson merge "$merge" \
               url_upgrades: ($merge.url_upgrades // 0), skipped_known: ($merge.skipped_known // 0)},
      jd_fetch: $jdf, rotation: $rot,
      gating: {gated: ([ $new[] | select(.tier == "D") ] | length),
-              by_kind: ([ $new[] | (.gate_violations // [])[] | (.kind // "unknown") ] | group_by(.) | map({(.[0]): length}) | add // {}),
+              by_kind: ([ $new[] | (.gate_violations // [])[] | (if type=="object" then (.kind // "unknown") else tostring end) ] | group_by(.) | map({(.[0]): length}) | add // {}),
               near_miss: ([ $new[] | select(.near_miss == true) ] | length)},
      tiers: ([ $new[] | .tier // "untiered" ] | group_by(.) | map({(.[0]): length}) | add // {}
              | {A: (.A // 0), B: (.B // 0), C: (.C // 0), D: (.D // 0), untiered: (.untiered // 0)}),
@@ -1466,7 +1469,7 @@ For each `rotation.json .picked` source: sweep it in the logged-in session via t
 `python3 $SCRIPTS/merge_tracker.py --ws $WS --tracker $WS/tracker.json --today $TODAY $rd/sweep-*.json` — save its stdout to `$rd/merge.json` and `bash $SCRIPTS/checkpoint.sh save $rd merge $rd/merge.json`. On non-zero exit: STOP the pipeline, show the validator output, append `{"stage": "merge", "message": "<first line of stderr>"}` to `$rd/pipeline-errors.json` (create it as `{"errors": []}` first if absent), and still proceed to Steps 4g–4h with whatever previous stages completed (always-render).
 
 ### Step 4f: Fetch-then-gate (D2), then gate + score
-1. Queue: every merged entry from this run with `jd_path: null` → `bash $SCRIPTS/jd_queue.sh push $WS/cache/jd-queue.json <entries>` (an entry whose JD is already on disk but carries an `unknown` load-bearing `signals` value is NOT queued — it goes straight to gate + score in 4f.2, since the gate reads the full JD text; re-fetching a JD that already exists on disk is the exact economics inversion this phase fixes). Pop the budget: `bash $SCRIPTS/jd_queue.sh pop $WS/cache/jd-queue.json 75` — and CHECK its exit status: on non-zero exit the rewrite failed and nothing was dequeued, so discard the printed output and skip the fetch stage this run (fetches are idempotent, so a rare double-serve is harmless — but never treat failed-pop output as consumed). For each popped entry fetch the full JD (WebFetch for public urls; the extension for login-walled sources), write `jds/<id>.txt`, set `jd_path` on the entry via the atomic single-entry recipe (state-validators.md). Re-push any popped entry whose fetch failed back onto the queue before writing jd-fetch.json — a failed fetch defers, never strands. Write `{"budget": 75, "used": <n>, "deferred": $(bash $SCRIPTS/jd_queue.sh count ...)}` to `$rd/jd-fetch.json`; checkpoint `jd-fetch`.
+1. Queue: every merged entry from this run with `jd_path: null` → `bash $SCRIPTS/jd_queue.sh push $WS/cache/jd-queue.json <entries>` (an entry whose JD is already on disk but carries an `unknown` load-bearing `signals` value is NOT queued — it goes straight to gate + score in 4f.2, since the gate reads the full JD text; re-fetching a JD that already exists on disk is the exact economics inversion this phase fixes). Pop the budget: `bash $SCRIPTS/jd_queue.sh pop $WS/cache/jd-queue.json 75` — and CHECK its exit status: on non-zero exit the rewrite failed and nothing was dequeued, so discard the printed output and skip the fetch stage this run (fetches are idempotent, so a rare double-serve is harmless — but never treat failed-pop output as consumed). For each popped entry fetch the full JD (WebFetch for public urls; the extension for login-walled sources), write `jds/<id>.txt`, set `jd_path` on the entry via the atomic single-entry recipe (state-validators.md). Re-push any popped entry whose fetch failed back onto the queue before writing jd-fetch.json — a failed fetch defers, never strands. **This sub-step's bookkeeping is unconditional:** the queue push and the `jd-fetch.json` write happen even when you fetch nothing — a run that skips fetching (empty queue, failed pop, or every candidate's endpoint already proved dead in-sweep) still writes `{"budget": 75, "used": 0, "deferred": <real queue count>}` and appends one line to `$rd/pipeline-errors.json` (`{"stage": "jd-fetch", "message": "<why the stage fetched nothing>"}`) so the scorecard discloses it — zeros with a non-empty candidate list and no explanation are the 2026-07-03 bookkeeping defect. Write `$rd/jd-fetch.json`; checkpoint `jd-fetch`.
 2. Gate + score every this-run entry **with a jd_path**, batched ≤5 per `subagent-protocol.md`: `_gate-engine` first (violations as structured data; single-kind failures continue to the rubric per its § near-miss), `_job-matcher` rubric second (refuses jd-missing). Persist per entry atomically: `tier`, `tier_reason`, `gate_violations[]`, `dimensions`, `rubric_version: "v1"`, and when applicable `near_miss` + `near_miss_would_be_tier`; scores into `cache/scores.json` under the usual key. Checkpoint `scoring` when the batch set completes.
 
 ### Step 4g: Scorecard + payload
