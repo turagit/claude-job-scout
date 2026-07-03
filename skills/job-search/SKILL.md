@@ -47,7 +47,7 @@ One entry: `{ query: $1, family: "explicit" }`, in each declared market.
 For each entry:
 
 1. **Construct the URL** per `linkedin-search.md` §1: `keywords` (URL-encoded Boolean query), `location`, `f_WT` from `work_arrangement`, `f_JT` from `contract_type`, `f_TPR=r604800` (Past Week), `sortBy=DD`. Never set `f_AL` unless the user explicitly asked for Easy Apply only. Navigate straight to it. On the first query of the run, glance at the active filter chips to confirm the parameters took; if one was ignored, set that filter via the UI for the rest of the run and note the drift in the summary.
-2. Collect job IDs from the results page (scroll 1–2 times to load the tail; do NOT page beyond page 1 — `/deep-sweep` is the multi-page surface).
+2. Collect job IDs from the results page (scroll 1–2 times to load the tail; do NOT page beyond page 1 — `/ultramode` is the multi-page surface).
 3. **Dedupe by ID** against `.job-scout/tracker.json` (see `../shared-references/canonical-schemas.md`). Drop known IDs; bump their `last_seen`.
 4. **Dedupe by repost fingerprint** per `linkedin-search.md` §5 — `company|title|location` against non-rejected tracker entries. Matches are reposts: bump `last_seen`, append `repost id: <new_id> (<date>)` to the existing entry's notes, drop the candidate.
 5. **Record query stats** per `linkedin-search.md` §4: candidates seen, new after dedupe (tier outcomes are added after Step 4 scoring).
@@ -154,4 +154,4 @@ If the `Agent` tool is unavailable, fall back to a terminal markdown table: tier
 
 ## Next Steps
 
-Suggest `/create-alerts` (zero-arg derives alerts from this plan), `/deep-sweep` for the weekly multi-page pass, or `/apply` for approved jobs.
+Suggest `/create-alerts` (zero-arg derives alerts from this plan), `/ultramode` for the weekly multi-page pass, or `/apply` for approved jobs.

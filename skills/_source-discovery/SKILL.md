@@ -1,7 +1,7 @@
 ---
 name: _source-discovery
 description: >
-  [Internal subagent — dispatched only by /ultramode (and /ultramode sources), not user-invocable]
+  [Internal subagent — dispatched only by /sources (rebuild/onboarding) and /ultramode's first-run registry bootstrap, not user-invocable]
   Internal subagent skill. Builds the verified per-workspace source registry
   `.job-scout/sources.json` by enumerating candidate job sources along independent
   axes, live-probing and adversarially verifying each one, looping until a
@@ -129,7 +129,7 @@ This subagent has no write tools. The dispatching `/ultramode` command, after pa
 1. Writes the merged registry to **`.job-scout/sources.json`** (atomic-rename, per `../shared-references/state-validators.md`), conforming to the Task 1 schema.
 2. Sets `user-profile.json` `ultramode.registry_built_at` to the build timestamp.
 
-The build is **re-runnable** via `/ultramode sources`, which re-dispatches this subagent and overwrites the registry. Deleting `.job-scout/sources.json` triggers a fresh first-run discovery on the next ultramode run.
+The build is **re-runnable** via `/sources rebuild` (the deprecated `/ultramode sources` spelling still redirects here), which re-dispatches this subagent and overwrites the registry. Deleting `.job-scout/sources.json` triggers a fresh first-run discovery on the next ultramode run.
 
 ## Budget
 

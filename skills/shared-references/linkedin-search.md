@@ -1,6 +1,6 @@
 # LinkedIn Search — URL Grammar, Boolean Queries, Query Plan v2
 
-> **Single source of truth for how this plugin searches LinkedIn jobs.** Every command that runs a job search (`/job-search`, `/deep-sweep`, `/create-alerts`, and any future discovery surface) builds its searches from this reference. The aims: maximum recall for relevant roles, deterministic reproducible queries, the fewest possible browser steps, and a learning loop so the plan improves with every run.
+> **Single source of truth for how this plugin searches LinkedIn jobs.** Every command that runs a job search (`/job-search`, `/ultramode`, `/create-alerts`, and any future discovery surface) builds its searches from this reference. The aims: maximum recall for relevant roles, deterministic reproducible queries, the fewest possible browser steps, and a learning loop so the plan improves with every run.
 
 ## 1. Filter-addressed URLs (use these, not the filter UI)
 
@@ -19,7 +19,7 @@ https://www.linkedin.com/jobs/search/?keywords=<url-encoded query>&location=<url
 | `keywords` | The Boolean query (§2) | URL-encoded string | query plan (§3) |
 | `location` | Market to search | Free text: `United Kingdom`, `London`, `European Union`, `Portugal` … | `requirements.location_preferences[]` |
 | `f_WT` | Workplace type | `1` on-site · `2` remote · `3` hybrid (comma-combinable: `2,3`) | `requirements.work_arrangement` |
-| `f_TPR` | Posted within | `r86400` 24 h · `r604800` week · `r2592000` month | cadence: daily sweeps `r86400`–`r604800`; `/deep-sweep` `r604800` |
+| `f_TPR` | Posted within | `r86400` 24 h · `r604800` week · `r2592000` month | cadence: daily sweeps `r86400`–`r604800`; `/ultramode` `r604800` |
 | `f_JT` | Job type | `F` full-time · `C` contract · `T` temporary · `P` part-time (comma-combinable) | `requirements.contract_type` (permanent → `F`; freelance → `C,T`) |
 | `f_E` | Experience level | `1` intern … `4` mid-senior · `5` director · `6` executive (comma-combinable) | `requirements.seniority_floor` when cleanly mappable; otherwise omit — the gate engine is the enforcement point, not this filter |
 | `f_AL` | Easy Apply only | `true` | **never set by default** — it hides most of the market; only on explicit user request |
@@ -66,7 +66,7 @@ One Boolean query per **title cluster**. Clusters live in `user-profile.json.que
 
 **Fallback:** when `query_clusters[]` is absent or empty, run one plain query per `target_titles[]` entry (pre-v0.10.0 behaviour). Never block on missing clusters.
 
-### 3b. Skill queries (deep-sweep always; zero-arg /job-search when the corpus is ripe)
+### 3b. Skill queries (ultramode always; zero-arg /job-search when the corpus is ripe)
 
 Skill queries catch the roles title queries can never see — right job, unexpected title. Build 2–3 per run:
 
@@ -85,7 +85,7 @@ When a title query yields <5 new (post-dedupe) IDs, LLM-generate 2–3 synonym v
 
 ### 3f. Capability queries (recall engine — Phase 12)
 
-Capability queries catch the great-fit roles written in a different vocabulary — the right job, worded around an *implied* capability rather than a literal CV keyword. Where the skill family (§3b) pairs literal CV skills, the capability family searches what the CV can **credibly speak to**: the `stated`, `latent`, and bridged `adjacent` bands of the approved capability graph, each widened by jargon aliases. It is built **by reference here** — the three sweep surfaces (`/job-search`, `/deep-sweep`, ultramode's keyword sweep via `_source-sweep`) all assemble it from this one section; none duplicate its construction.
+Capability queries catch the great-fit roles written in a different vocabulary — the right job, worded around an *implied* capability rather than a literal CV keyword. Where the skill family (§3b) pairs literal CV skills, the capability family searches what the CV can **credibly speak to**: the `stated`, `latent`, and bridged `adjacent` bands of the approved capability graph, each widened by jargon aliases. It is built **by reference here** — the three sweep surfaces (`/job-search`, `/ultramode`'s LinkedIn adapter, `/ultramode`'s keyword sweep via `_source-sweep`) all assemble it from this one section; none duplicate its construction.
 
 **The two inputs (combine them here):**
 
@@ -166,7 +166,7 @@ Sweep report payloads already carry `posted_at` and (when shown) `applicants`. T
 ## Consumers
 
 - `job-search/SKILL.md` — full plan (title + skill + geo + synonym rescue + capability §3f), stats writes.
-- `deep-sweep/SKILL.md` — full plan at deep settings (Past Week, pages 1–3), including the capability family §3f, stats writes.
+- `ultramode/references/linkedin-adapter.md` — full plan at deep settings (Past Week, pages 1–3), including the capability family §3f, stats writes (formerly `deep-sweep/SKILL.md`).
 - `_source-sweep/SKILL.md` — ultramode's keyword sweep folds the capability family §3f into the lane keywords it sweeps each external source with.
 - `check-job-notifications/SKILL.md` — not a query surface, but applies §5 repost dedupe and §6 freshness to everything it ingests.
 - `create-alerts/SKILL.md` — derives proposed alerts from clusters + top-performing queries.
