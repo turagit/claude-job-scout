@@ -52,7 +52,7 @@ This reference replaces the older inline schemas in `tracker-schema.md` and `_jo
     "base_country": "string|null — the user's home/legal-work country; ONLY ever set by onboarding, never inferred. Default null.",
     "target_geography": "string|array|null — where the user wants roles (country, region, or 'remote'); default null",
     "work_arrangement": ["remote", "hybrid", "on-site"],
-    "contract_type": ["permanent", "freelance"],
+    "contract_type": ["permanent", "freelance", "detachering", "contract"],
     "location_preferences": ["string"],
     "seniority_floor": "string|null",
     "min_day_rate": "number|null",
@@ -96,7 +96,7 @@ This reference replaces the older inline schemas in `tracker-schema.md` and `_jo
 
 Phase 15: `requirements.exclusion_terms[]` is additive-optional; `profile_hash` is canonically computed by `_ultra-engine/scripts/profile_hash.sh` over `{target_titles, query_clusters, master_keyword_list, requirements, dimensions}` — every writer that edits those fields recomputes it.
 
-The `ultramode` block is additive and optional. Absent (or `default: false`, `api_keys: {}`, `registry_built_at: null`) means ultramode is off / cold-start — the plugin behaves exactly as in pre-Phase-11 LinkedIn-only mode. `requirements.base_country` is **only ever populated by onboarding, never inferred** from CV text, locale, or prior runs.
+The `ultramode` block is additive and optional. Absent (or `api_keys: {}`, `registry_built_at: null`) means cold-start — no registry yet; the first `/ultramode` run triggers the `/sources` interview. (`default` is retired and ignored.) `requirements.base_country` is **only ever populated by onboarding, never inferred** from CV text, locale, or prior runs.
 
 ### Dimension `type` (deterministic-derivation enabler)
 

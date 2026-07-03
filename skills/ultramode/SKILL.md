@@ -117,27 +117,24 @@ Skip for now? (Y/n)
 
 Keys live in `ultramode.api_keys` as a `{ "<provider>": "<token>" }` map. The dispatcher reads them in Step 4c (looking up only the key a `needs_key` source requires) and never logs or echoes a token back.
 
-`/config` is extended (this task) to add/remove a provider key and to toggle `ultramode.default`. See `../config/SKILL.md`:
+`/config` is extended (this task) to add/remove a provider key. See `../config/SKILL.md`:
 
 - `/config ultramode key <provider> <token>` — add/replace a key.
 - `/config ultramode key <provider> --remove` — remove a key.
-- `/config ultramode default <true|false>` — toggle the run-without-prompting default (default `false`).
-
-When `ultramode.default` is `true`, a Tier 1 LinkedIn command may offer to also run the ultramode sweep without re-prompting; when `false` (the default), ultramode runs only on explicit `/ultramode`.
 
 ## Next Steps
 
-Suggest `/apply` for approved new roles, `/match-jobs` to re-score against an updated CV, or `/ultramode sources` to rebuild the registry when the lane changes (new geography, new contract type).
+Suggest `/apply` for approved new roles, `/match-jobs` to re-score against an updated CV, or `/sources rebuild` to rebuild the registry when the lane changes (new geography, new contract type).
 
 ## Reference materials
 
 - `../shared-references/ultramode-sources.md` — taxonomy, access lanes, the universal backbone, `derive_priority_order()`, the cross-source fingerprint + `merge_delta_into_tracker()` canonical selection, key-handling note.
-- `../shared-references/canonical-schemas.md` — the `sources.json` schema, the `ultramode` profile block (`default`/`api_keys`/`registry_built_at`), `requirements.base_country`/`target_geography`, the structured `source` + namespaced id.
+- `../shared-references/canonical-schemas.md` — the `sources.json` schema, the `ultramode` profile block (`api_keys`/`registry_built_at`; `default` retired v0.15.0), `requirements.base_country`/`target_geography`, the structured `source` + namespaced id.
 - `../shared-references/render-orchestration.md` — the `ultramode` view and the render lifecycle (Steps A–G).
 - `../shared-references/subagent-protocol.md` — the dispatch / delta-return / budget contract for `_source-discovery`, `_source-sweep`, the scorer, and `_visualizer`.
 - `../shared-references/cv-loading.md` — the CV corpus this command reuses (never re-parses).
-- `../_source-discovery/SKILL.md` — the discovery subagent (Step 3d).
+- `../_source-discovery/SKILL.md` — the discovery subagent (dispatched by /sources rebuild).
 - `../_source-sweep/SKILL.md` — the per-source sweep subagent (Step 4c), its prompt templates, and the ATS watchlist definition; the extension lane runs on the main thread per Step 4d's rotation subset.
 - `../_job-matcher/SKILL.md` + `../_gate-engine/SKILL.md` — the unchanged scorer (Step 4f).
-- `../config/SKILL.md` — key add/remove and `ultramode.default` toggle (Step 5).
+- `../config/SKILL.md` — key add/remove (Step 5); the default toggle is retired.
 - `../shared-references/browser-policy.md` — the Chrome-extension-only rule and the read-only `WebFetch` carve-out.

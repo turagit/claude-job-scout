@@ -5,11 +5,11 @@ allowed-tools: Read, Write, Edit, Bash
 disable-model-invocation: true
 ---
 
-View or change per-workspace plugin settings. Render settings live in `.job-scout/config.json`; ultramode settings (`api_keys`, `default`) live in `user-profile.json` under the `ultramode` block. This command exposes:
+View or change per-workspace plugin settings. Render settings live in `.job-scout/config.json`; ultramode settings (`api_keys`, `registry_built_at`) live in `user-profile.json` under the `ultramode` block. This command exposes:
 
 - `render` — how Tier 1 command output is displayed (in `config.json`).
 - `ultramode key <provider> <token>` / `ultramode key <provider> --remove` — add / remove a provider API key (in `user-profile.json` `ultramode.api_keys`).
-- `ultramode default <true|false>` — toggle whether ultramode runs without re-prompting (in `user-profile.json` `ultramode.default`).
+- `ultramode default` — retired (v0.15.0); prints a notice and writes nothing.
 
 ## Step 0: Bootstrap workspace
 
@@ -25,7 +25,7 @@ The user types one of these forms:
 /config render <always|never|ask>
 /config ultramode key <provider> <token>
 /config ultramode key <provider> --remove
-/config ultramode default <true|false>
+/config ultramode default   (RETIRED v0.15.0 — prints a notice)
 ```
 
 - `/config` (no args) — show all current settings (render + ultramode).
@@ -33,7 +33,7 @@ The user types one of these forms:
 - `/config render <value>` — set `render` to the given value.
 - `/config ultramode key <provider> <token>` — add or replace an ultramode provider key.
 - `/config ultramode key <provider> --remove` — remove an ultramode provider key.
-- `/config ultramode default <true|false>` — toggle `ultramode.default`.
+- `/config ultramode default` — retired (v0.15.0); prints a notice, writes nothing.
 
 ## Step 2: Show current settings (no-arg invocation)
 
@@ -48,7 +48,6 @@ Current settings (.job-scout/config.json):
 
 Ultramode (user-profile.json → ultramode):
 
-  ultramode.default    = <true|false, default false>
   ultramode.api_keys   = <comma-separated provider slugs that have a key, or "(none)"> 
   ultramode.registry_built_at = <ISO timestamp or "(not built — run /ultramode)">
 ```
@@ -116,14 +115,16 @@ Set ultramode key for "<provider>" (token hidden). Stored in user-profile.json (
 2. Delete that provider's entry from `ultramode.api_keys` (preserve all other keys), write the whole object back via `Write`.
 3. Confirm: `Removed ultramode key for "<provider>".`
 
-## Step 6: Toggle the ultramode default (`/config ultramode default <true|false>`)
+## Step 6: `/config ultramode default` — retired (v0.15.0)
 
-Controls whether ultramode runs without re-prompting (default `false` — ultramode runs only on explicit `/ultramode`).
+The toggle is gone: `/ultramode` always sweeps the full market, and the scopes replaced the switch (`/ultramode linkedin`, `/ultramode external`, `/ultramode source <name>`). On any `/config ultramode default …` invocation print exactly:
 
-1. Validate `<value>` is `true` or `false`. If not, print `Invalid value. Allowed: true, false.` and exit without writing.
-2. Read `user-profile.json` (treat a missing `ultramode` block as the default above).
-3. Set `ultramode.default = <boolean>` (merge — preserve `api_keys`, `registry_built_at`, and every other key).
-4. Write the whole object back via `Write`. Confirm: `Set ultramode.default = <value>`.
+```
+`ultramode.default` was retired in v0.15.0 — /ultramode always sweeps the full market.
+Scopes replace the toggle: /ultramode linkedin · /ultramode external · /ultramode source <name>
+```
+
+Write nothing. A `default` key still present in `user-profile.json` is harmless — every reader ignores it.
 
 ## Step 7: Validate the file is well-formed JSON after write
 
@@ -133,5 +134,5 @@ Re-read the file just written (`.job-scout/config.json` for render changes, `use
 
 - **`shared-references/workspace-layout.md`** — `.job-scout/` layout and bootstrap procedure.
 - **`shared-references/render-orchestration.md`** — describes how the `render` key is consumed by Tier 1 commands.
-- **`shared-references/canonical-schemas.md`** — the `ultramode` block (`default`/`api_keys`/`registry_built_at`) in `user-profile.json`.
-- **`../ultramode/SKILL.md`** — how `ultramode.api_keys` and `ultramode.default` are consumed; the keyless-first / never-in-a-browser-form key-handling rule.
+- **`shared-references/canonical-schemas.md`** — the `ultramode` block (`api_keys`/`registry_built_at`; `default` retired v0.15.0) in `user-profile.json`.
+- **`../ultramode/SKILL.md`** — how `ultramode.api_keys` is consumed; the keyless-first / never-in-a-browser-form key-handling rule.

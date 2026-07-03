@@ -148,13 +148,9 @@ Follow `../shared-references/render-orchestration.md` end-to-end (Step G already
 
 If the `Agent` tool is unavailable, fall back to a terminal markdown table: tier, title, company, location, posted date, matched query; dimension breakdowns for A-tier.
 
-## Step 7: Widen to ultramode when opted in (default off)
+## Step 7: The wider market
 
-This step is the only addition to this command's flow, and it is **strictly gated**. Read `user-profile.json` for the `ultramode` block (treat an absent block as `{default: false}`). **Only when `ultramode.default` is `true`**, after the LinkedIn sweep above has fully completed, also run the multi-source ultramode external sweep so the user sees one combined ranked list across LinkedIn and the rest of the market:
-
-- Follow `../ultramode/SKILL.md` Step 4 (the multi-source sweep flow) — **reference it, do not duplicate its body here.** Load `.job-scout/sources.json`. If it is absent, note that `/ultramode` onboarding is needed (`Run /ultramode once to build your source registry before the search can widen.`) and **skip gracefully** — do not run discovery from this command, and do not block the LinkedIn results already shown. Otherwise sweep the external sources into the **same `tracker.json`** (the LinkedIn run already loaded and wrote it), dedupe across sources, gate and score the genuinely-new roles through the unchanged scorer, and present the **unified, source-agnostic `ultramode` report** (one combined ranked list, rendered via `_visualizer` with `view: "ultramode"`) in place of the separate LinkedIn-only view.
-
-**When `ultramode.default` is `false` or absent — the default — this command does exactly what it does today: Steps 0–6 only, no extra steps, no behaviour change.** The widening here is purely additive and never alters the pre-existing default path.
+`/job-search` is LinkedIn-only by design — the surgical search. For the whole market (LinkedIn + every registry source, deduped, one ranking) run `/ultramode`; manage where it looks with `/sources`. The old `ultramode.default` widening toggle is retired (v0.15.0).
 
 ## Next Steps
 
