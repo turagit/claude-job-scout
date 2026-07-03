@@ -5,7 +5,7 @@ A five-minute setup to go from "plugin installed" to your first ranked list of m
 ## Before you begin
 
 - **Claude Code** with the `linkedin-job-hunter` plugin installed.
-- **The Claude Chrome extension**, signed in to **your own LinkedIn account** in that browser. This is how the plugin works *inside the browser you already use* — it never takes over your screen or asks for your password. (Sourcing beyond LinkedIn — `/ultramode` — also reads public job APIs directly, no extension needed.)
+- **The Claude Chrome extension**, signed in to **your own LinkedIn account** in that browser. This is how the plugin works *inside the browser you already use* — it never takes over your screen or asks for your password. (`/ultramode`'s external sources read public job APIs directly and need no extension; LinkedIn itself still goes through it.)
 - **Your CV** as a file (PDF, DOCX, DOC, TXT, or Markdown).
 - Optionally, **supporting documents** — diplomas, certificates, conference talks, architecture decks, recommendations, case studies, portfolio pieces.
 
@@ -48,25 +48,24 @@ Type each as a slash command in Claude Code. The plugin asks questions where it 
    - your **capability graph** — the latent and adjacent skills your CV credibly speaks to, so it can find great-fit roles written in *different words*.
    Review and approve each. *(If you added supporting documents, it'll also offer to index them — say yes, or run `/index-docs` whenever you add more.)*
 
-2. **`/optimize-profile`** — reads your LinkedIn profile and proposes rewrites (headline, About, experience, skills) aligned to your CV, so recruiters and search find you.
+2. **`/sources onboarding`** — builds your verified source registry. Answer the country question honestly; it is never guessed. Covers LinkedIn plus employer ATS boards, remote-job feeds, aggregators, national boards, freelance marketplaces, and community channels, all live-verified before anything is added.
 
-3. **`/job-search`** — searches LinkedIn for matching roles and saves a **ranked report**. The best fits surface first, each card showing how strongly you match and where you're a genuine standout. *(First time any report is shown, the plugin asks once whether you prefer rich HTML reports opened in your browser or plain text — that's `/config render`.)*
+3. **`/ultramode`** — the full-market sweep. 30–45 minutes, walk away — the report opens itself when it's done. Near-misses (strong-fit roles that failed just one hard gate) appear in their own rail with `/bend` hints. *(First time any report is shown, the plugin asks once whether you prefer rich HTML reports opened in your browser or plain text — that's `/config render`.)*
 
-4. **`/match-jobs`** — score and rank a set of jobs (a search, your saved jobs, or a pasted URL) against your CV in detail.
-
-5. **`/ultramode`** — *(optional but recommended)* widen the net **beyond LinkedIn** — employer ATS boards, remote-job feeds, aggregators, freelance marketplaces. The first run asks your **base country** (it always asks, never guesses) and a few preferences, builds a verified list of sources tailored to you, then returns one unified, ranked report with a direct "apply at source" link per role.
+Once your first report is in, `/optimize-profile` aligns your LinkedIn profile with your CV, and `/job-search <title>` or `/match-jobs` score anything specific you want to check by hand.
 
 Then settle into a rhythm:
 
 - **Daily:** **`/check-job-notifications`** — your driver. Scans new LinkedIn alerts + recommendations, scores the new roles, writes a fresh ranked report.
-- **Weekly:** **`/deep-sweep`** — a thorough multi-query sweep across all surfaces.
+- **Weekly:** **`/ultramode`** — the full-market sweep again: LinkedIn plus every verified source, deduped into one ranking.
+- **Between sweeps:** **`/tune`** — show and adjust titles, keywords, exclusions, and hard gates, without a full re-interview.
 - **Per role you like:** **`/cover-letter <job>`** (three tailored angles, citing your supporting docs) and **`/interview-prep <tracker-id>`** (SPAR stories, likely questions, questions to ask).
 - **To apply:** **`/apply`** — walks you through LinkedIn Easy Apply on the jobs *you* approved. Never auto-submits.
 - **Recruiters:** **`/check-inbox`** — triages LinkedIn messages into hot/warm/cold leads and drafts replies for your approval.
 - **Alerts that work while you sleep:** **`/create-alerts`** — proposes LinkedIn job alerts from your search plan.
 - **See how you're doing:** **`/funnel-report`** — your 30/60/90-day pipeline, drop-offs, trending keywords, and suggested next moves.
 
-Anytime: **`/config`** to change settings (report style, ultramode defaults, optional API keys).
+Anytime: **`/config`** to change settings (report style, optional API keys).
 
 ---
 
@@ -80,13 +79,12 @@ Anytime: **`/config`** to change settings (report style, ultramode defaults, opt
 ### The first 15 minutes, condensed
 
 ```text
-1. mkdir ~/job-hunt && cd ~/job-hunt        # a workspace
-2. copy your CV + certificates/talks in     # into ~/job-hunt (not .job-scout/)
-3. /analyze-cv      → approve the proposals  # profile + capability graph
-4. /optimize-profile                          # align your LinkedIn
-5. /job-search      → read the ranked report  # first matches
-6. /ultramode       → answer onboarding        # sources beyond LinkedIn
-…then /check-job-notifications daily.
+1. mkdir ~/job-hunt && cd ~/job-hunt          # a workspace
+2. copy your CV + certificates/talks in       # into ~/job-hunt (not .job-scout/)
+3. /analyze-cv          → approve the proposals  # profile + capability graph
+4. /sources onboarding  → answer the country Q   # verified source registry
+5. /ultramode           → walk away, ~30-45 min  # LinkedIn + every source, one report
+…then /check-job-notifications daily, /tune between sweeps.
 ```
 
 For the full feature reference, see the [README](README.md).

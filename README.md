@@ -23,9 +23,12 @@ All commands are user-invoked slash commands. The model will **not** auto-trigge
 
 | Command | Description |
 |---------|-------------|
+| `/ultramode` | **The weekly full-market sweep** — LinkedIn + every verified source, one ranking, near-miss rail, run scorecard (scopes: `linkedin` · `external` · `source <name>`) |
 | `/check-job-notifications` | **Daily driver** — check notifications + Top picks + Saved jobs, expand similar-jobs from A-tier hits, score new listings, save a ranked report |
-| `/deep-sweep` | **Weekly thorough scan** — full Boolean query plan (title clusters + skill queries + synonyms), all source surfaces, Past Week, pages 1-3, similar-jobs expansion. Run once a week |
-| `/ultramode` | **Opt-in multi-source sweep** beyond LinkedIn (off by default) — builds a verified per-workspace source registry from your CV, sweeps it, and returns one unified tier-ranked report with a direct apply-at-source link per role. `sources`: edit the registry; `onboarding`: re-run the lane interview |
+| `/sources` | Manage where it looks: `list` · `add <url\|name>` · `rebuild` · `onboarding` |
+| `/tune` | Show and adjust titles, keywords, exclusions, and hard gates — no full re-interview |
+| `/bend` | Re-score a near-miss job with its one failed gate relaxed — the "would you bend?" action from the report |
+| `/deep-sweep` | **Deprecated alias → `/ultramode`** — prints a pointer, then runs the full-market sweep. Removed next minor release |
 | `/analyze-cv` | Analyse and optimise your CV for ATS and recruiters; discover per-workspace dealbreakers, voice, scoring dimensions, and Boolean query clusters |
 | `/job-search` | Zero-arg: the full query plan — Boolean title clusters, skill-combination queries, geo iteration, synonym rescue, repost dedupe. Single-arg: search that title only |
 | `/create-alerts` | Zero-arg: derive 3-5 LinkedIn alerts from your query plan. `manual`: dictate criteria yourself |
@@ -56,7 +59,7 @@ These are model-auto-loaded playbooks used by the commands above. You don't invo
 
 The hardest part of a job search isn't scrolling — it's surfacing the roles you'd be a *great* fit for, especially when they're written in words you'd never have searched for. This release tackles both ends of that problem.
 
-**Wider recall — catches great-fit roles written in different words.** `/analyze-cv` now derives a **capability graph** from your CV — the functional and adjacent capabilities behind your stated skills, not just the tool names — and shows it to you for approval before it's used. Paired with a conservative **jargon and alias map** (high-confidence title and skill synonyms, grown from the job descriptions your sweeps already read), it feeds a new line of **capability queries** into your existing search plan. These find well-matched roles that were retitled, jargon-rebranded, or described at the function level ("scale, availability, observability") rather than the tool level ("Kubernetes") — the kind your title and skill searches quietly miss. The queries run on `/job-search`, `/deep-sweep`, and ultramode, are capped at a few per run, and ride the same learning loop as every other query: the ones that keep finding A/B-tier jobs graduate into your clusters, the ones that don't retire on their own.
+**Wider recall — catches great-fit roles written in different words.** `/analyze-cv` now derives a **capability graph** from your CV — the functional and adjacent capabilities behind your stated skills, not just the tool names — and shows it to you for approval before it's used. Paired with a conservative **jargon and alias map** (high-confidence title and skill synonyms, grown from the job descriptions your sweeps already read), it feeds a new line of **capability queries** into your existing search plan. These find well-matched roles that were retitled, jargon-rebranded, or described at the function level ("scale, availability, observability") rather than the tool level ("Kubernetes") — the kind your title and skill searches quietly miss. The queries run on `/job-search` and `/ultramode`, are capped at a few per run, and ride the same learning loop as every other query: the ones that keep finding A/B-tier jobs graduate into your clusters, the ones that don't retire on their own.
 
 **Sharper ranking — shows where you're a genuine standout, best matches first.** A flat A/B/C list doesn't tell you where you're exceptional versus merely qualified. Now each A/B-tier match carries a **competitiveness** badge (are you a standout for this role?), a **confidence** badge (how sure is the match?), and a short **explanation tag** (`all-fit`, `one-gap`, `overqualified`, and so on). Reports sort **within each tier by confidence then recency**, so the bulletproof standout matches rise to the top of their tier instead of being buried.
 
@@ -64,29 +67,29 @@ It's all additive: your existing tiers, scores, and cached results are untouched
 
 ---
 
-### Ultramode — sourcing beyond LinkedIn (v0.11.0+)
+### Ultramode — the flagship full-market sweep (v0.15.0)
 
-LinkedIn is one market surface. Many of the roles you could actually land are posted elsewhere first — on employer ATS boards, on occupation- and geography-specific boards, on remote-native feeds, in freelance marketplaces, and in community channels. **Ultramode** is an opt-in sweep that widens your sourcing into those places and folds everything it finds into the same tracker, scoring, and report you already use.
+As of v0.15.0 ultramode IS the flagship: LinkedIn is one source in the registry, swept by the same engine. Many of the roles you could actually land are posted elsewhere first — on employer ATS boards, on occupation- and geography-specific boards, on remote-native feeds, in freelance marketplaces, and in community channels. `/ultramode` sweeps all of it — LinkedIn plus every verified external source — in one pass, and folds everything it finds into the same tracker, scoring, and report you already use.
 
-**It is off by default.** The LinkedIn pipeline is unchanged — turning ultramode on is a choice you own.
+**Scopes narrow the sweep when you don't want the whole market.** Bare `/ultramode` covers everything; `/ultramode linkedin` runs LinkedIn only (what `/deep-sweep` used to be); `/ultramode external` skips LinkedIn; `/ultramode source <name>` sweeps exactly one registry source, right now.
 
 **How to use it:**
 
-- `/ultramode` — runs the external sweep and renders its own report.
-- `/ultramode sources` — re-runs source discovery or lets you edit the registry (and `/ultramode sources add <url|name>` adds a board you already use).
-- `/ultramode onboarding` — re-runs the lane interview.
+- `/ultramode` — sweeps the whole market and renders one unified report. Run it weekly.
+- `/ultramode linkedin` / `/ultramode external` / `/ultramode source <name>` — narrower scopes, see above.
+- `/sources` — manage the registry: `list`, `add <url|name>`, `rebuild`, or `onboarding` (the lane interview). A registry-less first `/ultramode` run announces and runs the `/sources` interview for you automatically.
 
 **The first run** reads what it can from your CV and keyword corpus, then asks you for what it cannot safely infer — your **base country** (asked explicitly and always confirmed out loud, never guessed from an email handle), your target geography, work arrangement, contract type, and field. From that it builds a **verified** per-workspace source registry (`.job-scout/sources.json`): it enumerates candidate sources widely, live-probes and adversarially verifies every one before it counts, and keeps going until fresh strategies turn up nothing new. Nothing enters the registry on the model's word alone.
 
-**The source categories** it covers are universal — employer ATS providers, remote-native boards, aggregators, national and vertical boards, freelance marketplaces, and community channels — but the concrete sources that fill them are derived for *your* lane. A small universal backbone is always available so even rare occupations have coverage out of the box.
+**The source categories** it covers are universal — LinkedIn, employer ATS providers, remote-native boards, aggregators, national and vertical boards, freelance marketplaces, and community channels — but the concrete sources that fill them are derived for *your* lane. A small universal backbone is always available so even rare occupations have coverage out of the box.
 
-**Keyless-first.** Ultramode works immediately with zero API keys (ATS boards, niche and remote feeds, and any keyless aggregator). If discovery finds a keyed aggregator that would materially improve coverage for your lane, it asks inline with the signup link and gracefully skips if you decline. Any keys you add live in your gitignored workspace config and are never entered into a browser form.
+**Keyless-first.** Every external source works immediately with zero API keys (ATS boards, niche and remote feeds, and any keyless aggregator). If discovery finds a keyed aggregator that would materially improve coverage for your lane, it asks inline with the signup link and gracefully skips if you decline. Any keys you add live in your gitignored workspace config and are never entered into a browser form.
 
 **The results** come back as one unified, tier-ranked report — every job from every source in a single list, ranked A→B→C and freshest-first, with the **source shown only as a chip**, never as the organising axis. Each role carries a direct **apply-at-source** link to the canonical, direct-to-employer listing (employer ATS is preferred over LinkedIn, aggregators, and marketplaces), plus an "also seen on N sources" line. Dealbreaker-gated jobs collapse into the same "Filtered out" group as everywhere else.
 
 **A near-miss rail surfaces close calls.** A strong-fit role that fails exactly one hard gate collapses into its own "would you bend?" section instead of dropping out of sight — `/bend <id>` re-scores it with that gate relaxed and shows a one-line before/after. The report **always renders**, even on a partial or interrupted run, and carries a **scorecard**: what was swept, skipped, or gated and why, dedupe accounting, and any truncation, disclosed rather than silently capped. Login-walled marketplaces rotate through the sweep so every one gets checked **at least fortnightly**.
 
-Set `/config ultramode.default on` to have your existing `/job-search` and `/deep-sweep` sweeps widen to the external registry automatically.
+Between runs, `/tune` shows and adjusts your titles, keywords, exclusions, and hard gates — no need to wait for the next sweep, and no full re-interview required.
 
 ---
 
@@ -213,14 +216,16 @@ In Claude Desktop / Claude Code, go to Settings → Plugins → "Install from fo
    File format doesn't matter much — PDF, DOCX, PNG, Markdown, plain text all work. Claude will index what it can read and ask you about the rest. Nothing leaves your machine; see the [`.job-scout/` section](#the-job-scout-workspace-important) for the full data-handling story.
 4. Log into LinkedIn in your browser.
 5. Run `/analyze-cv` — bootstraps `.job-scout/`, runs the one-time discovery interview, and saves your profile.
-6. Run `/optimize-profile` to align your LinkedIn profile with your CV.
-7. Run `/job-search` or `/create-alerts` to start finding jobs.
+6. Run `/sources onboarding` — builds your verified, per-workspace source registry (LinkedIn plus employer ATS boards, remote boards, aggregators, national boards, freelance marketplaces, and community channels), asking your base country explicitly along the way.
+7. Run `/ultramode` — the first full-market sweep: LinkedIn and every verified source, deduped into one ranked report.
 
 ### Daily workflow (once set up)
 
 1. `/check-job-notifications` — scans unread alerts, scores new jobs, writes a ranked report. Offers to continue into LinkedIn's "Top job picks for you" feed for a deeper sweep.
 2. Review the matches and tell Claude which ones to apply to.
 3. Optionally run `/check-inbox` for recruiter messages.
+4. **Weekly:** run `/ultramode` again for the full-market sweep.
+5. **Between runs:** `/tune` adjusts titles, keywords, exclusions, and hard gates without a full re-interview; `/bend <id>` re-scores a near-miss role from the report's rail with its one failed gate relaxed.
 
 ## Privacy & Safety
 

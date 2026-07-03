@@ -4,6 +4,17 @@ All notable changes to the LinkedIn Job Hunter plugin are documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] — 2026-07-03
+
+### Changed
+- **`/ultramode` is the flagship.** Bare `/ultramode` sweeps the WHOLE market — LinkedIn (now a registry source, swept by the same engine through `references/linkedin-adapter.md`) plus every verified external source — into one deduped, unified ranking. Scopes: `/ultramode linkedin` (the old `/deep-sweep`), `/ultramode external`, `/ultramode source <name>`.
+- **`/deep-sweep` is a deprecation alias** (prints a pointer, runs the full-market sweep; removed next minor release). `/job-search`'s widening step and the `ultramode.default` toggle are retired — scopes replace the switch; a leftover `default` key is ignored.
+
+### Added
+- **`/sources`** — registry management gets its own verb: `list` (registry + last-swept view), `add <url|name>` (probe/classify/admit a board, or resolve a company to its ATS board), `rebuild` (discovery through the Phase 13 gates, now folding the dynamic ATS watchlist in at build time), `onboarding` (the lane interview).
+- **`/tune`** — see and adjust the hunting vocabulary (titles, keywords, exclusions) and the hard gates (rate floor, contract types, arrangement) without the full CV interview. Every edit recomputes `profile_hash` via the new engine script, so cached scores re-evaluate lazily instead of going stale.
+- **`profile_hash.sh`** — canonical 16-hex hash of the scoring-relevant profile subset, with tests; `requirements.exclusion_terms[]` (additive) feeds every query plan's NOT-terms.
+
 ## [0.14.1] — 2026-07-03
 
 ### Fixed
