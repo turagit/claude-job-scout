@@ -25,7 +25,15 @@ for variant in \
   hv=$(bash "$PH" "$t/v.json")
   [ "$ha" != "$hv" ]; _report $? "field variant shifts hash: $variant"
 done
-assert_fail bash "$PH" "$t/does-not-exist.json"
-out=$(bash "$PH" "$t/does-not-exist.json" 2>/dev/null || true)
-assert_eq "" "$out" "bad path prints nothing (fails loudly, never a fake hash)"
+# bad inputs must fail loudly with EMPTY stdout — never a plausible fake hash
+for bad in missing empty malformed; do
+  case "$bad" in
+    missing)   p="$t/does-not-exist.json";;
+    empty)     p="$t/empty.json"; : > "$p";;
+    malformed) p="$t/malformed.json"; printf '{broken' > "$p";;
+  esac
+  assert_fail bash "$PH" "$p"
+  out=$(bash "$PH" "$p" 2>/dev/null || true)
+  assert_eq "" "$out" "$bad input prints nothing (never a fake hash)"
+done
 finish
