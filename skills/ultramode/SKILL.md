@@ -2,7 +2,7 @@
 name: ultramode
 description: Sweep every verified job source for your workspace in one pass — discover the source registry, dedupe across sources, gate, score, and render a unified ranking
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
-argument-hint: [optional: sources | onboarding — omit to run the multi-source sweep]
+argument-hint: [linkedin | external | source <name> — omit for the full-market sweep]
 disable-model-invocation: true
 version: 0.2.0
 ---
@@ -67,6 +67,8 @@ Before the first sweep of a run, ensure `sources.json` carries the LinkedIn entr
   "verified_at": "<today>"
 }
 ```
+
+If `sources.json` is absent under the `linkedin` scope, skip this ensure-once and Step 4b's registry load entirely — the adapter needs no registry; the entry is added when `/sources` first builds one.
 
 ## Step 4: Sweep flow (the multi-source pass)
 

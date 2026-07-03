@@ -309,6 +309,8 @@ Before the first sweep of a run, ensure `sources.json` carries the LinkedIn entr
   "verified_at": "<today>"
 }
 ```
+
+If `sources.json` is absent under the `linkedin` scope, skip this ensure-once and Step 4b's registry load entirely — the adapter needs no registry; the entry is added when `/sources` first builds one.
 ````
 
 - [ ] **Step 4: Scope-gate Step 4 and slot the adapter in.** Three surgical edits inside the existing `## Step 4: Sweep flow (the multi-source pass)`:
@@ -317,6 +319,8 @@ Before the first sweep of a run, ensure `sources.json` carries the LinkedIn entr
   3. In **Step 4f**, after sub-step 2, add a third sub-step: `3. **Similar-jobs expansion (LinkedIn scope only):** for each THIS-RUN LinkedIn role scored `tier: "A"`, collect up to 5 IDs from its listing page's "Similar jobs" rail (extension, dedupe-before-extract against the snapshot), produce ONE supplemental envelope (stage `sweep-linkedin-similar`, `source.board: "Similar"`), validate → merge → gate + score that batch the same way. One round only — expansion roles never seed further expansion (the old /deep-sweep Step 8 cap, unchanged).`
 
 - [ ] **Step 5: canonical-schemas additive notes.** In `skills/shared-references/canonical-schemas.md`: (a) in the `sources.json` section, after the category sentence, add: `Phase 15: the registry may carry ONE \`category: "linkedin"\` entry (the LinkedIn adapter — always swept, never rotation-governed; maps to \`source.lane: "linkedin"\`); it is ensured automatically by \`/ultramode\` and \`/sources rebuild\`.` (b) In the `ultramode` profile-block description, change the `default` line to: `` `default` — RETIRED v0.15.0: never written, ignored on read (scopes replaced it; see `/ultramode` Invocation forms) ``.
+
+- [ ] **Step 5b (controller addition): frontmatter `argument-hint`** → `[linkedin | external | source <name> — omit for the full-market sweep]`.
 
 - [ ] **Step 6: Verify** — `grep -n "linkedin-adapter" skills/ultramode/SKILL.md` → ≥2 hits; `grep -n "sources/SKILL.md" skills/ultramode/SKILL.md` → ≥1; `grep -cn "ultramode.default" skills/ultramode/SKILL.md` → only the retirement mentions (no live reads); `bash skills/_ultra-engine/tests/run.sh` → `ALL PASS`.
 
