@@ -7,7 +7,7 @@ case "$cmd" in
   pick)
     n="$3"
     jq -r --argjson n "$n" '
-      [ .sources[] | select(.access_lane == "extension") ]
+      [ .sources[] | select(.access_lane == "extension" and (.category // "") != "linkedin") ]
       | sort_by(.last_swept_at // "0000-00-00")
       | .[:$n][].name' "$f"
     ;;

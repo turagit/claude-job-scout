@@ -646,6 +646,8 @@ Also re-run the Task 16 (Phase 14) render-verify one-liner → `render ok:` twic
 
 - [ ] **Step 2: Fix anything the sweep catches** (small pointer edits only — anything structural goes back to the controller), re-run the failing grep, then commit: `git add -A && git commit -m "Phase 15 Task 8: integration consistency sweep"` (or report "sweep clean, nothing to commit").
 
+**Audit trail (controller-authorised, final-review wave):** `skills/_ultra-engine/scripts/rotation.sh` is otherwise frozen this phase (Global Constraints), but the controller separately amended the freeze for exactly one line: the `pick` branch's select gains `and (.category // "") != "linkedin"` so the LinkedIn registry entry can never enter the marketplace rotation, with a matching fixture entry + assertion in `test_rotation.sh`. Not part of this task's original sweep — landed in the Phase 15 final-review fix wave.
+
 ---
 
 ## Self-review (run before handoff)

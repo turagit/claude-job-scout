@@ -52,7 +52,7 @@ If any check fails, append the violation and continue evaluating remaining check
 
 ## Caching
 
-Gate results are part of the score cache (see `_job-matcher` SKILL.md § Score Caching Contract). Same key (`job_id × cv_hash × profile_hash × rubric_version`). Profile changes invalidate via `profile_hash` bump (`/analyze-cv` recomputes the hash when `requirements` changes).
+Gate results are part of the score cache (see `_job-matcher` SKILL.md § Score Caching Contract). Same key (`job_id × cv_hash × profile_hash × rubric_version`). Profile changes invalidate via `profile_hash` bump — the hash is recomputed via `_ultra-engine/scripts/profile_hash.sh` by any writer that edits the scoring-relevant subset (`/tune` today; `/analyze-cv` and `/optimize-profile` adopt the same script).
 
 ## Gate semantics are data, not taxonomy (Phase 14, D4)
 

@@ -28,7 +28,7 @@ Hard gates (deal-breakers):
   Location:              {{location values}}
   Rate floor:            {{rate_floor value + currency | "none"}}
 
-profile_hash: {{current}} · Changes here re-score lazily on the next run.
+profile_hash: {{current}} (absent until the first /tune edit — computed by _ultra-engine/scripts/profile_hash.sh) · Changes here re-score lazily on the next run.
 Edit: /tune add title "…" · /tune exclude "…" · /tune gate rate-floor 800 · full grammar in the hint.
 ```
 

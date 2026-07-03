@@ -13,7 +13,7 @@ version: 0.1.0
 
 # Source Discovery (Subagent)
 
-Build the per-workspace **verified** source registry written to `.job-scout/sources.json`. The engine discovers concrete job sources for one workspace lane, **probes every candidate live before it is allowed into the registry**, and merges the always-on universal backbone. The dispatching command (`/ultramode`, Task 7) fans this out, parses the returned delta, and writes the file.
+Build the per-workspace **verified** source registry written to `.job-scout/sources.json`. The engine discovers concrete job sources for one workspace lane, **probes every candidate live before it is allowed into the registry**, and merges the always-on universal backbone. Dispatched by `/sources` (rebuild/onboarding); `/ultramode`'s first-run bootstrap routes through `/sources`. The dispatcher parses the returned delta and writes the file.
 
 **This skill is dispatched only by other skills, via the `Agent` tool, per `../shared-references/subagent-protocol.md`.** It is not user-invocable. One discovery dispatch builds the whole registry for a workspace.
 

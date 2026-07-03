@@ -62,7 +62,7 @@ One Boolean query per **title cluster**. Clusters live in `user-profile.json.que
 ]
 ```
 
-`/analyze-cv` discovery (Step 3d) proposes the clusters by grouping `target_titles[]` into true-synonym sets; the user approves or edits. Each cluster renders as `("Title A" OR "Title B" OR "Title C") NOT (term1 OR term2)`.
+`/analyze-cv` discovery (Step 3d) proposes the clusters by grouping `target_titles[]` into true-synonym sets; the user approves or edits. Each cluster renders as `("Title A" OR "Title B" OR "Title C") NOT (term1 OR term2)`. Additionally union `requirements.exclusion_terms[]` (the `/tune` exclusion list; treat absent as empty) into every rendered NOT group — clusters, per-title fallbacks, and capability queries alike.
 
 **Fallback:** when `query_clusters[]` is absent or empty, run one plain query per `target_titles[]` entry (pre-v0.10.0 behaviour). Never block on missing clusters.
 

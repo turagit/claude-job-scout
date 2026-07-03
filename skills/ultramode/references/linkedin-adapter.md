@@ -15,6 +15,8 @@ The Step 4b snapshot path, the Step 1 lane corpus (`query_clusters[]`/`target_ti
 5. **Extract each genuinely-new role** (open the listing): title, company, location, salary, posted_at, applicant count, URL, full JD text → `jds/<id>.txt` per `../../shared-references/jd-storage.md`; run JD keyword extraction per `../../shared-references/jd-keyword-extraction.md`. Apply the GATE_BLOCK drop-on-explicit rule (stated permanent/onsite/hybrid ⇒ count in `counts.dropped_explicit_violation`, do not extract); record honest `signals` for the rest.
 6. **Write query-stats** per §4: per-query candidates/new counts now; after the dispatcher's Step 4f scoring, complete the tier-count writes, retirement (3 consecutive zero-new), and synonym promotion — the adapter owns both halves of the §4 lifecycle.
 
+Deliberate deltas vs the old `/deep-sweep`: repost matches no longer bump `last_seen` (envelope model — known roles are dropped, not re-emitted), and the cap 60 is new and always disclosed.
+
 ## The envelope
 
 Same shape as every sweep (validated by `validate_delta.py` before merge): `status`, `counts` (`scanned` = every ID seen incl. known/reposts; `matched` = lane-relevant AND genuinely-new; `dropped_explicit_violation`; `returned`; `capped` — cap 60 for this source, disclosed), `deltas[]` with **bare numeric LinkedIn ids** (never namespaced — back-compat with the whole tracker), `url`, title/company/location, `source: {"lane": "linkedin", "provider": "linkedin", "board": "Search" | "Top Picks" | "Saved" | "Similar"}`, `fingerprint` via `bash <SCRIPTS>/fingerprint.sh`, `posted_at`, `jd_path`, `signals`, `tags`. Checkpoint stage: `sweep-linkedin`.

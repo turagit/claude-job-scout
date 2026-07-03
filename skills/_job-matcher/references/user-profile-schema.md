@@ -24,6 +24,7 @@ This file documents read/write access and operational rules. Every workspace has
 | `/apply` | cv_path, requirements | — |
 | `/check-inbox` | tone, cv_summary, requirements | — |
 | `/optimize-profile` | cv_path, cv_summary, tone | linkedin_profile_url, profile_hash |
+| `/tune` | target_titles, query_clusters, master_keyword_list, requirements | target_titles, query_clusters, master_keyword_list, requirements.exclusion_terms, requirements.deal_breakers, profile_hash |
 | `/create-alerts` | requirements, target_titles | — |
 | `/cover-letter` | All (esp. tone, cv_summary) | — |
 | `/interview-prep` | All | — |

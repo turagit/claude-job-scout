@@ -33,7 +33,7 @@ Follow `../shared-references/workspace-layout.md` to ensure `.job-scout/` exists
 Read `.job-scout/sources.json` and print a terminal table (no `_visualizer` — this is a Tier-2 utility view):
 
 ```
-Registry: {{N}} sources · built {{built_at}} · base {{base_country}} · geography {{target_geography}}
+Registry: {{N}} sources · built {{ultramode.registry_built_at (from user-profile.json)}} · base {{base_country}} · geography {{target_geography}}
 {{category}}: {{n}} · … (one line, all six categories + linkedin)
 
 | name | category | lane | needs_key | last swept |
@@ -88,9 +88,9 @@ Runs after onboarding, or standalone (reusing the already-known lane answers; re
 2. **Dispatch `_source-discovery`** via the `Agent` tool per `../shared-references/subagent-protocol.md`, `budget_lines: 800`, `allowed_tools: ["Read", "Grep", "WebFetch", "WebSearch"]`. **The dispatch is mandatory and loops to `ok`:** never persist a `partial` (re-dispatch with the `continuation_cursor`); treat a clean-but-empty single-round `ok` or `tool_unavailable` as suspect — re-probe before persisting.
 3. **Gate and persist — the Phase 13 gates, verbatim:**
    - **Gate 1 (parsed-delta):** no parsed `_source-discovery` delta ⇒ you have NOT run discovery — do not write `sources.json`. Log the dispatch so its presence is auditable.
-   - **Gate 2 (count invariant):** assert `len(sources) == len(resolved backbone) + len(fragment.sources) + len(retained user_sources)` before writing; mismatch ⇒ fail loudly.
+   - **Gate 2 (count invariant):** assert `len(sources) == len(resolved backbone) + len(fragment.sources) + len(retained user_sources) (+1 when the ensured LinkedIn entry is present)` before writing; mismatch ⇒ fail loudly.
    - **Gate 3 (lane-conditional acceptance):** freelance lanes require ≥1 `freelance-marketplace` AND ≥1 `ats-provider` plus ≥5 non-backbone total; other lanes ≥5 non-backbone. Below threshold ⇒ warn, show the shortfall + `errors[]`, offer an immediate re-dispatch, write only on explicit acknowledgement with `discovered_below_threshold` recorded.
-   - **Present the approval table** (name, category, lane, keys) headed by the discovered-source count and per-category breakdown, then persist atomically: resolve the backbone (fill `{country}` from the confirmed `base_country`), union the verified fragment, **ensure the LinkedIn registry entry exists** (Task 3's § LinkedIn entry — add it if absent), re-assert Gate 2, write `sources.json.tmp` → `mv`. Stamp `ultramode.registry_built_at` only after a gated write.
+   - **Present the approval table** (name, category, lane, keys) headed by the discovered-source count and per-category breakdown, then persist atomically: resolve the backbone (fill `{country}` from the confirmed `base_country`), union the verified fragment, **ensure the LinkedIn registry entry exists** (per ../ultramode/SKILL.md Step 3 — add it if absent), re-assert Gate 2 (which now accounts for the +1), write `sources.json.tmp` → `mv`. Stamp `ultramode.registry_built_at` only after a gated write.
 
 ## Not a sweep
 

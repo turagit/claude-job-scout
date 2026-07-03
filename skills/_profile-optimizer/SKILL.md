@@ -92,12 +92,12 @@ After proposing all content, generate an alignment report:
     ```
 
     Show two versions: **Current** (from cached profile) and **Proposed** (from this session's proposals). Check: does the snippet contain the target role title? The user's location? At least one quantified achievement? Does it truncate cleanly (not mid-word)? If the proposed snippet is weaker than the current, flag it.
-10. **Apply changes** via browser with user permission — one section at a time. After each write, recompute `profile_hash` (SHA-256 over canonical JSON of headline, about, experience bullets, skills list, Open to Work config) and persist to `.job-scout/user-profile.json`.
+10. **Apply changes** via browser with user permission — one section at a time. LinkedIn-content edits (headline, about, experience bullets, skills list, Open to Work config) do not by themselves shift `profile_hash` — see § State & Caching for the canonical recipe and when a recompute is actually needed.
 
 ## State & Caching
 
-- **`.job-scout/user-profile.json`** — source of `master_keyword_list` (built by `_cv-optimizer`) and `profile_hash` (built by this skill). Reuse `master_keyword_list` unless `cv_hash` changed; rebuild `profile_hash` on any content-changing profile edit (see bullet 2).
-- **`profile_hash`** — after any write that changes `master_keyword_list` or the LinkedIn-facing content this skill proposes (headline, about, experience bullets, skills list, Open to Work config), compute a SHA-256 over the canonical JSON of those fields and persist to `.job-scout/user-profile.json` as `profile_hash`. Downstream skills (`_job-matcher`) use it as part of the score-cache key, so a profile edit invalidates stale scores.
+- **`.job-scout/user-profile.json`** — source of `master_keyword_list` (built by `_cv-optimizer`) and `profile_hash` (computed by the canonical engine script, not this skill). Reuse `master_keyword_list` unless `cv_hash` changed.
+- **`profile_hash`** — Recompute `profile_hash` with the canonical engine script — `bash ../_ultra-engine/scripts/profile_hash.sh .job-scout/user-profile.json` (16-hex over the scoring-relevant subset; see `_ultra-engine/SKILL.md`) — after any edit that changes titles, clusters, keywords, requirements, or dimensions (e.g. this skill rebuilding `master_keyword_list`). LinkedIn-content edits that change none of those do not shift the hash. Downstream skills (`_job-matcher`) use it as part of the score-cache key, so a scoring-relevant edit invalidates stale scores.
 - **`.job-scout/cache/linkedin-profile.json`** — last-seen LinkedIn profile snapshot with per-section content hashes. Shape:
 
   ```json

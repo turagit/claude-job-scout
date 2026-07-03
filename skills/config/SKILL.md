@@ -37,7 +37,7 @@ The user types one of these forms:
 
 ## Step 2: Show current settings (no-arg invocation)
 
-Read `.job-scout/config.json` (treat missing as `{}`) and `user-profile.json` (treat missing `ultramode` block as `{default: false, api_keys: {}, registry_built_at: null}`). Print:
+Read `.job-scout/config.json` (treat missing as `{}`) and `user-profile.json` (treat missing `ultramode` block as `{api_keys: {}, registry_built_at: null}`). Print:
 
 ```
 Current settings (.job-scout/config.json):

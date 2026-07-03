@@ -296,7 +296,7 @@ The tracker file `schema_version` is **NOT** bumped for these additions (it stay
     {
       "name": "string — human-readable source name",
       "url": "string — homepage or board URL",
-      "category": "ats-provider | remote-board | aggregator | national-board | freelance-marketplace | community",
+      "category": "ats-provider | remote-board | aggregator | national-board | freelance-marketplace | community | linkedin (at most one entry — the LinkedIn adapter)",
       "access_lane": "api | rss | html | extension",
       "endpoint": "string — the URL ultramode fetches: the JSON API (api), the feed (rss), or the listing/search page (html). MUST be non-empty for api, rss and html; may be empty for extension (the dispatcher navigates `url` in the browser). `url` is the human-facing homepage.",
       "needs_key": "boolean — true if an API key is required (looked up in user-profile ultramode.api_keys)",
@@ -310,7 +310,7 @@ The tracker file `schema_version` is **NOT** bumped for these additions (it stay
 }
 ```
 
-A worked example with four real sources lives in `sources-schema-example.json` alongside this reference. The registry's `sources[]` length MUST equal `len(backbone bodies) + len(discovered fragment.sources) + len(retained user_sources)` — the dispatcher asserts this before the atomic write (`ultramode/SKILL.md` Step 3e) so a silently-dropped or silently-empty discovery fragment cannot pass as a complete registry.
+A worked example with four real sources lives in `sources-schema-example.json` alongside this reference. The registry's `sources[]` length MUST equal `len(backbone bodies) + len(discovered fragment.sources) + len(retained user_sources)` (+1 for the ensured LinkedIn entry) — the dispatcher asserts this before the atomic write (`sources/SKILL.md` § rebuild) so a silently-dropped or silently-empty discovery fragment cannot pass as a complete registry.
 
 ## `cache/capability-graph.json` (CV capability graph)
 
@@ -364,7 +364,7 @@ Both caches are **regenerable and deletable** — they hold no source-of-truth s
 | `threads.*.lead_tier` | `hot`, `warm`, `cold`, `non-lead` |
 | `user-profile.requirements.deal_breakers[].kind` | `work_arrangement`, `contract_type`, `seniority_floor`, `location`, `industry`, `company`, `rate_floor`, `salary_floor`, `custom` |
 | `user-profile.segment` | free-text string (any descriptor the user chooses at `/analyze-cv` discovery) |
-| `sources.sources[].category` | `ats-provider`, `remote-board`, `aggregator`, `national-board`, `freelance-marketplace`, `community` |
+| `sources.sources[].category` | `ats-provider`, `remote-board`, `aggregator`, `national-board`, `freelance-marketplace`, `community`, `linkedin` (at most one entry — the LinkedIn adapter) |
 | `sources.sources[].access_lane` | `api`, `rss`, `html`, `extension` |
 | `query-stats.json` query `family` | `title`, `skill`, `synonym`, `explicit`, `capability` |
 | `tracker.jobs.*.competitiveness` / `scores.*.competitiveness` | `high`, `med`, `low`, or absent/null |
@@ -382,7 +382,7 @@ Both caches are **regenerable and deletable** — they hold no source-of-truth s
 | code | emitted by | meaning |
 |---|---|---|
 | `lane_dry` | discovery | a category/geography was probed and **genuinely** confirmed nothing (the critic asked, §2 admitted none). The honest empty result. |
-| `discovered_below_threshold` | discovery / dispatcher | the confirmed-set is below the known-rich-lane acceptance threshold (`ultramode/SKILL.md` Step 3e); names every dry lane and triggers the warn + offer-re-dispatch path. |
+| `discovered_below_threshold` | discovery / dispatcher | the confirmed-set is below the known-rich-lane acceptance threshold (`sources/SKILL.md` § rebuild); names every dry lane and triggers the warn + offer-re-dispatch path. |
 | `probe_failed` | discovery / sweep | a candidate's live probe failed outright (timeout / `ECONNREFUSED` / blanket `403`) — distinct from `lane_dry`. The source could not be judged, not judged-and-rejected. |
 | `source_unreachable` | sweep | a known registry source's endpoint returned a transient non-2xx (e.g. `503`) and no candidates were collected this sweep; retryable next run (distinct from `probe_failed`, which is a discovery-time candidate-probe failure). |
 | `tool_unavailable` | discovery / sweep | N consecutive `WebFetch`/`WebSearch` calls failed outright, so the probe lane itself is dead. The dispatcher MUST treat this as a hard error to surface/retry on the main thread — **never** as a clean dry `ok`. |

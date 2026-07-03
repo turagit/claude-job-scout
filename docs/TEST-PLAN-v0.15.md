@@ -14,7 +14,10 @@ Update the plugin to v0.15.0, reload, then in order:
    - `$ jq '.sources | length' .job-scout/sources.json` → ≥ 12; `$ jq '[.sources[] | select(.category=="linkedin")] | length'` → 1.
 3. `/tune` — shows titles/keywords/gates; `/tune add title "Site Reliability Engineer"` → confirm line with `profile_hash old → new`; `/tune` again shows it.
 4. `/deep-sweep` — prints the deprecation pointer, then runs the full-market sweep.
-5. `/config ultramode default true` — prints the retirement notice, writes nothing.
+5. `/ultramode linkedin` — sweeps ONLY LinkedIn (no external sources in the scorecard; report renders; similar-jobs expansion fires for A-tier LinkedIn roles).
+6. `/sources` then `/sources add <a board URL you use>` — the list renders with the LinkedIn row; the added board is probed, classified, and appears in the list immediately after.
+7. `/tune add title "Platform Engineer"` then `/ultramode linkedin` — the announced query plan includes the new title (or its cluster).
+8. `/config ultramode default true` — prints the retirement notice, writes nothing.
 
 **Pass:** every step behaves as written; the report renders; no stage improvises.
 

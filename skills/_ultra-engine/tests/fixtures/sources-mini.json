@@ -4,5 +4,6 @@
   {"name": "Toptal", "url": "https://toptal.com", "category": "freelance-marketplace", "access_lane": "extension", "needs_key": false},
   {"name": "freelance.nl", "url": "https://freelance.nl", "category": "freelance-marketplace", "access_lane": "extension", "needs_key": false, "last_swept_at": "2026-06-01"},
   {"name": "Worksome", "url": "https://worksome.com", "category": "freelance-marketplace", "access_lane": "extension", "needs_key": false, "last_swept_at": "2026-06-25"},
-  {"name": "RemoteOK", "url": "https://remoteok.com", "category": "remote-board", "access_lane": "api", "needs_key": false}
+  {"name": "RemoteOK", "url": "https://remoteok.com", "category": "remote-board", "access_lane": "api", "needs_key": false},
+  {"name": "LinkedIn", "url": "https://www.linkedin.com/jobs/", "category": "linkedin", "access_lane": "extension", "needs_key": false}
  ]}

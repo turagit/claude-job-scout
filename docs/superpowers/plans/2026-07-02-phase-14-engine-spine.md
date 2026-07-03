@@ -833,7 +833,8 @@ if __name__ == "__main__":
   {"name": "Toptal", "url": "https://toptal.com", "category": "freelance-marketplace", "access_lane": "extension", "needs_key": false},
   {"name": "freelance.nl", "url": "https://freelance.nl", "category": "freelance-marketplace", "access_lane": "extension", "needs_key": false, "last_swept_at": "2026-06-01"},
   {"name": "Worksome", "url": "https://worksome.com", "category": "freelance-marketplace", "access_lane": "extension", "needs_key": false, "last_swept_at": "2026-06-25"},
-  {"name": "RemoteOK", "url": "https://remoteok.com", "category": "remote-board", "access_lane": "api", "needs_key": false}
+  {"name": "RemoteOK", "url": "https://remoteok.com", "category": "remote-board", "access_lane": "api", "needs_key": false},
+  {"name": "LinkedIn", "url": "https://www.linkedin.com/jobs/", "category": "linkedin", "access_lane": "extension", "needs_key": false}
  ]}
 ```
 
@@ -847,12 +848,15 @@ picks=$(bash "$R" pick "$tmp" 3)
 assert_eq "Toptal
 freelance.nl
 Malt" "$picks" "never-swept first, then stalest; api lane excluded"
+assert_eq "" "$(bash "$R" pick "$tmp" 9 | grep -x "LinkedIn" || true)" "linkedin category never enters the rotation"
 bash "$R" mark "$tmp" "Toptal" "2026-07-02"
 assert_eq "2026-07-02" "$(jq -r '.sources[]|select(.name=="Toptal").last_swept_at' "$tmp")" "mark stamps"
 picks2=$(bash "$R" pick "$tmp" 1)
 assert_eq "freelance.nl" "$picks2" "marked source rotates to back"
 rm -f "$tmp"; finish
 ```
+
+> **Phase 15 final-review amendment (controller-authorised):** this phase's Global Constraints freeze `skills/_ultra-engine/scripts/*`, but the Phase 15 final-review fix wave amended the freeze for exactly this one line — see `2026-07-03-phase-15-ultramode-merge.md` Task 8's audit-trail note. The fixture/test/implementation blocks in this task are kept in sync with the shipped files below.
 
 - [ ] **Step 2: Run to verify it fails.**
 
@@ -869,7 +873,7 @@ case "$cmd" in
   pick)
     n="$3"
     jq -r --argjson n "$n" '
-      [ .sources[] | select(.access_lane == "extension") ]
+      [ .sources[] | select(.access_lane == "extension" and (.category // "") != "linkedin") ]
       | sort_by(.last_swept_at // "0000-00-00")
       | .[:$n][].name' "$f"
     ;;
