@@ -72,7 +72,8 @@ This reference replaces the older inline schemas in `tracker-schema.md` and `_jo
     "nice_to_haves": ["string"],
     "companies_to_avoid": ["string"],
     "industries_to_avoid": ["string"],
-    "companies_to_target": ["string"]
+    "companies_to_target": ["string"],
+    "exclusion_terms": ["string — /tune-managed NOT-terms; unioned into every query plan's not_terms and every sweep's {{NOT_TERMS}}; optional, default []"]
   },
   "tone": {
     "register": "string",
@@ -92,6 +93,8 @@ This reference replaces the older inline schemas in `tracker-schema.md` and `_jo
   "created_by": "string"
 }
 ```
+
+Phase 15: `requirements.exclusion_terms[]` is additive-optional; `profile_hash` is canonically computed by `_ultra-engine/scripts/profile_hash.sh` over `{target_titles, query_clusters, master_keyword_list, requirements, dimensions}` — every writer that edits those fields recomputes it.
 
 The `ultramode` block is additive and optional. Absent (or `default: false`, `api_keys: {}`, `registry_built_at: null`) means ultramode is off / cold-start — the plugin behaves exactly as in pre-Phase-11 LinkedIn-only mode. `requirements.base_country` is **only ever populated by onboarding, never inferred** from CV text, locale, or prior runs.
 
