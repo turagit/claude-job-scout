@@ -78,7 +78,7 @@ From `requirements`: `target_geography`, `work_arrangement`, `contract_type`, an
 
 ### Target companies (so the ATS lane is never dark)
 
-Ask (optional): *"Name 2–5 companies you'd love to work for / contract with — I'll watch their job boards directly."* → merge into `requirements.companies_to_target[]`; also offer employer names derived from the CV corpus for confirmation. Empty is fine — the lane-matching curated seed still applies.
+Ask (optional): *"Name 2–5 companies you'd love to work for / contract with — I'll watch their own job boards directly."* → merge into `requirements.companies_to_target[]`; also offer employer names derived from the CV corpus for confirmation. Empty is fine — the lane-matching curated seed still applies.
 
 ## `/sources rebuild` — dispatch discovery and persist through the gates
 
