@@ -84,7 +84,7 @@ This reference replaces the older inline schemas in `tracker-schema.md` and `_jo
   },
   "master_keyword_list": ["string"],
   "ultramode": {
-    "default": "boolean — when true, multi-source ultramode runs without re-prompting; default false",
+    "default": "`default` — RETIRED v0.15.0: never written, ignored on read (scopes replaced it; see `/ultramode` Invocation forms)",
     "api_keys": "object — maps a provider slug to an API key, e.g. { 'greenhouse': 'gh_live_abc123' }; default {}",
     "registry_built_at": "ISO8601|null — when sources.json was last (re)built; null until first discovery"
   },
@@ -280,7 +280,7 @@ The tracker file `schema_version` is **NOT** bumped for these additions (it stay
 
 ## `sources.json` (ultramode source registry)
 
-`.job-scout/sources.json` is the single per-workspace registry of verified job sources, written by ultramode discovery (Phase 11). One registry holds sources of mixed types, so there is **no top-level `lane`** field. Instead each source carries a `category` (its broad source type — which maps to the tracker entry's `source.lane` when a job is sourced) and an `access_lane` (its technical polling method). The file is regenerable and deletable: its absence triggers first-run discovery.
+`.job-scout/sources.json` is the single per-workspace registry of verified job sources, written by ultramode discovery (Phase 11). One registry holds sources of mixed types, so there is **no top-level `lane`** field. Instead each source carries a `category` (its broad source type — which maps to the tracker entry's `source.lane` when a job is sourced) and an `access_lane` (its technical polling method). Phase 15: the registry may carry ONE `category: "linkedin"` entry (the LinkedIn adapter — always swept, never rotation-governed; maps to `source.lane: "linkedin"`); it is ensured automatically by `/ultramode` and `/sources rebuild`. The file is regenerable and deletable: its absence triggers first-run discovery.
 
 ```json
 {

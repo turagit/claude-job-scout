@@ -7,9 +7,7 @@ disable-model-invocation: true
 version: 0.2.0
 ---
 
-Multi-source ultramode (Phase 11). One pass that sweeps **every verified source** in this workspace's registry — ATS boards, remote boards, aggregators, national boards, freelance marketplaces, communities — dedupes the same role across them, gates and scores the genuinely-new roles through the existing rubric, and renders **one unified, source-agnostic ranking** alongside the LinkedIn surface. This command is the **dispatcher**: it loads the tracker once, derives the poll order, fans out the per-source sweep subagents, runs the extension lane on the main thread, performs the cross-source canonical merge, persists state, and renders via `_visualizer`.
-
-LinkedIn remains the `/job-search` / `/deep-sweep` surface. Ultramode adds the **rest** of the market on top — keyless-first, with optional keyed aggregators when the candidate opts in.
+**The flagship sweep.** One pass over the WHOLE market: LinkedIn (via `references/linkedin-adapter.md` — the richest surface, always swept) plus every verified source in this workspace's registry — ATS boards, remote boards, aggregators, national boards, freelance marketplaces, communities. Dedupe across sources, gate and score the genuinely-new roles, render one unified, source-agnostic ranking with the near-miss rail and the run scorecard. This command is the **dispatcher**: registry + rotation + snapshot, per-source sweeps through the `_ultra-engine` scripts, serial canonical merge, fetch-then-gate, scoring, always-render.
 
 ## Browser policy (read first)
 
@@ -17,19 +15,14 @@ All logged-in browser work in this command uses **the Claude Chrome extension ex
 
 ## Invocation forms
 
-The user types one of:
-
 ```
-/ultramode                          — run the multi-source sweep (first run triggers onboarding)
-/ultramode sources                  — re-run source discovery / rebuild the registry
-/ultramode sources add <url|name>   — add a source you already use to the registry
-/ultramode onboarding               — re-run the first-run lane interview from scratch
+/ultramode                    — full market: LinkedIn + every registry source (the weekly run)
+/ultramode linkedin           — LinkedIn only (what /deep-sweep used to be)
+/ultramode external           — external sources only (keyless lanes need no browser)
+/ultramode source <name>      — exactly one registry source, now (bypasses the rotation)
 ```
 
-- **Bare `/ultramode`** — the sweep flow (Step 4). If `.job-scout/sources.json` is absent, first-run onboarding (Step 3) runs automatically, then the sweep proceeds.
-- **`/ultramode sources`** — re-dispatch `_source-discovery` and overwrite the registry (Step 3, discovery sub-step only — it reuses the already-known lane answers from `requirements`, re-asking only for genuine gaps). Does not run the sweep unless the user then runs bare `/ultramode`.
-- **`/ultramode sources add <url|name>`** — add a board or site the candidate already uses or trusts, at any time. The source is probed and access-lane-classified (login-walled → `extension` lane, never dropped), appended to `.job-scout/sources.json`, and joins subsequent sweeps driven by the existing keyword corpus — no re-specifying queries. Does not run the sweep on its own.
-- **`/ultramode onboarding`** — re-run the **whole** lane interview (Step 3 in full, including the explicit `base_country` question), then rebuild the registry.
+Registry management lives in **`/sources`** (list · add · rebuild · onboarding). The deprecated spellings still work but redirect: `/ultramode sources …` → print `Registry management moved to /sources — running it for you.` and follow `../sources/SKILL.md`; `/ultramode onboarding` → same, § onboarding. The old `ultramode.default` config toggle is retired (v0.15.0): the full market IS the default; scopes replace the toggle, and a `default` key still present in `user-profile.json` is ignored.
 
 ## Step 0: Bootstrap workspace
 
@@ -37,7 +30,7 @@ Follow `../shared-references/workspace-layout.md` to ensure `.job-scout/` exists
 
 ## Step 1: Load profile, CV corpus & requirements
 
-Follow `../shared-references/cv-loading.md`. Read `user-profile.json` for `segment`, `target_titles[]`, `query_clusters[]`, `requirements`, `cv_summary`, `master_keyword_list`, `ultramode` (the `{default, api_keys, registry_built_at}` block — treat an absent block as `{default: false, api_keys: {}, registry_built_at: null}`).
+Follow `../shared-references/cv-loading.md`. Read `user-profile.json` for `segment`, `target_titles[]`, `query_clusters[]`, `requirements`, `cv_summary`, `master_keyword_list`, `ultramode.api_keys` (provider tokens for keyed sources — Step 5) and `ultramode.registry_built_at`; a legacy `ultramode.default` key is IGNORED (retired v0.15.0, never written).
 
 The **CV corpus** is the lane's relevance vocabulary, reused (never re-derived) across the whole run:
 
@@ -46,118 +39,34 @@ The **CV corpus** is the lane's relevance vocabulary, reused (never re-derived) 
 - `master_keyword_list` — the workspace keyword model built by `_cv-optimizer`.
 - `.job-scout/cache/jd-keyword-corpus.json` (the **jd-keyword-corpus**) — the market-specific keyword model built up by prior sweeps; treat a missing file as empty.
 
-From these, build the **lane relevance terms** passed to every sweep: `lane_keywords[]` = union of `cv_summary.key_skills`, the title tokens from `target_titles[]`/`query_clusters[]`, the top co-occurring skills in the jd-keyword-corpus, and `master_keyword_list`; `not_terms[]` = the workspace's exclusion terms (seniority/scope mismatches from `requirements.deal_breakers[]`). This is the same corpus `/job-search` and `/match-jobs` already read — ultramode reuses it rather than parsing the CV again.
+From these, build the **lane relevance terms** passed to every sweep: `lane_keywords[]` = union of `cv_summary.key_skills`, the title tokens from `target_titles[]`/`query_clusters[]`, the top co-occurring skills in the jd-keyword-corpus, and `master_keyword_list`; `not_terms[]` = the workspace's exclusion terms (seniority/scope mismatches from `requirements.deal_breakers[]`) plus `requirements.exclusion_terms[]` (the `/tune` exclusion list; treat absent as empty). This is the same corpus `/job-search` and `/match-jobs` already read — ultramode reuses it rather than parsing the CV again.
 
 If `target_titles` and `cv_summary.target_roles` are both empty, stop and ask the user to run `/analyze-cv` first — ultramode needs a declared lane to filter sources against.
 
 ## Step 2: Branch on invocation form
 
-- **Registry present AND bare `/ultramode`** → skip to Step 4 (sweep flow).
-- **Registry absent (any form), OR `/ultramode onboarding`** → Step 3 (full onboarding), then Step 4 for bare/onboarding forms.
-- **`/ultramode sources`** → Step 3 discovery sub-step only (rebuild registry; do not sweep).
+- **Registry present** → Step 4, with the scope: bare = LinkedIn + all external; `linkedin` = the adapter only; `external` = registry sources only; `source <name>` = that one source only.
+- **Registry absent** → run the first-run flow in `../sources/SKILL.md` (§ onboarding then § rebuild) — announce it (`No source registry yet — running the /sources interview first.`), then continue into Step 4 with the requested scope. (`/ultramode linkedin` works without a registry: the adapter needs none — but still suggest `/sources onboarding` for the full market.)
+- **Deprecated forms** (`sources …`, `onboarding`) → redirect per Invocation forms; do not sweep.
 
-## Step 3: First-run onboarding (build the source registry)
+## Step 3: The LinkedIn registry entry (ensure-once)
 
-Runs when `.job-scout/sources.json` is absent, on `/ultramode onboarding`, or (discovery sub-step only) on `/ultramode sources`. This is the **lane interview** that produces the discovery input envelope.
-
-### Step 3a: Establish `base_country` — explicit question, read back to confirm
-
-`base_country` is the workspace's home/legal-work country. It anchors the national-board backbone entries and the aggregator country codes (Adzuna `{country}`, Jooble `{country}` subdomain).
-
-**Ask the candidate their `base_country` explicitly, then read the answer back to confirm it. NEVER infer `base_country`.** Do not infer it from the email handle, not from the CV text, not from the browser locale, not from `requirements.location_preferences`, not from any prior run. It is set **only** by this explicit question + confirmation. (This mirrors the canonical-schemas rule: `requirements.base_country` is *only ever populated by onboarding, never inferred*.)
-
-```
-Which country are you based in / legally able to work in? This anchors the
-national job boards and country-specific aggregators I search.
-
-  Country: ___
-```
-
-Read the answer back to confirm before continuing — e.g. `Got it — base_country = "Portugal". Is that right? (Y/n)`. Only on confirmation, set `requirements.base_country` on `user-profile.json` (merge, do not overwrite unrelated keys). If the candidate declines to give a country, leave `base_country` as `null` — discovery then skips the national-board backbone entries rather than guessing (per `ultramode-sources.md` § Universal Backbone). Never substitute a guessed value for a declined answer.
-
-### Step 3b: Fill the rest of the lane from `requirements` — ask only for gaps
-
-Read `requirements` for `target_geography`, `work_arrangement`, `contract_type`, and the field descriptor (`segment` / `target_titles`). For each that is already set, use it. **Ask only for the genuine gaps** (read-first, ask-second):
-
-- `target_geography` — where the candidate wants roles (country, region, or "remote").
-- `work_arrangement` — `remote` / `hybrid` / `on-site` (any subset).
-- `contract_type` — `permanent` / `freelance` (either or both).
-- field — derived from `segment` / `target_titles`; confirm rather than re-ask if already declared.
-
-### Step 3c: Ask for trusted sources
-
-Ask: **"Which job sources do you already use or trust?"** — boards, niche communities, a company careers page, a Slack/Discord jobs channel. Collect them as `user_sources[] = [{name, url}]`. These are always probed, classified, and retained by discovery (login-walled ones land in the `extension` lane; see `_source-discovery` § User sources). An empty answer is fine — the backbone still applies.
-
-### Step 3c-bis: Seed target companies (so the ATS lane is not dark on first run)
-
-The ATS lane is per-company: a fresh workspace with an empty `requirements.companies_to_target[]` and no A/B-tier employers yet has **nothing to resolve**, so the highest-signal direct-to-employer category stays dark on first run. To avoid that, seed it now:
-
-- **Ask** (optional): *"Name 2–5 companies you'd love to work for / contract with — I'll watch their own job boards directly."* Collect into `requirements.companies_to_target[]` (merge, do not overwrite).
-- **And/or derive** candidates from the CV corpus already loaded in Step 1 — the employer names in `cv_summary` work history and any companies named in `target_titles`/`segment` — and offer them for the user to confirm before adding.
-- An empty answer is fine: discovery still bootstraps the ATS lane from the **lane-matching `## Curated lane seed → ATS seed`** (`../shared-references/ultramode-sources.md`), so the category is no longer guaranteed empty. User-named companies simply add to it.
-
-This list is passed to discovery (Step 3d) and feeds the sweep-time ATS watchlist (`_source-sweep` § ATS watchlist).
-
-### Step 3d: Dispatch `_source-discovery`
-
-Build the discovery input envelope from the CV corpus (Step 1) and the lane answers above, and dispatch `_source-discovery` via the `Agent` tool per `../shared-references/subagent-protocol.md`:
+Before the first sweep of a run, ensure `sources.json` carries the LinkedIn entry; if absent (pre-v0.15 registry), append it via the atomic-rename recipe and say so (`Registry upgraded: LinkedIn added as a source.`):
 
 ```json
 {
-  "task": "discover-sources",
-  "inputs": {
-    "base_country": "<from Step 3a — confirmed value, or null>",
-    "target_geography": "<requirements.target_geography>",
-    "work_arrangement": ["<requirements.work_arrangement>"],
-    "contract_type": ["<requirements.contract_type>"],
-    "field": "<segment / target_titles descriptor>",
-    "cv_keywords": ["<from cv_summary.key_skills + master_keyword_list>"],
-    "companies_to_target": ["<from Step 3c-bis — confirmed/derived companies, or []>"],
-    "user_sources": [ { "name": "...", "url": "..." } ]
-  },
-  "budget_lines": 800,
-  "allowed_tools": ["Read", "Grep", "WebFetch", "WebSearch"]
+  "name": "LinkedIn",
+  "url": "https://www.linkedin.com/jobs/",
+  "category": "linkedin",
+  "access_lane": "extension",
+  "endpoint": null,
+  "needs_key": false,
+  "needs_slug": false,
+  "poll_method": "The LinkedIn adapter — references/linkedin-adapter.md: query plan v2 (linkedin-search.md §3), Past Week pages 1-3, Top picks + Saved surfaces, post-scoring similar-jobs expansion, query-stats writes.",
+  "notes": "The richest surface. Always swept on bare /ultramode — never rotation-governed.",
+  "verified_at": "<today>"
 }
 ```
-
-Discovery is a **multi-round web loop**, not a single scoring batch — dispatch it with a budget well above the 200 default (`budget_lines: 800`). The subagent enumerates (seeded with the lane-matching curated seed), live-probes, adversarially verifies, loops until the completeness critic is dry, resolves the curated lane seed + merges the universal backbone, and returns a verified `sources_fragment` delta (it writes nothing — the dispatcher writes the file).
-
-**The dispatch is mandatory and the loop runs to `ok`:**
-- **You MUST call the `Agent` tool here.** Persisting a registry (Step 3e) without a parsed `_source-discovery` delta is a defect — see the Step 3e gate. (Only the documented `Agent`-unavailable fallback in `subagent-protocol.md` exempts this, and that fallback runs the same enumerate→probe→verify loop in-thread and is logged.)
-- If it returns `status: "partial"` with a `continuation_cursor`, **re-dispatch with the cursor until `status: "ok"`** — never persist a `partial`.
-- If it returns `status: "ok"` with an **empty confirmed-set after a single round**, or an `errors[]` carrying `tool_unavailable`, treat the probe lane as suspect: **re-probe (retry the dispatch, or run the probes on the main thread via the `WebFetch` carve-out) before persisting** — do not accept a clean-but-empty `ok` as a genuinely dry lane. Parse the delta only once it is a real, non-suspect `ok`.
-
-### Step 3e: Gate, present for approval & persist
-
-**Persistence is gated on a real discovery result. Do NOT skip these gates — they are what stops a silent backbone-only registry (the Phase 13 failure).**
-
-**Gate 1 — parsed-delta gate (you must have actually run discovery).** If you did **not** call the `Agent` tool in Step 3d and parse a real `_source-discovery` delta envelope (or run the documented in-thread fallback), **you have NOT completed Step 3 — do not write `sources.json`.** Step 3e is not self-sufficient: resolving the backbone from the reference is **not** a substitute for discovery. Log the dispatch (and any fallback) in the run output so its presence is auditable.
-
-**Gate 2 — count invariant.** Build the merged registry, then assert before writing:
-
-```
-len(sources) == len(resolved backbone bodies) + len(fragment.sources) + len(retained user_sources)
-```
-
-A mismatch means the discovered fragment was dropped or mis-merged — **fail loudly, do not write.** This catches a fragment silently lost at merge time.
-
-**Gate 3 — known-rich-lane acceptance.** Count the **non-backbone** discovered sources and break them down by `category`. Apply the lane-conditional threshold:
-
-- **If `requirements.contract_type` includes `freelance`:** require **≥ 1 `freelance-marketplace` AND ≥ 1 `ats-provider`** among the discovered/seed sources (the two structurally-dark categories), plus **≥ 5 non-backbone sources total**.
-- **Otherwise (tech / professional / EU-remote lanes):** require **≥ 5 non-backbone sources total.**
-- **A genuinely thin niche lane** (the critic asked and `errors[]` legitimately carries `lane_dry` for the missing categories, with no `tool_unavailable`/`probe_failed`) may fall below threshold — but only **after** the dispatcher has confirmed discovery actually ran the loop (Gate 1 + a non-suspect `ok`).
-
-On a **below-threshold** result: do **not** silently write. **Warn**, show the shortfall + `errors[]` (which dry lanes, and whether any were `probe_failed`/`tool_unavailable` rather than truly `lane_dry`), and **offer an immediate `/ultramode sources` re-dispatch**. Write a below-threshold registry **only on explicit user acknowledgement**, and record `discovered_below_threshold` in the run output so the thin result is visible, never invisible.
-
-**Present for approval (transparent table).** Show a short table per source — name, category, access lane, `needs_key` / `needs_slug` — **headed by the discovered-source count and the per-category breakdown** (e.g. `Discovered: 23 non-backbone — ats-provider:9 · freelance-marketplace:6 · national-board:3 · remote-board:3 · community:2`) so a zero- or thin-discovered union is visible **before** write. Note inline which sources are **keyless** vs **keyed** (key handling is Step 5), and surface any `errors[]` (dry lanes, unconfirmed user sources, probe failures).
-
-**On approval, persist:**
-
-1. Resolve the backbone bodies from `../shared-references/ultramode-sources.md` § Universal Backbone (the subagent named them in `backbone[]`), fill `{country}` from the confirmed `base_country` (skip national-board entries when `base_country` is null), and union with the verified discovered/seed/user fragment. (The curated lane seed was already re-probed by discovery — its hits arrive inside the fragment with their own `verified_at`, not re-resolved here.)
-2. Re-assert the Gate 2 count invariant on the final object, then write the merged registry to **`.job-scout/sources.json`** (write to `sources.json.tmp`, then `mv` it over `sources.json` — the atomic-rename recipe in `../shared-references/state-validators.md`), conforming to the `sources.json` schema in `../shared-references/canonical-schemas.md` (`base_country`/`target_geography` copied in, `priority_order[]`, `backbone[]`, `sources[]`). Every `sources[]` entry carries a non-null `verified_at`.
-3. Set `user-profile.json` `ultramode.registry_built_at` to the build timestamp (merge, do not overwrite) — **only after a successful write that passed all three gates.** Never stamp `registry_built_at` for a run that did not actually persist a gated registry.
-
-The build is re-runnable any time via `/ultramode sources`; deleting `sources.json` triggers a fresh onboarding on the next run.
 
 ## Step 4: Sweep flow (the multi-source pass)
 
@@ -167,13 +76,13 @@ Resolve `SCRIPTS` = `../_ultra-engine/scripts` (this plugin's engine — see `..
 `rd=$(bash $SCRIPTS/checkpoint.sh find-incomplete $WS)`. If non-empty and its manifest `started_at` is within 48h, announce **resuming** and skip every stage whose checkpoint says `done`. Otherwise `rd=$(bash $SCRIPTS/checkpoint.sh init $WS $(date +%F-%H%M))`. Set `TODAY` = the run id's date component (`TODAY=$(basename "$rd" | cut -c1-10)` — so a resumed run keeps its original date); every `date +%F` in Steps 4e–4g uses `$TODAY`.
 
 ### Step 4b: Registry, rotation, snapshot
-Load `sources.json`; derive poll order per `ultramode-sources.md` § Adaptive priority order. Pick this run's extension-lane subset: `bash $SCRIPTS/rotation.sh pick $WS/sources.json 4`; write `{picked, rotated_out}` (rotated_out = extension sources not picked) to `$rd/rotation.json`. Build the snapshot: `bash $SCRIPTS/snapshot.sh $WS/tracker.json $WS/cache/ultramode-snapshot.json`, then `bash $SCRIPTS/checkpoint.sh save $rd snapshot $WS/cache/ultramode-snapshot.json`. ATS coverage in the sweep is the registry's `ats-provider` sources themselves; the dynamic watchlist union (tracker A/B-tier employers + `companies_to_target[]` + curated seed + manual additions, per `../_source-sweep/SKILL.md` § ATS watchlist) is applied when the registry is (re)built (Step 3 / `/ultramode sources`); Phase 15's `/sources` command takes ownership of refreshing it. This weekly sweep pass reads the registry as-is.
+Load `sources.json`; derive poll order per `ultramode-sources.md` § Adaptive priority order. Pick this run's extension-lane subset: `bash $SCRIPTS/rotation.sh pick $WS/sources.json 4`; write `{picked, rotated_out}` (rotated_out = extension sources not picked) to `$rd/rotation.json`. Scopes: `linkedin` skips the rotation pick and every non-LinkedIn source (write `{"picked": [], "rotated_out": []}`); `external` proceeds as written but skips the adapter in 4d; `source <name>` replaces both the poll order and the rotation with exactly that one source (an extension-lane pick of one; still `rotation.sh mark` it when swept). Build the snapshot: `bash $SCRIPTS/snapshot.sh $WS/tracker.json $WS/cache/ultramode-snapshot.json`, then `bash $SCRIPTS/checkpoint.sh save $rd snapshot $WS/cache/ultramode-snapshot.json`. ATS coverage in the sweep is the registry's `ats-provider` sources themselves; the dynamic watchlist union (tracker A/B-tier employers + `companies_to_target[]` + curated seed + manual additions, per `../_source-sweep/SKILL.md` § ATS watchlist) is applied when the registry is (re)built (Step 3 / `/ultramode sources`); Phase 15's `/sources` command takes ownership of refreshing it. This weekly sweep pass reads the registry as-is.
 
 ### Step 4c: Fan out subagent sweeps (api/rss/html lanes)
 For each non-extension source in poll order: load the template matching its `access_lane` from `../_source-sweep/references/prompt-<lane>.md`, substitute ONLY the placeholders (all ten, nothing else: {{SOURCE_JSON}} = the registry entry verbatim · {{SNAPSHOT_PATH}} = $WS/cache/ultramode-snapshot.json · {{WS_DIR}} = .job-scout · {{SCRIPTS}} = the resolved ../_ultra-engine/scripts path · {{LANE_KEYWORDS}} / {{NOT_TERMS}} = the Step 1 lane corpus · {{GATE_BLOCK}} = the drop-on-explicit-violation rules built from requirements.deal_breakers values[]/free_text as data · {{FRESHNESS_DAYS}} = 7 · {{CAP}} = 40 · {{API_KEY_LINE}} = for a needs_key source, the token line looked up from ultramode.api_keys per Step 5, else an empty line — and if a needed key is ABSENT, do not dispatch that source at all), and dispatch via the Agent tool per `subagent-protocol.md` (parallel across sources is fine — they never write the tracker). Save each return: write it to a temp file, `python3 $SCRIPTS/validate_delta.py --ws $WS <file>`; on failure re-dispatch that source once with the validator's stderr appended under a "## Previous attempt was rejected because" line. **On a source's second validation failure, or an absent API key (the ABSENT case above), the failure must still reach the scorecard:** write a minimal valid envelope in its place — `{"status": "ok", "counts": {"scanned": 0, "matched": 0, "dropped_explicit_violation": 0, "returned": 0, "capped": false}, "deltas": [], "errors": [{"code": "<sweep_failed|no_api_key>", "message": "<detail — e.g. Skipped <provider> (no API key)>"}], "continuation_cursor": null}` and checkpoint IT as `sweep-<slug>` exactly as a successful sweep would be, so the scorecard's disclosures surface it. On success: `bash $SCRIPTS/checkpoint.sh save $rd sweep-<name-slug> <file>`.
 
 ### Step 4d: Extension lane — main thread, rotation subset only
-For each `rotation.json .picked` source: sweep it in the logged-in session via the Chrome extension (dedupe-before-extract against the snapshot; collect candidate ids on the listing page; open only new ones; write each full JD to `jds/<namespaced-id>.txt` minted with `bash $SCRIPTS/namespace_id.sh`; build the SAME envelope shape including `counts` + `signals`). Validate + checkpoint exactly as 4c, then `bash $SCRIPTS/rotation.sh mark $WS/sources.json <name> $(date +%F)`. A source that cannot be swept (login expired, layout dead) records an `errors[]` envelope — never silence.
+First — unless the scope is `external` or `source <name>` (non-LinkedIn) — sweep **LinkedIn** on the main thread per `references/linkedin-adapter.md`: it produces the same validated envelope (checkpoint stage `sweep-linkedin`) as every other source, and it is never rotation-governed. Then the rotation subset: For each `rotation.json .picked` source: sweep it in the logged-in session via the Chrome extension (dedupe-before-extract against the snapshot; collect candidate ids on the listing page; open only new ones; write each full JD to `jds/<namespaced-id>.txt` minted with `bash $SCRIPTS/namespace_id.sh`; build the SAME envelope shape including `counts` + `signals`). Validate + checkpoint exactly as 4c, then `bash $SCRIPTS/rotation.sh mark $WS/sources.json <name> $(date +%F)`. A source that cannot be swept (login expired, layout dead) records an `errors[]` envelope — never silence.
 
 ### Step 4e: Merge (all-or-nothing, serial, atomic)
 `python3 $SCRIPTS/merge_tracker.py --ws $WS --tracker $WS/tracker.json --today $TODAY $rd/sweep-*.json` — save its stdout to `$rd/merge.json` and `bash $SCRIPTS/checkpoint.sh save $rd merge $rd/merge.json`. On non-zero exit: STOP the pipeline, show the validator output, append `{"stage": "merge", "message": "<first line of stderr>"}` to `$rd/pipeline-errors.json` (create it as `{"errors": []}` first if absent), and still proceed to Steps 4g–4h with whatever previous stages completed (always-render).
@@ -181,6 +90,7 @@ For each `rotation.json .picked` source: sweep it in the logged-in session via t
 ### Step 4f: Fetch-then-gate (D2), then gate + score
 1. Queue: every merged entry from this run with `jd_path: null` → `bash $SCRIPTS/jd_queue.sh push $WS/cache/jd-queue.json <entries>` (an entry whose JD is already on disk but carries an `unknown` load-bearing `signals` value is NOT queued — it goes straight to gate + score in 4f.2, since the gate reads the full JD text; re-fetching a JD that already exists on disk is the exact economics inversion this phase fixes). Pop the budget: `bash $SCRIPTS/jd_queue.sh pop $WS/cache/jd-queue.json 75` — and CHECK its exit status: on non-zero exit the rewrite failed and nothing was dequeued, so discard the printed output and skip the fetch stage this run (fetches are idempotent, so a rare double-serve is harmless — but never treat failed-pop output as consumed). For each popped entry fetch the full JD (WebFetch for public urls; the extension for login-walled sources), write `jds/<id>.txt`, set `jd_path` on the entry via the atomic single-entry recipe (state-validators.md). Re-push any popped entry whose fetch failed back onto the queue before writing jd-fetch.json — a failed fetch defers, never strands. **This sub-step's bookkeeping is unconditional:** the queue push and the `jd-fetch.json` write happen even when you fetch nothing — a run that skips fetching (empty queue, failed pop, or every candidate's endpoint already proved dead in-sweep) still writes `{"budget": 75, "used": 0, "deferred": <real queue count>}` and appends one line to `$rd/pipeline-errors.json` (`{"stage": "jd-fetch", "message": "<why the stage fetched nothing>"}`) so the scorecard discloses it — zeros with a non-empty candidate list and no explanation are the 2026-07-03 bookkeeping defect. Write `$rd/jd-fetch.json`; checkpoint `jd-fetch`.
 2. Gate + score every this-run entry **with a jd_path**, batched ≤5 per `subagent-protocol.md`: `_gate-engine` first (violations as structured data; single-kind failures continue to the rubric per its § near-miss), `_job-matcher` rubric second (refuses jd-missing). Persist per entry atomically: `tier`, `tier_reason`, `gate_violations[]`, `dimensions`, `rubric_version: "v1"`, and when applicable `near_miss` + `near_miss_would_be_tier`; scores into `cache/scores.json` under the usual key. Checkpoint `scoring` when the batch set completes.
+3. **Similar-jobs expansion (LinkedIn scope only):** for each THIS-RUN LinkedIn role scored `tier: "A"`, collect up to 5 IDs from its listing page's "Similar jobs" rail (extension, dedupe-before-extract against the snapshot), produce ONE supplemental envelope (stage `sweep-linkedin-similar`, `source.board: "Similar"`), validate → merge → gate + score that batch the same way. One round only — expansion roles never seed further expansion (the old /deep-sweep Step 8 cap, unchanged).
 
 ### Step 4g: Scorecard + payload
 `bash $SCRIPTS/scorecard.sh $rd $WS/tracker.json $TODAY` then `bash $SCRIPTS/payload.sh $WS/tracker.json $rd $TODAY <n-sources-swept> > $rd/payload.json`; checkpoint both. The payload is the render input verbatim — do not hand-assemble or re-sort it.
