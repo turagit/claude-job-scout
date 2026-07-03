@@ -72,6 +72,19 @@ ha=$(bash "$PH" "$t/a.json"); hb=$(bash "$PH" "$t/b.json"); hc=$(bash "$PH" "$t/
 assert_eq "$ha" "$hb" "unrelated fields and key order do not change the hash"
 [ "$ha" != "$hc" ]; _report $? "scoring-relevant change changes the hash (a=$ha c=$hc)"
 case "$ha" in ????????????????) _report 0 "16 hex chars";; *) _report 1 "16 hex chars: got '$ha'";; esac
+# every scoring-relevant field must shift the hash; bad paths fail loudly
+for variant in \
+  '.requirements.contract_type = ["permanent"]' \
+  '.master_keyword_list = ["kerberos"]' \
+  '.dimensions = [{"name": "x"}]' \
+  '.query_clusters = [{"label": "l", "titles": ["SRE"], "not_terms": []}]'; do
+  jq "$variant" "$t/a.json" > "$t/v.json"
+  hv=$(bash "$PH" "$t/v.json")
+  [ "$ha" != "$hv" ]; _report $? "field variant shifts hash: $variant"
+done
+assert_fail bash "$PH" "$t/does-not-exist.json"
+out=$(bash "$PH" "$t/does-not-exist.json" 2>/dev/null || true)
+assert_eq "" "$out" "bad path prints nothing (fails loudly, never a fake hash)"
 finish
 ```
 
@@ -87,13 +100,14 @@ finish
 # form of the SCORING-RELEVANT subset only. Any writer that changes one of
 # these fields recomputes profile_hash with this script — cached scores keyed
 # on the old hash then re-evaluate lazily. Unrelated fields never shift it.
-set -eu
+set -eu -o pipefail
+[ -f "$1" ] || { echo "profile_hash: no such file: $1" >&2; exit 1; }
 jq -S '{target_titles: (.target_titles // []), query_clusters: (.query_clusters // null),
         master_keyword_list: (.master_keyword_list // []), requirements: (.requirements // {}),
         dimensions: (.dimensions // [])}' "$1" | shasum -a 256 | cut -c1-16
 ```
 
-- [ ] **Step 4: Run to verify it passes** — test → `checks=3 fails=0`; `bash skills/_ultra-engine/tests/run.sh` → `ALL PASS`.
+- [ ] **Step 4: Run to verify it passes** — test → `checks=9 fails=0`; `bash skills/_ultra-engine/tests/run.sh` → `ALL PASS`.
 
 - [ ] **Step 5: Document + commit** — add one row to the script table in `skills/_ultra-engine/SKILL.md` (after the `payload` row, same format): `| profile_hash | \`bash $SCRIPTS/profile_hash.sh <user-profile.json>\` | Canonical 16-hex hash of the scoring-relevant profile subset; every writer that edits titles/clusters/keywords/requirements/dimensions MUST recompute it (D11 cache invalidation). |`
 

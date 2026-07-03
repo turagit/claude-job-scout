@@ -15,4 +15,17 @@ ha=$(bash "$PH" "$t/a.json"); hb=$(bash "$PH" "$t/b.json"); hc=$(bash "$PH" "$t/
 assert_eq "$ha" "$hb" "unrelated fields and key order do not change the hash"
 [ "$ha" != "$hc" ]; _report $? "scoring-relevant change changes the hash (a=$ha c=$hc)"
 case "$ha" in ????????????????) _report 0 "16 hex chars";; *) _report 1 "16 hex chars: got '$ha'";; esac
+# every scoring-relevant field must shift the hash; bad paths fail loudly
+for variant in \
+  '.requirements.contract_type = ["permanent"]' \
+  '.master_keyword_list = ["kerberos"]' \
+  '.dimensions = [{"name": "x"}]' \
+  '.query_clusters = [{"label": "l", "titles": ["SRE"], "not_terms": []}]'; do
+  jq "$variant" "$t/a.json" > "$t/v.json"
+  hv=$(bash "$PH" "$t/v.json")
+  [ "$ha" != "$hv" ]; _report $? "field variant shifts hash: $variant"
+done
+assert_fail bash "$PH" "$t/does-not-exist.json"
+out=$(bash "$PH" "$t/does-not-exist.json" 2>/dev/null || true)
+assert_eq "" "$out" "bad path prints nothing (fails loudly, never a fake hash)"
 finish

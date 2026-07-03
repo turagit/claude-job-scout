@@ -4,7 +4,8 @@
 # form of the SCORING-RELEVANT subset only. Any writer that changes one of
 # these fields recomputes profile_hash with this script — cached scores keyed
 # on the old hash then re-evaluate lazily. Unrelated fields never shift it.
-set -eu
+set -eu -o pipefail
+[ -f "$1" ] || { echo "profile_hash: no such file: $1" >&2; exit 1; }
 jq -S '{target_titles: (.target_titles // []), query_clusters: (.query_clusters // null),
         master_keyword_list: (.master_keyword_list // []), requirements: (.requirements // {}),
         dimensions: (.dimensions // [])}' "$1" | shasum -a 256 | cut -c1-16
