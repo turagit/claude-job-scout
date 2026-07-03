@@ -24,8 +24,8 @@ Universal fields (every view):
 
 Per-view extensions (only when the view's schema requires them):
 
-- `tier_counts: { a, b, c, d, total }` — for views that bucket scored items: `match-jobs`, `job-search`, `check-job-notifications`, `deep-sweep`, `ultramode`. Populate every key (use `0` when none) so toolbar buttons render `(0)` rather than blank; `d` is the gated/filtered count.
-- `source_breakdown: { "<source label>": <count> }` — optional, for multi-source views (`deep-sweep`, `ultramode`). A name→count map shown as a "sources searched" strip. Labels are pre-rendered (e.g. `Greenhouse · Miro`).
+- `tier_counts: { a, b, c, d, total }` — for views that bucket scored items: `match-jobs`, `job-search`, `check-job-notifications`, `ultramode`. Populate every key (use `0` when none) so toolbar buttons render `(0)` rather than blank; `d` is the gated/filtered count.
+- `source_breakdown: { "<source label>": <count> }` — optional, for multi-source views (`ultramode`). A name→count map shown as a "sources searched" strip. Labels are pre-rendered (e.g. `Greenhouse · Miro`).
 - `unread_count` — for `check-job-notifications` and `check-inbox`.
 - `thread_count` — for `check-inbox`.
 - `metrics`, `stages` — for `funnel-report`.
@@ -42,7 +42,6 @@ Per-view extensions (only when the view's schema requires them):
 | `check-inbox` | `check-inbox-latest.html` |
 | `funnel-report` | `funnel-report-<YYYY-MM-DD-HHMM>.html` |
 | `interview-prep` | `interview-prep-<role-slug>-<YYYY-MM-DD-HHMM>.html` |
-| `deep-sweep` | `deep-sweep-<YYYY-MM-DD>.html` |
 | `ultramode` | `ultramode-<YYYY-MM-DD>.html` |
 
 For `interview-prep`: `<role-slug>` is `<tracker-id>-<4-char-disambiguator>`. The disambiguator is the first 4 characters of the SHA-1 hash of the input role title — keeps filenames distinct even when re-running prep on the same tracker entry.
@@ -53,7 +52,7 @@ Tiers come straight from the `_job-matcher` v1 rubric — uppercase `A | B | C |
 
 ### Optional scoring signals + within-tier ordering (Phase 12)
 
-The five **job-card** views (`match-jobs`, `job-search`, `check-job-notifications`, `deep-sweep`, `ultramode`) each carry four **optional, additive** scoring fields on every `results[]` entry. They surface as native `.tag-chip` badges on A/B-tier cards only (the C/D tiers and the gated group never show them). The fields and their enums (single source of truth: `canonical-schemas.md` § "Canonical enums"):
+The four **job-card** views (`match-jobs`, `job-search`, `check-job-notifications`, `ultramode`) each carry four **optional, additive** scoring fields on every `results[]` entry. They surface as native `.tag-chip` badges on A/B-tier cards only (the C/D tiers and the gated group never show them). The fields and their enums (single source of truth: `canonical-schemas.md` § "Canonical enums"):
 
 | Field | Allowed values | Badge |
 |---|---|---|
@@ -64,7 +63,7 @@ The five **job-card** views (`match-jobs`, `job-search`, `check-job-notification
 
 **Back-compatibility (hard rule).** These keys are written **lazily** by the scorer — populated on the next scoring of an entry, never backfilled — and are **omitted entirely (never `null`)** when not yet derived. Pre-Phase-A entries simply lack the keys. Templates read them defensively (`{{ job.confidence or '' }}`); an absent field renders **nothing** and never errors. The whole badge row is guarded by `{% if job.tier in ['A','B'] and (job.competitiveness or job.confidence or job.match_explanation_tag) %}`, so a card with none of the three signals shows no badge row at all. No new CSS — the badges reuse `.tag-chip` / `.tag-chip.accent`.
 
-**Within-tier ordering is the COMMAND's responsibility (not the template).** Mirroring the existing tier-order contract, the dispatching command pre-sorts `results[]` in its payload-build step **before** dispatching to `_visualizer`; the template renders the array in supplied order and never re-sorts. The within-tier order is: **`confidence` high → med → low** (an entry whose `confidence` is absent sorts *after* any explicit value — treated as lowest), then **`posted_at` descending** as the tie-breaker. (`check-job-notifications` keeps its compensation-disclosure preference between the confidence and `posted_at` keys.) Each of the five commands documents this in its own payload-build step. Scope guard: only the five job-card views — `check-inbox`, `funnel-report`, and `interview-prep` render no job cards and carry none of these fields.
+**Within-tier ordering is the COMMAND's responsibility (not the template).** Mirroring the existing tier-order contract, the dispatching command pre-sorts `results[]` in its payload-build step **before** dispatching to `_visualizer`; the template renders the array in supplied order and never re-sorts. The within-tier order is: **`confidence` high → med → low** (an entry whose `confidence` is absent sorts *after* any explicit value — treated as lowest), then **`posted_at` descending** as the tie-breaker. (`check-job-notifications` keeps its compensation-disclosure preference between the confidence and `posted_at` keys.) Each of the four commands documents this in its own payload-build step. Scope guard: only the four job-card views — `check-inbox`, `funnel-report`, and `interview-prep` render no job cards and carry none of these fields.
 
 ### The `ultramode` view (D8 — unified, source-agnostic results)
 
@@ -183,7 +182,6 @@ A 2–3 line summary printed even when HTML rendering succeeds. Format depends o
 | `funnel-report` | `✓ Pipeline snapshot for week of {{date}} — opened report in Chrome` |
 | `check-inbox` | `✓ {{N}} threads — {{unread}} unread — opened report in Chrome` |
 | `interview-prep` | `✓ Prep dossier for {{role}} at {{company}} — opened report in Chrome` |
-| `deep-sweep` | `✓ Deep sweep — {{N_queries}} queries · {{N_new}} new jobs — A:{{a}} B:{{b}} · Filtered:{{gated}} — opened report in Chrome` |
 | `ultramode` | `✓ Ultramode — {{N_sources}} sources · {{N_new}} new jobs — A:{{a}} B:{{b}} C:{{c}} · Filtered:{{gated}} — opened report in Chrome` |
 
 When falling back to markdown, replace the trailing clause with `— rendered above`.

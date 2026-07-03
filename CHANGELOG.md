@@ -15,6 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **`/tune`** — see and adjust the hunting vocabulary (titles, keywords, exclusions) and the hard gates (rate floor, contract types, arrangement) without the full CV interview. Every edit recomputes `profile_hash` via the new engine script, so cached scores re-evaluate lazily instead of going stale.
 - **`profile_hash.sh`** — canonical 16-hex hash of the scoring-relevant profile subset, with tests; `requirements.exclusion_terms[]` (additive) feeds every query plan's NOT-terms.
 
+### Removed
+- The `deep-sweep` render view (two templates + its view-enum entries) — unreachable now that `/deep-sweep` defers to `/ultramode`'s unified view. Archived deep-sweep reports in workspaces are static files and are unaffected.
+
 ## [0.14.1] — 2026-07-03
 
 ### Fixed
