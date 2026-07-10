@@ -3,6 +3,7 @@
 .vscode/
 .job-scout/
 .superpowers/
+.worktrees/
 *.swp
 *.swo
 __pycache__/
