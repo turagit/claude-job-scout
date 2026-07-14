@@ -28,6 +28,7 @@ Resolve `SCRIPTS` as this skill's own `scripts/` directory (e.g. `skills/_ultra-
 | identity | `python3 $SCRIPTS/lib/identity.py normalise <url>` / `key <url> <category>` | THE host-identity normalisation (`domain\|category`); catalogue/lifecycle scripts import it — never re-derive. |
 | catalog | `python3 $SCRIPTS/catalog.py validate <catalogue>` / `select <catalogue> --scope <eu-nl\|eu-broad>` / `config-read $WS/user-profile.json` | Packaged-catalogue schema validation; deterministic scope selection (candidates annotated with `pack`); effective scope/refresh config with defaults, read-only (D7). |
 | project | `python3 $SCRIPTS/project.py --candidate <file\|-> --priority N --verified-at <ISO>` | Catalogue candidate → registry entry: strips catalogue-only fields, requires a probe-time `verified_at`, maps `auth_required` → initial `auth_state`. The projection boundary (D11). |
+| registry_lifecycle | `python3 $SCRIPTS/registry_lifecycle.py merge --registry $WS/sources.json --candidates <entries.json> [--catalogue <cat>] [--expect-sha256 <hex>]` / `retire --registry $WS/sources.json --name <name>` | Atomic lifecycle boundary: identity dedupe via aliases, tombstone skip, user-source retention, exact counts, single-linkedin, catalogue-leak rejection, conflict-aware write (exit 3). Retirement = tombstone, never mere absence. |
 
 Single-entry tracker field updates (a score landing, a bend) use the atomic jq recipe in `../shared-references/state-validators.md`; multi-entry writes go through `merge_tracker.py` only.
 
