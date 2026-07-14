@@ -1,6 +1,6 @@
 # Render Orchestration
 
-The procedure every Tier 1 user-facing command follows after computing its output, when the user has opted in to HTML rendering. Centralised here because all six Tier 1 commands implement the identical lifecycle: build a payload → consult `render` config → maybe dispatch `_visualizer` → maybe open in Chrome → handle failure → print terminal summary.
+The procedure every Tier 1 user-facing command follows after computing its output, when the user has opted in to HTML rendering. Centralised here because all six Tier 1 commands implement the identical lifecycle: build a payload → consult `render` config → maybe dispatch `_visualizer` → maybe deliver the report → handle failure → print terminal summary.
 
 ## When to invoke
 
@@ -95,7 +95,7 @@ The user has never set a render preference. Print exactly this prompt to the con
 ```
 How should command output be displayed?
 
-  always  — Render as a styled HTML report and auto-open in Chrome.
+  always  — Render as a styled HTML report and deliver it to you.
             Best experience. Adds modest token overhead per command
             (the visualizer subagent inlines templates + assets).
   never   — Show output as styled markdown directly in this window.
@@ -122,8 +122,8 @@ Use the chosen value to set `mode` for this run (e.g., `"always"` → `mode = "h
 User has `render: "ask"` set. After the command's core work is done, print:
 
 ```
-Render this report as HTML in Chrome? (y/N)
-  y = styled HTML in Chrome (adds modest token overhead)
+Render this report as HTML? (y/N)
+  y = styled HTML, delivered to you (adds modest token overhead)
   N = styled markdown in this window
 ```
 
@@ -158,9 +158,14 @@ The dispatch follows `subagent-protocol.md`. Parse the JSON response.
 
 Subagent returned `status: "ok"` with a `path` delta.
 
-1. Call the Chrome extension's "navigate to URL" tool with `file://<path>`.
-2. **If Chrome opens successfully**, print the terminal summary (Step E) and return.
-3. **If Chrome fails to open**, fall through to Step F: ask-and-fallback.
+1. **Deliver the file to the user through the harness's file-delivery tool** (e.g. `SendUserFile`
+   with `display: "render"`), so the report renders in the user's panel. Never ask the browser
+   extension to navigate to a local `file://` URL — browser URL policy rejects local navigation
+   (Phase 16, D14).
+2. **If no file-delivery tool exists in this harness**, open via the OS instead:
+   `open "<path>"` (macOS) / `xdg-open "<path>"` (Linux) via Bash.
+3. **If both are unavailable or fail**, fall through to Step F: ask-and-fallback.
+4. On success, print the terminal summary (Step E) and return.
 
 ### Success, format=markdown
 
@@ -176,35 +181,40 @@ A 2–3 line summary printed even when HTML rendering succeeds. Format depends o
 
 | View | Summary line |
 |------|--------------|
-| `match-jobs` | `✓ {{N}} matches scored — A:{{a}} B:{{b}} C:{{c}} — opened report in Chrome` (or `…rendered as markdown above`) |
-| `job-search` | `✓ {{N}} jobs surfaced — A:{{a}} B:{{b}} — opened report in Chrome` |
-| `check-job-notifications` | `✓ {{N}} notifications — {{unread}} unread — opened report in Chrome` |
-| `funnel-report` | `✓ Pipeline snapshot for week of {{date}} — opened report in Chrome` |
-| `check-inbox` | `✓ {{N}} threads — {{unread}} unread — opened report in Chrome` |
-| `interview-prep` | `✓ Prep dossier for {{role}} at {{company}} — opened report in Chrome` |
-| `ultramode` | `✓ Ultramode — {{N_sources}} sources · {{N_new}} new jobs — A:{{a}} B:{{b}} C:{{c}} · Filtered:{{gated}} — opened report in Chrome` |
+| `match-jobs` | `✓ {{N}} matches scored — A:{{a}} B:{{b}} C:{{c}} — report delivered` (or `…rendered as markdown above`) |
+| `job-search` | `✓ {{N}} jobs surfaced — A:{{a}} B:{{b}} — report delivered` |
+| `check-job-notifications` | `✓ {{N}} notifications — {{unread}} unread — report delivered` |
+| `funnel-report` | `✓ Pipeline snapshot for week of {{date}} — report delivered` |
+| `check-inbox` | `✓ {{N}} threads — {{unread}} unread — report delivered` |
+| `interview-prep` | `✓ Prep dossier for {{role}} at {{company}} — report delivered` |
+| `ultramode` | `✓ Ultramode — {{N_sources}} sources · {{N_new}} new jobs — A:{{a}} B:{{b}} C:{{c}} · Filtered:{{gated}} — report delivered` |
 
 When falling back to markdown, replace the trailing clause with `— rendered above`.
 
+**Direct links are mandatory (Phase 16, D15):** whatever the render mode, the terminal summary
+ends with one line per surfaced A/B/C role: `{{tier}} · {{title}} — {{company}} → {{canonical url}}`
+(the canonical apply-at-source URL — the same link the report card carries). A user must never
+need to open the HTML to reach a job.
+
 ## Step F: Ask-and-fallback
 
-The HTML render or open failed.
+The HTML render or delivery failed.
 
-**`budget_exceeded` short-circuit:** if the visualizer returned `errors[0].code == "budget_exceeded"`, skip the prompt and re-dispatch with `format: "markdown"` directly. Print a one-line note `⚠ Report exceeded HTML budget; rendering as markdown.` before the markdown body. The user is not asked because there is no Chrome-open path to fall back from — the rendering itself is what failed.
+**`budget_exceeded` short-circuit:** if the visualizer returned `errors[0].code == "budget_exceeded"`, skip the prompt and re-dispatch with `format: "markdown"` directly. Print a one-line note `⚠ Report exceeded HTML budget; rendering as markdown.` before the markdown body. The user is not asked because there is no delivery path to fall back from — the rendering itself is what failed.
 
-For all other error codes (`schema_mismatch`, `template_missing`, `io_error`, or extension-unavailable), prompt the user as below.
+For all other error codes (`schema_mismatch`, `template_missing`, `io_error`, or delivery-unavailable), prompt the user as below.
 
 Print exactly this prompt:
 
 ```
-⚠ Couldn't open in Chrome (<reason>).
+⚠ Couldn't deliver the report (<reason>).
 Show output here as text instead? (Y/n)
 ```
 
-Where `<reason>` is the subagent's `errors[0].message` if available, otherwise `extension unavailable`.
+Where `<reason>` is the subagent's `errors[0].message` if available, otherwise `delivery unavailable`.
 
 Map response:
-- empty / `Y` / `y` → re-dispatch `_visualizer` with `format: "markdown"` and same `data`. Print the returned `body`. Append `(HTML written to <path> if you'd like to open it manually)` if a path was successfully written before the open failed.
+- empty / `Y` / `y` → re-dispatch `_visualizer` with `format: "markdown"` and same `data`. Print the returned `body`. Append `(HTML written to <path> if you'd like to open it manually)` if a path was successfully written before delivery failed.
 - `n` / `N` → print `Open manually: <path>` if a path was successfully written. If no path was written, print `Render failed; no file produced.` Then return.
 
 If the markdown re-dispatch itself fails, dispatch one more time with `format: "plain"` and print the resulting body. The plain path is the last-resort safety net and never fails (worst case is a JSON dump).
