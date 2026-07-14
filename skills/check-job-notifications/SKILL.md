@@ -240,12 +240,14 @@ Construct a `data` payload for the render layer. Tiers come straight from the `_
 Follow `../shared-references/render-orchestration.md` end-to-end (Step G already ran in Step 0):
 
 1. Step A — payload built in Step 11 above.
-2. Steps B–F — read render config, dispatch `_visualizer`, open in Chrome (or fall back), handle errors.
+2. Steps B–F — read render config, dispatch `_visualizer`, deliver the report (or fall back), handle errors.
 3. Step E — print the summary line:
 
 ```
-✓ {{N}} notifications — {{unread}} unread — opened report in Chrome
+✓ {{N}} notifications — {{unread}} unread — report delivered
 ```
+
+Then, per render-orchestration.md § Step E, one line per surfaced A/B/C role: `{{tier}} · {{title}} — {{company}} → {{canonical url}}` — the direct links are mandatory in every render mode.
 
 Fall back to pre-v0.7.0 markdown table if `Agent` tool is unavailable.
 

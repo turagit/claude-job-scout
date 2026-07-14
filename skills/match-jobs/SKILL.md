@@ -148,8 +148,8 @@ Merge newly scored jobs into `.job-scout/tracker.json` with status "seen".
 Follow `../shared-references/render-orchestration.md` end-to-end (Step G already ran in Step 0):
 
 1. Step A — payload built in Step 5 above.
-2. Steps B–F — read render config, dispatch `_visualizer`, open in Chrome (or fall back), handle errors.
-3. Step E — print the `match-jobs` summary line: `✓ {{N}} matches scored — A:{{a}} B:{{b}} C:{{c}} — opened report in Chrome` (or `…rendered as markdown above` when falling back).
+2. Steps B–F — read render config, dispatch `_visualizer`, deliver the report (or fall back), handle errors.
+3. Step E — print the `match-jobs` summary line: `✓ {{N}} matches scored — A:{{a}} B:{{b}} C:{{c}} — report delivered` (or `…rendered as markdown above` when falling back). Then, per render-orchestration.md § Step E, one line per surfaced A/B/C role: `{{tier}} · {{title}} — {{company}} → {{canonical url}}` — the direct links are mandatory in every render mode.
 
 If the `Agent` tool is unavailable, fall back to a terminal-only markdown render: print a table with tier, title, company, location, and posted_at; for A-tier jobs additionally print the dimension breakdown and rationale below the table. Skip URL links in the fallback (the orchestrator's render-orchestration.md isn't invoked, so no _visualizer markdown template is loaded).
 

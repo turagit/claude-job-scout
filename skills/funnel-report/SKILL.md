@@ -164,7 +164,7 @@ Construct a `data` payload as in `../shared-references/render-orchestration.md` 
 Then follow `../shared-references/render-orchestration.md` Steps B–F (Step G already ran in Step 0). Summary line:
 
 ```
-✓ Pipeline snapshot for week of {{date}} — opened report in Chrome
+✓ Pipeline snapshot for week of {{date}} — report delivered
 ```
 
 Fall back to pre-v0.7.0 markdown summary if `Agent` tool is unavailable. Note: filename is time-series, so each invocation writes a new file. Lifecycle Step G (run during Step 0) archives files older than 90 days into `.job-scout/reports/archive/`.
