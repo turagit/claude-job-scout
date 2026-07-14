@@ -24,12 +24,8 @@ def die(msg, code=2):
     sys.exit(code)
 
 
-def sha256(path):
-    return hashlib.sha256(open(path, "rb").read()).hexdigest()
-
-
 def write_atomic(path, data):
-    tmp = path + ".tmp"
+    tmp = path + ".tmp.%d" % os.getpid()
     with open(tmp, "w") as f:
         json.dump(data, f, indent=2)
         f.write("\n")
@@ -38,11 +34,33 @@ def write_atomic(path, data):
 
 
 def load_registry(path):
-    reg = json.load(open(path))
+    raw = open(path, "rb").read()
+    digest = hashlib.sha256(raw).hexdigest()
+    reg = json.loads(raw)
     if reg.get("schema_version", 1) < 2:
         die("sources.json is schema_version %s — run migrate_sources.py first"
             % reg.get("schema_version", 1))
-    return reg
+    return reg, digest
+
+
+def guarded_write(path, data, load_time_digest):
+    """Re-read the registry immediately before writing to narrow the
+    check-then-write race to the OS-level minimum. Not a substitute for
+    real locking, but this is a single-operator CLI — full locking is
+    out of scope."""
+    raw = open(path, "rb").read()
+    if hashlib.sha256(raw).hexdigest() != load_time_digest:
+        die("registry changed during merge — re-read and retry", 3)
+    write_atomic(path, data)
+
+
+def load_json_or_die(path, which):
+    try:
+        return json.load(open(path))
+    except FileNotFoundError as e:
+        die("cannot read %s file: %s (%s)" % (which, path, e), 2)
+    except json.JSONDecodeError as e:
+        die("cannot read %s file: %s (%s)" % (which, path, e), 2)
 
 
 def build_aliases(reg, cat):
@@ -61,11 +79,11 @@ def resolve(key, aliases):
 
 
 def merge(a):
-    reg = load_registry(a.registry)
-    if a.expect_sha256 and sha256(a.registry) != a.expect_sha256:
+    reg, digest = load_registry(a.registry)
+    if a.expect_sha256 and digest != a.expect_sha256:
         die("registry changed since read — re-read and retry", 3)
-    cands = json.load(open(a.candidates))
-    cat = json.load(open(a.catalogue)) if a.catalogue else None
+    cands = load_json_or_die(a.candidates, "candidates")
+    cat = load_json_or_die(a.catalogue, "catalogue") if a.catalogue else None
     aliases = build_aliases(reg, cat)
     retired = set(reg.get("retired_identities") or []) \
         | set((cat or {}).get("retired_identities") or [])
@@ -111,13 +129,13 @@ def merge(a):
         die("exact-count invariant broken: %d != %d retained + %d added"
             % (len(out), retained, added))
     reg["sources"] = out
-    write_atomic(a.registry, reg)
+    guarded_write(a.registry, reg, digest)
     print(json.dumps({"retained": retained, "added": added, "updated": updated,
                       "tombstoned_skipped": tomb, "total": len(out)}))
 
 
 def retire(a):
-    reg = load_registry(a.registry)
+    reg, digest = load_registry(a.registry)
     hits = [s for s in reg["sources"] if s["name"] == a.name]
     if not hits:
         die("unknown source: %s" % a.name)
@@ -128,7 +146,7 @@ def retire(a):
         reg["retired_identities"].append(key)
     reg["priority_order"] = [n for n in reg.get("priority_order", []) if n != a.name]
     reg["backbone"] = [n for n in reg.get("backbone", []) if n != a.name]
-    write_atomic(a.registry, reg)
+    guarded_write(a.registry, reg, digest)
     print(json.dumps({"retired": a.name, "identity": key, "total": len(reg["sources"])}))
 
 

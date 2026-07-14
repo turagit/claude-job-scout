@@ -116,6 +116,16 @@ class TestLifecycle(unittest.TestCase):
                            "--candidates", tmp_json([NEW])).stdout)
         self.assertEqual(1, c["tombstoned_skipped"])
 
+    def test_retire_unknown_source_rejected(self):
+        r = run("retire", "--registry", self.reg, "--name", "Nope")
+        self.assertEqual(2, r.returncode, r.stderr)
+
+    def test_merge_missing_candidates_file_rejected(self):
+        r = run("merge", "--registry", self.reg,
+                "--candidates", "/nonexistent.json")
+        self.assertEqual(2, r.returncode, r.stderr)
+        self.assertNotIn("Traceback", r.stderr)
+
     def test_v1_registry_refused(self):
         raw = tempfile.mktemp(suffix=".json")
         shutil.copy(FIXTURE, raw)
