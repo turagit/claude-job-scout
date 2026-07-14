@@ -4,7 +4,7 @@ description: Manage where the job hunt looks — list the verified source regist
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 argument-hint: [list | add <url|name> | scope [eu-nl|eu-broad] | retire <name> | rebuild | onboarding — omit for list]
 disable-model-invocation: true
-version: 0.1.0
+version: 0.2.0
 ---
 
 Where the hunt looks. `/ultramode` is *go look*; `/sources` is *where*. It owns `.job-scout/sources.json` — the per-workspace, CV-derived, **verified** source registry built by `_source-discovery` — and the first-run lane interview that seeds it.
@@ -114,19 +114,19 @@ Runs after onboarding, or standalone (reusing the already-known lane answers; re
 1. **Build the discovery input envelope** from the CV corpus (`../shared-references/cv-loading.md`; `cv_summary.key_skills`, `target_titles[]`/`query_clusters[]`, `master_keyword_list`, the jd-keyword-corpus) and the lane answers: `base_country`, `target_geography`, `work_arrangement`, `contract_type`, field, `cv_keywords[]`, `companies_to_target[]` — **the dynamic ATS watchlist union (tracker A/B-tier employers + `companies_to_target[]` + the lane-matching curated seed + manual additions, per `../_source-sweep/SKILL.md` § ATS watchlist) is folded in here, at registry-build time** — and `user_sources[]`.
 2. **Dispatch `_source-discovery`** via the `Agent` tool per `../shared-references/subagent-protocol.md`, `budget_lines: 800`, `allowed_tools: ["Read", "Grep", "WebFetch", "WebSearch"]`. **The dispatch is mandatory and loops to `ok`:** never persist a `partial` (re-dispatch with the `continuation_cursor`); treat a clean-but-empty single-round `ok` or `tool_unavailable` as suspect — re-probe before persisting.
 
-2-bis. **Catalogue admission (Phase 16, D5).** After discovery returns, admit the packaged catalogue for this workspace's scope — candidate precedence is `user sources → EU/NL catalogue → lane seed → universal backbone → live discoveries`:
-   1. `scope=$(python3 $SCRIPTS/catalog.py config-read .job-scout/user-profile.json | jq -r .source_scope)`
-   2. `python3 $SCRIPTS/catalog.py select ../shared-references/source-catalogue.json --scope $scope` → the candidate list.
-   3. **Probe every candidate live — packaged entries are hypotheses, never auto-admitted (never-fabricate):** api/rss/html lanes get a read-only `WebFetch` GET of `endpoint` (Gate B: postings visible); a recognised access/login wall flips the candidate to `access_lane: "extension"` with `endpoint: ""` and is RETAINED (verification completes in the logged-in sweep). A dead/parked candidate is dropped and recorded in the run notes with its probe evidence.
-   4. Project each survivor: `python3 $SCRIPTS/project.py --candidate <one>.json --priority <next free> --verified-at <probe ISO8601>` (catalogue-only fields are stripped here; leaks are rejected again at merge).
-   5. Merge atomically: `python3 $SCRIPTS/registry_lifecycle.py merge --registry .job-scout/sources.json --candidates <projected-array>.json --catalogue ../shared-references/source-catalogue.json --expect-sha256 $(shasum -a 256 .job-scout/sources.json | cut -d' ' -f1)`. Exit 3 = the registry changed underneath — re-read and retry once. Report the printed counts verbatim (`retained/added/updated/tombstoned_skipped/total`).
-   Gate 2's count invariant now reads: `len(sources) == merge.total` as printed by `registry_lifecycle.py` — the script IS the count assertion; a mismatch inside it fails loudly before any write.
-
 3. **Gate and persist — the Phase 13 gates, verbatim:**
    - **Gate 1 (parsed-delta):** no parsed `_source-discovery` delta ⇒ you have NOT run discovery — do not write `sources.json`. Log the dispatch so its presence is auditable.
    - **Gate 2 (count invariant):** assert `len(sources) == len(resolved backbone) + len(fragment.sources) + len(retained user_sources) (+1 when the ensured LinkedIn entry is present)` before writing; mismatch ⇒ fail loudly.
    - **Gate 3 (lane-conditional acceptance):** freelance lanes require ≥1 `freelance-marketplace` AND ≥1 `ats-provider` plus ≥5 non-backbone total; other lanes ≥5 non-backbone. Below threshold ⇒ warn, show the shortfall + `errors[]`, offer an immediate re-dispatch, write only on explicit acknowledgement with `discovered_below_threshold` recorded.
    - **Present the approval table** (name, category, lane, keys) headed by the discovered-source count and per-category breakdown, then persist atomically: resolve the backbone (fill `{country}` from the confirmed `base_country`), union the verified fragment, **ensure the LinkedIn registry entry exists** (per ../ultramode/SKILL.md Step 3 — add it if absent), re-assert Gate 2 (which now accounts for the +1), write `sources.json.tmp` → `mv`. Stamp ultramode.registry_built_at only after a gated write (unchanged) — the Phase 16 staleness nag reads it.
+
+4. **Catalogue admission (Phase 16, D5) — runs after the gated persist, so the registry file exists and is never clobbered.** Candidate precedence is `user sources → EU/NL catalogue → lane seed → universal backbone → live discoveries`; the step-3 write has already persisted every non-catalogue band, and this step merges the packaged catalogue on top without removing anything:
+   1. `scope=$(python3 $SCRIPTS/catalog.py config-read .job-scout/user-profile.json | jq -r .source_scope)`
+   2. `python3 $SCRIPTS/catalog.py select ../shared-references/source-catalogue.json --scope $scope` → the candidate list.
+   3. **Probe every candidate live — packaged entries are hypotheses, never auto-admitted (never-fabricate):** api/rss/html lanes get a read-only `WebFetch` GET of `endpoint` (Gate B: postings visible); a recognised access/login wall flips the candidate to `access_lane: "extension"` with `endpoint: ""` and is RETAINED (verification completes in the logged-in sweep). A dead/parked candidate is dropped and recorded in the run notes with its probe evidence.
+   4. Project each survivor: `python3 $SCRIPTS/project.py --candidate <one>.json --priority <next free> --verified-at <probe ISO8601>` (catalogue-only fields are stripped here; leaks are rejected again at merge).
+   5. Merge atomically: `python3 $SCRIPTS/registry_lifecycle.py merge --registry .job-scout/sources.json --candidates <projected-array>.json --catalogue ../shared-references/source-catalogue.json --expect-sha256 $(shasum -a 256 .job-scout/sources.json | cut -d' ' -f1)`. Exit 3 = the registry changed underneath — re-read and retry once. Report the printed counts verbatim (`retained/added/updated/tombstoned_skipped/total`).
+   Gate 2 (step 3) governs the pre-catalogue write with its own formula, unchanged; after this merge the closing invariant is `len(sources) == merge.total` exactly as printed by `registry_lifecycle.py` — the script IS the count assertion, and a mismatch inside it fails loudly before any write. Retired identities stay out (tombstones); user sources and every step-3 entry are retained by construction.
 
 ## Not a sweep
 
