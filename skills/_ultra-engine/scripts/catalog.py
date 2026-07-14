@@ -29,7 +29,7 @@ def validate(cat):
     if not isinstance(cat.get("catalog_version"), int) or cat["catalog_version"] < 1:
         errs.append("catalog_version must be an int >= 1")
     if cat.get("default_scope") not in SCOPES:
-        errs.append("default_scope must be one of %s" % (SCOPES,))
+        errs.append("default_scope must be one of %s" % SCOPES)
     for k in ("identity_aliases", "retired_identities", "packs"):
         if not isinstance(cat.get(k), list):
             errs.append("%s must be a list" % k)
@@ -44,7 +44,9 @@ def validate(cat):
             errs.append("%s: priority must be an int" % pid)
         scopes = p.get("scopes") or []
         if not scopes or not set(scopes) <= set(SCOPES):
-            errs.append("%s: scopes must be a non-empty subset of %s" % (pid, (SCOPES,)))
+            errs.append("%s: scopes must be a non-empty subset of %s" % (pid, SCOPES))
+        if "eu-nl" in scopes and "eu-broad" not in scopes:
+            errs.append("%s: a pack visible at eu-nl must also be visible at eu-broad (superset guarantee)" % pid)
         if not isinstance(p.get("countries"), list):
             errs.append("%s: countries must be a list" % pid)
         for s in p.get("sources") or []:
@@ -88,9 +90,9 @@ def config_read(profile):
     refresh = um.get("source_refresh", "manual")
     errs = []
     if scope not in SCOPES:
-        errs.append("invalid ultramode.source_scope: %r (allowed: %s)" % (scope, (SCOPES,)))
+        errs.append("invalid ultramode.source_scope: %r (allowed: %s)" % (scope, SCOPES))
     if refresh not in REFRESH:
-        errs.append("invalid ultramode.source_refresh: %r (allowed: %s)" % (refresh, (REFRESH,)))
+        errs.append("invalid ultramode.source_refresh: %r (allowed: %s)" % (refresh, REFRESH))
     if errs:
         fail(errs)
     return {"source_scope": scope, "source_refresh": refresh}
@@ -115,7 +117,7 @@ def main():
         print("ok")
     elif a.cmd == "select":
         if a.scope not in SCOPES:
-            fail(["invalid scope: %r (allowed: %s)" % (a.scope, (SCOPES,))])
+            fail(["invalid scope: %r (allowed: %s)" % (a.scope, SCOPES)])
         cat = json.load(open(a.catalogue))
         errs = validate(cat)
         if errs:

@@ -52,6 +52,20 @@ class TestValidate(unittest.TestCase):
         r = run("validate", tmp_json(cat))
         self.assertEqual(2, r.returncode)
 
+    def test_eu_nl_without_eu_broad_violates_superset_guarantee(self):
+        cat = json.load(open(FIXTURE))
+        cat["packs"][0]["scopes"] = ["eu-nl"]
+        r = run("validate", tmp_json(cat))
+        self.assertEqual(2, r.returncode)
+        self.assertIn("superset", r.stderr)
+
+    def test_candidate_with_verified_at_rejected(self):
+        cat = json.load(open(FIXTURE))
+        cat["packs"][0]["sources"][0]["verified_at"] = "2026-01-01T00:00:00Z"
+        r = run("validate", tmp_json(cat))
+        self.assertEqual(2, r.returncode)
+        self.assertIn("verified_at", r.stderr)
+
 
 class TestSelect(unittest.TestCase):
     def test_eu_nl_excludes_broad_only_packs(self):
