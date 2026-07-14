@@ -23,9 +23,9 @@ All commands are user-invoked slash commands. The model will **not** auto-trigge
 
 | Command | Description |
 |---------|-------------|
-| `/ultramode` | **The weekly full-market sweep** — LinkedIn + every verified source, one ranking, near-miss rail, run scorecard (scopes: `linkedin` · `external` · `source <name>`) |
+| `/ultramode` | **The weekly full-market sweep** — LinkedIn + every verified source, one ranking, near-miss rail, run scorecard (scopes: `linkedin` · `external` · `source <name>` · `super`) |
 | `/check-job-notifications` | **Daily driver** — check notifications + Top picks + Saved jobs, expand similar-jobs from A-tier hits, score new listings, save a ranked report |
-| `/sources` | Manage where it looks: `list` · `add <url\|name>` · `rebuild` · `onboarding` |
+| `/sources` | Manage where it looks: `list` · `add <url\|name>` · `scope [eu-nl\|eu-broad]` · `retire <name>` · `rebuild` · `onboarding` |
 | `/tune` | Show and adjust titles, keywords, exclusions, and hard gates — no full re-interview |
 | `/bend` | Re-score a near-miss job with its one failed gate relaxed — the "would you bend?" action from the report |
 | `/deep-sweep` | **Deprecated alias → `/ultramode`** — prints a pointer, then runs the full-market sweep. Removed next minor release |
@@ -90,6 +90,20 @@ As of v0.15.0 ultramode IS the flagship: LinkedIn is one source in the registry,
 **A near-miss rail surfaces close calls.** A strong-fit role that fails exactly one hard gate collapses into its own "would you bend?" section instead of dropping out of sight — `/bend <id>` re-scores it with that gate relaxed and shows a one-line before/after. The report **always renders**, even on a partial or interrupted run, and carries a **scorecard**: what was swept, skipped, or gated and why, dedupe accounting, and any truncation, disclosed rather than silently capped. Login-walled marketplaces rotate through the sweep so every one gets checked **at least fortnightly**.
 
 Between runs, `/tune` shows and adjusts your titles, keywords, exclusions, and hard gates — no need to wait for the next sweep, and no full re-interview required.
+
+---
+
+### EU/NL/BENELUX source parity (v0.16.0)
+
+The plugin ships a packaged **EU/NL/BENELUX source catalogue** — evidence-stamped candidates grouped into priority packs, with the **BENELUX pack swept first** (a `/sources rebuild` and every sweep's poll order and extension-lane rotation weight BENELUX sources ahead of the rest, on the reasoning that NL/BE/LUX boards are the highest-value hunting ground for an NL-based, EU-remote search).
+
+**Scope your registry with `/sources scope`.** `eu-nl` (the default) draws from the EU/NL/BENELUX packs only; `eu-broad` opts in the global marketplaces and remote boards on top (Upwork, Freelancer, FlexJobs, Contra, and similar). Check the current scope and its effect with bare `/sources scope`; change it with `/sources scope eu-broad` (or back to `eu-nl`) — it takes effect at the next `/sources rebuild`, which it will offer to run for you. `/sources retire <name>` permanently tombstones a source — a future catalogue or rebuild will never re-admit it; undo by editing the tombstone list and re-adding the source's URL.
+
+**`/ultramode super`** is the exhaustive scope: LinkedIn plus every external source plus **every** extension-lane source with no rotation held back — useful for a full-market baseline sweep rather than the weekly 4-source rotation. It's resumable, and every mode (bare, `linkedin`, `external`, `source <name>`, `super`) now reports **five-way sweep accounting** in its summary — sources attempted, completed, login-blocked, failed, and rotated-out — so a partial run is disclosed, never silently hidden.
+
+**Login handoff, not stored credentials.** The plugin reuses your existing Chrome session where one exists — it never stores, enters, or remembers a password. If a source needs sign-in, `/ultramode` skips it without stalling the run and tells you: sign in yourself in the open Chrome tab, then rerun `/ultramode source <name>` to sweep just that source once you're in.
+
+**Reports deliver through the harness file panel now** — no more `file://` navigation in Chrome, which was unreliable on some setups; the plugin falls back to your OS's default file opener if the harness delivery path isn't available. Every summary — weekly sweep, daily driver, everything — now carries a direct apply-at-source link per role, so you can act on a result without opening the HTML at all.
 
 ---
 

@@ -1,0 +1,450 @@
+{
+ "catalog_version": 1,
+ "default_scope": "eu-nl",
+ "identity_aliases": [],
+ "retired_identities": [],
+ "packs": [
+  {
+   "id": "benelux",
+   "priority": 1,
+   "scopes": [
+    "eu-nl",
+    "eu-broad"
+   ],
+   "countries": [
+    "NL",
+    "BE",
+    "LU"
+   ],
+   "sources": [
+    {
+     "name": "ZZPdock",
+     "url": "https://zzpdock.nl/",
+     "category": "aggregator",
+     "access_lane": "html",
+     "endpoint": "https://zzpdock.nl/zzp-opdrachten/it",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the IT category page; broker-deduplicated feed; filter client-side by lane keywords.",
+     "notes": "Aggregates freelance/ZZP assignments from 27 Dutch brokers in one deduplicated feed; free, no login; 242 live IT assignments with DevOps engineers among the most-requested profiles. Verified 3-0 by adversarial panel.",
+     "auth_required": false,
+     "evidence_url": "https://zzpdock.nl/zzp-opdrachten/it",
+     "evidence_checked_at": "2026-07-14T16:39:35Z"
+    },
+    {
+     "name": "Circle8",
+     "url": "https://www.circle8.nl/opdrachten",
+     "category": "freelance-marketplace",
+     "access_lane": "extension",
+     "endpoint": "",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "Browse the public assignments board in the browser (bot-checkpoint blocks plain HTTP); use the zelfstandig-professional filter.",
+     "notes": "Major Dutch broker; board is publicly browsable in a real browser (80 live assignments, zelfstandig-professional filter) but sessionless HTTP hits a Vercel bot checkpoint (429). Verified 3-0/2-0 by adversarial panel.",
+     "auth_required": false,
+     "evidence_url": "https://www.circle8.nl/opdrachten",
+     "evidence_checked_at": "2026-07-14T16:39:35Z"
+    },
+    {
+     "name": "Opdracht Overheid",
+     "url": "https://www.opdrachtoverheid.nl/",
+     "category": "aggregator",
+     "access_lane": "extension",
+     "endpoint": "",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "Browse the ICT filter in the browser; listings render client-side; detail pages carry rate and closing date.",
+     "notes": "Dutch aggregator of interim/freelance/zzp assignments at government bodies; sessionless view shows filters but listings render client-side \u2014 browser lane; research fetches saw rich public detail pages (rate, closing date).",
+     "auth_required": false,
+     "evidence_url": "https://www.opdrachtoverheid.nl/",
+     "evidence_checked_at": "2026-07-14T16:39:35Z"
+    },
+    {
+     "name": "ICTjob.be",
+     "url": "https://www.ictjob.be/",
+     "category": "national-board",
+     "access_lane": "extension",
+     "endpoint": "",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "Search IT jobs in the browser; sessionless requests time out.",
+     "notes": "Belgium's specialist IT job board, carrying freelance and contract IT roles; both sessionless probes timed out (tool-level block), so verification completes in the browser lane at rebuild.",
+     "auth_required": false,
+     "evidence_url": "https://www.ictjob.be/",
+     "evidence_checked_at": "2026-07-14T16:39:35Z"
+    },
+    {
+     "name": "Jobs.lu",
+     "url": "https://en.jobs.lu/",
+     "category": "national-board",
+     "access_lane": "html",
+     "endpoint": "https://en.jobs.lu/",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the board; browse the IT / Programming category; filter client-side.",
+     "notes": "Luxembourg national job board; listings and categories browsable without an account; applying needs a login, searching does not.",
+     "auth_required": false,
+     "evidence_url": "https://en.jobs.lu/",
+     "evidence_checked_at": "2026-07-14T16:39:35Z"
+    }
+   ]
+  },
+  {
+   "id": "nl-core",
+   "priority": 2,
+   "scopes": [
+    "eu-nl",
+    "eu-broad"
+   ],
+   "countries": [
+    "NL"
+   ],
+   "sources": [
+    {
+     "name": "Striive",
+     "url": "https://striive.com/nl",
+     "category": "freelance-marketplace",
+     "access_lane": "html",
+     "endpoint": "https://striive.com/nl",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the public assignments surface and filter Dutch IT and engineering contracts.",
+     "notes": "The public assignments page rendered with real Dutch listings and an IT Development category showing 188 open roles, with no login wall required for browsing.",
+     "auth_required": false,
+     "evidence_url": "https://striive.com/nl",
+     "evidence_checked_at": "2026-07-14T12:30:27Z"
+    },
+    {
+     "name": "DevITJobs Netherlands",
+     "url": "https://devitjobs.nl/",
+     "category": "national-board",
+     "access_lane": "html",
+     "endpoint": "https://devitjobs.nl/en/jobs/DevOps/all",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the public DevOps results and filter remote, city, and technology.",
+     "notes": "Sessionless HTTP GET was blocked with a 403 Forbidden on both the DevOps listings endpoint and the plain homepage, consistent with bot protection rather than an account requirement.",
+     "auth_required": false,
+     "evidence_url": "https://devitjobs.nl/en/jobs/DevOps/all",
+     "evidence_checked_at": "2026-07-14T12:30:27Z"
+    },
+    {
+     "name": "Nationale Vacaturebank",
+     "url": "https://www.nationalevacaturebank.nl/",
+     "category": "national-board",
+     "access_lane": "html",
+     "endpoint": "https://www.nationalevacaturebank.nl/vacatures/functie/devops-engineer",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the public occupation results and filter location, contract type, and freshness.",
+     "notes": "Both the DevOps search page and the bare homepage returned a hard WebFetch failure (\"unable to fetch\") with no HTML at all, so this is treated as a sessionless access wall pending browser-lane confirmation, since it is a long-established Dutch national board that plausibly still runs bot mitigation rather than being dead.",
+     "auth_required": false,
+     "evidence_url": "https://www.nationalevacaturebank.nl/vacatures/functie/devops-engineer",
+     "evidence_checked_at": "2026-07-14T12:33:28Z"
+    }
+   ]
+  },
+  {
+   "id": "eu-core",
+   "priority": 3,
+   "scopes": [
+    "eu-nl",
+    "eu-broad"
+   ],
+   "countries": [
+    "*"
+   ],
+   "sources": [
+    {
+     "name": "EU Remote Jobs",
+     "url": "https://euremotejobs.com/",
+     "category": "remote-board",
+     "access_lane": "html",
+     "endpoint": "https://euremotejobs.com/",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the public board and filter Europe or EMEA technical roles client-side.",
+     "notes": "Sessionless HTTP GET was blocked with a 403 Forbidden on the endpoint (already the plain homepage), consistent with bot protection rather than a login wall, so it moves to the browser lane.",
+     "auth_required": false,
+     "evidence_url": "https://euremotejobs.com/",
+     "evidence_checked_at": "2026-07-14T12:30:27Z"
+    },
+    {
+     "name": "Jobgether",
+     "url": "https://jobgether.com/",
+     "category": "aggregator",
+     "access_lane": "html",
+     "endpoint": "https://jobgether.com/",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the public search surface and filter Europe, remote type, contract, and occupation.",
+     "notes": "Sessionless HTTP GET returned 403 Forbidden on both attempts against the homepage, indicating bot protection, so the browser lane is needed to verify the previously observed Europe DevOps listings.",
+     "auth_required": false,
+     "evidence_url": "https://jobgether.com/",
+     "evidence_checked_at": "2026-07-14T12:30:27Z"
+    },
+    {
+     "name": "No Fluff Jobs",
+     "url": "https://nofluffjobs.com/",
+     "category": "national-board",
+     "access_lane": "html",
+     "endpoint": "https://nofluffjobs.com/",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the public board and filter DevOps, system administration, remote, and B2B roles.",
+     "notes": "WebFetch was unable to retrieve nofluffjobs.com on two attempts (a tool-level block rather than a normal HTTP response), so verification requires the browser lane.",
+     "auth_required": false,
+     "evidence_url": "https://nofluffjobs.com/",
+     "evidence_checked_at": "2026-07-14T12:30:27Z"
+    },
+    {
+     "name": "Wellfound Europe",
+     "url": "https://wellfound.com/location/europe",
+     "category": "aggregator",
+     "access_lane": "html",
+     "endpoint": "https://wellfound.com/location/europe",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the public Europe results and filter role, contract, and remote eligibility.",
+     "notes": "The Europe-specific endpoint 403'd and the plain-homepage fallback rendered only marketing copy and category navigation links with zero job titles, so this is effectively a gated/empty shell for sessionless access.",
+     "auth_required": false,
+     "evidence_url": "https://wellfound.com/",
+     "evidence_checked_at": "2026-07-14T12:30:27Z"
+    },
+    {
+     "name": "Remote in Europe",
+     "url": "https://remoteineurope.com/",
+     "category": "remote-board",
+     "access_lane": "html",
+     "endpoint": "https://remoteineurope.com/",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the public board and filter DevOps/SysAdmin and contract roles.",
+     "notes": "The homepage rendered fully with current DevOps and infrastructure listings and no login wall, confirming it as a directly admissible European remote board.",
+     "auth_required": false,
+     "evidence_url": "https://remoteineurope.com/",
+     "evidence_checked_at": "2026-07-14T12:30:27Z"
+    }
+   ]
+  },
+  {
+   "id": "eu-contract",
+   "priority": 4,
+   "scopes": [
+    "eu-nl",
+    "eu-broad"
+   ],
+   "countries": [
+    "*"
+   ],
+   "sources": [
+    {
+     "name": "JobServe",
+     "url": "https://www.jobserve.com/gb/en/Job-Search/",
+     "category": "aggregator",
+     "access_lane": "html",
+     "endpoint": "https://www.jobserve.com/gb/en/Job-Search/",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the public search and select IT, Contract, remote, rate, and freshness filters.",
+     "notes": "Two separate fetches of the search page and the homepage both came back with no server-rendered body at all, consistent with a JS-only shell or silent bot mitigation rather than a genuinely dead site, so it is routed to the browser lane rather than dropped.",
+     "auth_required": false,
+     "evidence_url": "https://www.jobserve.com/gb/en/Job-Search/",
+     "evidence_checked_at": "2026-07-14T12:33:28Z"
+    },
+    {
+     "name": "CWJobs Contract",
+     "url": "https://www.cwjobs.co.uk/jobs/contract",
+     "category": "national-board",
+     "access_lane": "html",
+     "endpoint": "https://www.cwjobs.co.uk/jobs/contract/devops",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the public contract results and filter occupation, rate, location, and remote.",
+     "notes": "The DevOps contract search timed out at 60 seconds and the bare homepage then timed out with ETIMEDOUT, which reads as connection-level bot mitigation on a well-known StepStone-owned UK board rather than the site being dead, so it is routed to the browser lane.",
+     "auth_required": false,
+     "evidence_url": "https://www.cwjobs.co.uk/jobs/contract/devops",
+     "evidence_checked_at": "2026-07-14T12:33:28Z"
+    },
+    {
+     "name": "Computer Futures Netherlands",
+     "url": "https://www.computerfutures.com/en-nl/find-a-job/all-jobs/",
+     "category": "aggregator",
+     "access_lane": "html",
+     "endpoint": "https://www.computerfutures.com/en-nl/find-a-job/all-jobs/",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the public Netherlands results and filter Cloud and DevOps contract roles.",
+     "notes": "Both the jobs listing URL and the plain homepage were rejected with HTTP 403, a clear bot-block on an active SThree-brand recruitment site rather than a login requirement, so it is routed to the browser lane.",
+     "auth_required": false,
+     "evidence_url": "https://www.computerfutures.com/en-nl/find-a-job/all-jobs/",
+     "evidence_checked_at": "2026-07-14T12:33:28Z"
+    },
+    {
+     "name": "Hays Netherlands",
+     "url": "https://www.hays.nl/en/job-search",
+     "category": "aggregator",
+     "access_lane": "html",
+     "endpoint": "https://www.hays.nl/en/job-search",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the public Netherlands search and filter technology, interim, ZZP, and location.",
+     "notes": "Both the job-search URL and the plain homepage were rejected with HTTP 403, a clear bot-block on a major, active recruitment firm rather than a login requirement, so it is routed to the browser lane.",
+     "auth_required": false,
+     "evidence_url": "https://www.hays.nl/en/job-search",
+     "evidence_checked_at": "2026-07-14T12:33:28Z"
+    },
+    {
+     "name": "RED Global",
+     "url": "https://www.redglobal.com/jobs/",
+     "category": "aggregator",
+     "access_lane": "html",
+     "endpoint": "https://www.redglobal.com/jobs/",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the public jobs page and filter Cloud and Infrastructure, Europe, remote, and contract.",
+     "notes": "This sessionless probe returned HTTP 200 with real server-rendered listings and no login or captcha wall, which contradicts the cited 2026-07-14 prior observation of an access wall; the jobs page skews heavily SAP/Business-Applications/Software-Development, with only one Cloud & Infrastructure listing and no DevOps, Linux, SRE, or Platform Engineering tagged roles, so lane relevance is weak.",
+     "auth_required": false,
+     "evidence_url": "https://www.redglobal.com/jobs/",
+     "evidence_checked_at": "2026-07-14T12:33:28Z"
+    }
+   ]
+  },
+  {
+   "id": "authenticated-marketplaces",
+   "priority": 5,
+   "scopes": [
+    "eu-broad"
+   ],
+   "countries": [
+    "*"
+   ],
+   "sources": [
+    {
+     "name": "Contra",
+     "url": "https://contra.com/opportunities",
+     "category": "freelance-marketplace",
+     "access_lane": "extension",
+     "endpoint": "",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "Open the official Opportunities surface in signed-in Chrome; the user owns all authentication.",
+     "notes": "The opportunities page is a client-rendered shell with no listings in the raw HTML, and its own product marketing confirms the full feed needs a signed-in account, so it is routed to the browser lane rather than dropped.",
+     "auth_required": true,
+     "evidence_url": "https://contra.com/opportunities",
+     "evidence_checked_at": "2026-07-14T12:33:28Z"
+    },
+    {
+     "name": "Upwork",
+     "url": "https://www.upwork.com/nx/find-work/",
+     "category": "freelance-marketplace",
+     "access_lane": "extension",
+     "endpoint": "",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "Open Find Work in signed-in Chrome and filter remote DevOps contracts; the user owns all authentication.",
+     "notes": "WebFetch received a 403 Forbidden on both the find-work URL and the plain homepage, consistent with bot-blocking on a well-established, real freelance marketplace; retains catalogued auth-required status and flips to the browser lane.",
+     "auth_required": true,
+     "evidence_url": "https://www.upwork.com/nx/find-work/",
+     "evidence_checked_at": "2026-07-14T12:35:35Z"
+    },
+    {
+     "name": "Freelancer",
+     "url": "https://www.freelancer.com/jobs/",
+     "category": "freelance-marketplace",
+     "access_lane": "extension",
+     "endpoint": "",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "Open the jobs surface in signed-in Chrome and filter DevOps projects; the user owns all authentication.",
+     "notes": "The public jobs and jobs/devops/ surfaces rendered real, current listings with budgets and bid counts sessionlessly with no login wall encountered; an account is only needed to bid, so the browse surface is admitted while auth_required stays true for participation.",
+     "auth_required": true,
+     "evidence_url": "https://www.freelancer.com/jobs/devops/",
+     "evidence_checked_at": "2026-07-14T12:35:35Z"
+    },
+    {
+     "name": "FlexJobs",
+     "url": "https://www.flexjobs.com/remote-jobs/computer-it",
+     "category": "aggregator",
+     "access_lane": "extension",
+     "endpoint": "",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "Open the member search in signed-in Chrome and filter EU-eligible DevOps roles; the user owns all authentication.",
+     "notes": "Three separate WebFetch attempts across the DevOps search URL and the plain homepage all timed out, consistent with anti-scraping protection on this well-known membership-paywalled aggregator; catalogued auth-required status is retained and it flips to the browser lane.",
+     "auth_required": true,
+     "evidence_url": "https://www.flexjobs.com/remote-jobs/devops",
+     "evidence_checked_at": "2026-07-14T12:35:35Z"
+    }
+   ]
+  },
+  {
+   "id": "eu-compatible-global",
+   "priority": 6,
+   "scopes": [
+    "eu-broad"
+   ],
+   "countries": [
+    "*"
+   ],
+   "sources": [
+    {
+     "name": "Remote.co Developer Jobs",
+     "url": "https://remote.co/remote-jobs/developer/",
+     "category": "remote-board",
+     "access_lane": "html",
+     "endpoint": "https://remote.co/remote-jobs/developer/",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the public developer board and retain only roles explicitly open in EU countries.",
+     "notes": "Two separate WebFetch attempts on the developer board and the homepage both timed out with no content returned, which reads as bot-blocking rather than a login wall on this well-established remote-jobs board, so it flips to the browser lane pending re-check.",
+     "auth_required": false,
+     "evidence_url": "https://remote.co/",
+     "evidence_checked_at": "2026-07-14T12:35:35Z"
+    },
+    {
+     "name": "Built In Remote",
+     "url": "https://builtin.com/jobs/remote",
+     "category": "aggregator",
+     "access_lane": "html",
+     "endpoint": "https://builtin.com/jobs/remote",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the public remote board and retain only roles tied to its EU country searches.",
+     "notes": "The site is real and reachable and the general remote board shows current listings, but the /dev-ops-engineering and /dev-ops-engineering/netherlands filter paths kept serving the same unfiltered generic sample rather than server-rendered DevOps results, implying client-side JS filtering is required, so it flips to the browser lane for accurate targeting.",
+     "auth_required": false,
+     "evidence_url": "https://builtin.com/jobs/remote/dev-ops-engineering",
+     "evidence_checked_at": "2026-07-14T12:35:35Z"
+    },
+    {
+     "name": "Working Nomads DevOps",
+     "url": "https://www.workingnomads.com/remote-devops-jobs",
+     "category": "aggregator",
+     "access_lane": "html",
+     "endpoint": "https://www.workingnomads.com/remote-devops-jobs",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the public DevOps board and filter Europe or an explicit EU country.",
+     "notes": "The page is real (correct title and nav for a DevOps jobs page and claims of 30K+ daily-updated remote jobs) but is an empty JS shell sessionlessly with zero listings server-rendered, so it flips to the browser lane.",
+     "auth_required": false,
+     "evidence_url": "https://www.workingnomads.com/remote-devops-jobs",
+     "evidence_checked_at": "2026-07-14T12:35:35Z"
+    },
+    {
+     "name": "Himalayas Netherlands",
+     "url": "https://himalayas.app/jobs/countries/netherlands",
+     "category": "remote-board",
+     "access_lane": "html",
+     "endpoint": "https://himalayas.app/jobs/countries/netherlands",
+     "needs_key": false,
+     "needs_slug": false,
+     "poll_method": "GET the public Netherlands results and filter occupation, engagement, and freshness.",
+     "notes": "The Netherlands country page itself is real and server-rendered (3,376 jobs claimed) but its current top-of-feed sample skewed to React Native, QA, and backend roles with no DevOps titles; the sibling role-filtered devops-engineer search on the same site confirmed a real, current, EU-based DevOps listing sessionlessly, so the board is admitted overall.",
+     "auth_required": false,
+     "evidence_url": "https://himalayas.app/jobs/devops-engineer",
+     "evidence_checked_at": "2026-07-14T12:35:35Z"
+    }
+   ]
+  }
+ ]
+}

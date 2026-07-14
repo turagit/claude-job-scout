@@ -1552,16 +1552,16 @@ Show the returned identity key. Absence from a future catalogue is NOT retiremen
 tombstone is; to undo, remove the key from `retired_identities` by hand and `/sources add` the URL.
 ```
 
-- [ ] **Step 5: Extend § rebuild with the catalogue stage.** Insert between the existing step 2 (dispatch `_source-discovery`) and step 3 (gates), as a new step:
+- [ ] **Step 5: Extend § rebuild with the catalogue stage.** Insert AFTER the § rebuild step-3 gated persist, as a new final step 4 (sequencing corrected in review: the merge needs the persisted registry to exist, and must never be overwritten by step 3's write):
 
 ```markdown
-2-bis. **Catalogue admission (Phase 16, D5).** After discovery returns, admit the packaged catalogue for this workspace's scope — candidate precedence is `user sources → EU/NL catalogue → lane seed → universal backbone → live discoveries`:
+4. **Catalogue admission (Phase 16, D5).** After discovery returns, admit the packaged catalogue for this workspace's scope — candidate precedence is `user sources → EU/NL catalogue → lane seed → universal backbone → live discoveries`:
    1. `scope=$(python3 $SCRIPTS/catalog.py config-read .job-scout/user-profile.json | jq -r .source_scope)`
    2. `python3 $SCRIPTS/catalog.py select <plugin>/skills/shared-references/source-catalogue.json --scope $scope` → the candidate list.
    3. **Probe every candidate live — packaged entries are hypotheses, never auto-admitted (never-fabricate):** api/rss/html lanes get a read-only `WebFetch` GET of `endpoint` (Gate B: postings visible); a recognised access/login wall flips the candidate to `access_lane: "extension"` with `endpoint: ""` and is RETAINED (verification completes in the logged-in sweep). A dead/parked candidate is dropped and recorded in the run notes with its probe evidence.
    4. Project each survivor: `python3 $SCRIPTS/project.py --candidate <one>.json --priority <next free> --verified-at <probe ISO8601>` (catalogue-only fields are stripped here; leaks are rejected again at merge).
    5. Merge atomically: `python3 $SCRIPTS/registry_lifecycle.py merge --registry .job-scout/sources.json --candidates <projected-array>.json --catalogue <plugin>/skills/shared-references/source-catalogue.json --expect-sha256 $(shasum -a 256 .job-scout/sources.json | cut -d' ' -f1)`. Exit 3 = the registry changed underneath — re-read and retry once. Report the printed counts verbatim (`retained/added/updated/tombstoned_skipped/total`).
-   Gate 2's count invariant now reads: `len(sources) == merge.total` as printed by `registry_lifecycle.py` — the script IS the count assertion; a mismatch inside it fails loudly before any write.
+   Gate 2 (step 3) governs the pre-catalogue write with its own formula, unchanged; after this merge the closing invariant is `len(sources) == merge.total` exactly as printed by `registry_lifecycle.py` — the script IS the count assertion, and a mismatch inside it fails loudly before any write. Retired identities stay out (tombstones); user sources and every step-3 entry are retained by construction.
 ```
 
 And in the § rebuild closing paragraph add: `Stamp ultramode.registry_built_at only after a gated write (unchanged) — the Phase 16 staleness nag reads it.`
@@ -1571,10 +1571,10 @@ And in the § rebuild closing paragraph add: `Stamp ultramode.registry_built_at 
 ```markdown
 ## The packaged catalogue (Phase 16)
 
-`shared-references/source-catalogue.json` ships versioned, evidence-stamped candidate packs for the EU/NL/BENELUX market (`catalog_version` 1; provenance: `docs/superpowers/specs/2026-07-14-phase-16-source-catalogue-research.json`). Packs: `eu-core`, `nl-core`, `benelux`, `eu-contract` (scopes `eu-nl` + `eu-broad`); `authenticated-marketplaces`, `eu-compatible-global` (`eu-broad` only — global marketplaces are a deliberate opt-in). Candidates are **selection hypotheses**: admission happens only in `/sources rebuild` after a live probe (`sources/SKILL.md` § rebuild 2-bis), and the four catalogue-only fields (`lane_tags`, `auth_required`, `evidence_url`, `evidence_checked_at`) never reach `sources.json`. Entries admitted from the `benelux`/`nl-core` packs carry `pack` provenance and get rotation + poll-order priority (D4): the BENELUX broker/board lane is this user population's highest-value hunting ground after LinkedIn. Retirement is tombstone-only (`/sources retire`); a candidate's absence from a later catalogue version never removes a live source.
+`shared-references/source-catalogue.json` ships versioned, evidence-stamped candidate packs for the EU/NL/BENELUX market (`catalog_version` 1; provenance: `docs/superpowers/specs/2026-07-14-phase-16-source-catalogue-research.json`). Packs: `eu-core`, `nl-core`, `benelux`, `eu-contract` (scopes `eu-nl` + `eu-broad`); `authenticated-marketplaces`, `eu-compatible-global` (`eu-broad` only — global marketplaces are a deliberate opt-in). Candidates are **selection hypotheses**: admission happens only in `/sources rebuild` after a live probe (`sources/SKILL.md` § rebuild step 4, Catalogue admission), and the four catalogue-only fields (`lane_tags`, `auth_required`, `evidence_url`, `evidence_checked_at`) never reach `sources.json`. Entries admitted from the `benelux`/`nl-core` packs carry `pack` provenance and get rotation + poll-order priority (D4): the BENELUX broker/board lane is this user population's highest-value hunting ground after LinkedIn. Retirement is tombstone-only (`/sources retire`); a candidate's absence from a later catalogue version never removes a live source.
 ```
 
-- [ ] **Step 7: Verify + commit.** Verification is manual (prose): `grep -n "scope\|retire\|2-bis\|catalog.py\|registry_lifecycle" skills/sources/SKILL.md` shows every new hook; `bash skills/_ultra-engine/tests/run.sh` still `ALL PASS` (no script changes).
+- [ ] **Step 7: Verify + commit.** Verification is manual (prose): `grep -n "scope\|retire\|Catalogue admission\|catalog.py\|registry_lifecycle" skills/sources/SKILL.md` shows every new hook; `bash skills/_ultra-engine/tests/run.sh` still `ALL PASS` (no script changes).
 
 ```bash
 git add skills/sources/SKILL.md skills/shared-references/ultramode-sources.md

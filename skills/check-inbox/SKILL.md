@@ -71,11 +71,11 @@ Construct a `data` payload as in `../shared-references/render-orchestration.md` 
 Follow `../shared-references/render-orchestration.md` end-to-end (Step G already ran in Step 0):
 
 1. Step A — payload built in Step 5 above.
-2. Steps B–F — read render config, dispatch `_visualizer`, open in Chrome (or fall back), handle errors.
+2. Steps B–F — read render config, dispatch `_visualizer`, deliver the report (or fall back), handle errors.
 3. Step E — print the summary line:
 
 ```
-✓ {{N}} threads — {{unread}} unread — opened report in Chrome
+✓ {{N}} threads — {{unread}} unread — report delivered
 ```
 
 Fall back to pre-v0.7.0 inline output if `Agent` tool is unavailable.

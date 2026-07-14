@@ -148,12 +148,14 @@ This is a time-series view — each invocation writes a new file. Lifecycle Step
 Then follow `../shared-references/render-orchestration.md` end-to-end (Step G already ran in Step 0):
 
 1. Step A — payload built above.
-2. Steps B–F — read render config, dispatch `_visualizer`, open in Chrome (or fall back), handle errors.
+2. Steps B–F — read render config, dispatch `_visualizer`, deliver the report (or fall back), handle errors.
 3. Step E — print the summary line:
 
 ```
-✓ Prep dossier for {{role}} at {{company}} — opened report in Chrome
+✓ Prep dossier for {{role}} at {{company}} — report delivered
 ```
+
+Include the role's canonical job URL on the summary line.
 
 (Or `…rendered as markdown above` when falling back.) If the `Agent` tool is unavailable, fall back to the pre-v0.7.0 markdown packet written in Step 4.
 

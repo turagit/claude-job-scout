@@ -143,8 +143,8 @@ Merge newly scored jobs into `.job-scout/tracker.json` with status `"seen"`.
 Follow `../shared-references/render-orchestration.md` end-to-end (Step G already ran in Step 0):
 
 1. Step A — payload built in Step 5 above.
-2. Steps B–F — read render config, dispatch `_visualizer`, open in Chrome (or fall back), handle errors.
-3. Step E — print the `job-search` summary line: `✓ {{N_queries}} queries ({{N_skill}} skill, {{N_synonym}} synonym) — {{N_results}} surfaced, {{reposts}} reposts skipped — A:{{a}} B:{{b}} · Filtered:{{gated}} — opened report in Chrome` (or `…rendered as markdown above` when falling back). If any queries were retired this run, add one line: `Retired {{n}} dead quer{{y|ies}} from the plan (3 consecutive runs with nothing new).`
+2. Steps B–F — read render config, dispatch `_visualizer`, deliver the report (or fall back), handle errors.
+3. Step E — print the `job-search` summary line: `✓ {{N_queries}} queries ({{N_skill}} skill, {{N_synonym}} synonym) — {{N_results}} surfaced, {{reposts}} reposts skipped — A:{{a}} B:{{b}} · Filtered:{{gated}} — report delivered` (or `…rendered as markdown above` when falling back). If any queries were retired this run, add one line: `Retired {{n}} dead quer{{y|ies}} from the plan (3 consecutive runs with nothing new).` Then, per render-orchestration.md § Step E, one line per surfaced A/B/C role: `{{tier}} · {{title}} — {{company}} → {{canonical url}}` — the direct links are mandatory in every render mode.
 
 If the `Agent` tool is unavailable, fall back to a terminal markdown table: tier, title, company, location, posted date, matched query; dimension breakdowns for A-tier.
 

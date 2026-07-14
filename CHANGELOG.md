@@ -4,6 +4,24 @@ All notable changes to the LinkedIn Job Hunter plugin are documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] — 2026-07-14
+
+### Added
+- **Packaged EU/NL/BENELUX source catalogue** — a re-derived, evidence-stamped set of source candidates grouped into priority packs (BENELUX first), replacing ad-hoc discovery-only seeding for the EU/NL lane.
+- **`/sources scope`** — show and set the catalogue scope (`eu-nl` default; `eu-broad` opts in global marketplaces and remote boards), offering a rebuild when changed.
+- **`/sources retire <name>`** — permanent tombstone; a future catalogue or rebuild never re-admits a retired source.
+- **`auth_state` in `sources.json`** (schema v2, auto-migrated on load) — tracks per-source `public`/`auth-required`/`signed-in`/`session-expired` observations, updated as sweeps succeed or hit login walls.
+- **`/ultramode super`** — the exhaustive scope: LinkedIn plus every external source plus every extension-lane source, no rotation held back. Resumable.
+- **Five-way sweep accounting** (attempted/completed/login-blocked/failed/rotated-out) in every `/ultramode` mode's summary — a partial run is always disclosed, never silently hidden.
+- **Per-role direct links in every summary** — every mode's terminal summary now lists a direct apply-at-source link per A/B/C-tier role, so results are actionable without opening the HTML report.
+
+### Changed
+- **Report delivery now goes through the harness file panel**, replacing the `file://` Chrome navigation (unreliable on some setups), with a fallback to your OS's default file opener.
+- **BENELUX-weighted extension-lane rotation** — the rotation pick and poll order now favour BENELUX sources first, on top of the existing staleness ordering.
+
+### Fixed
+- **Scorecard no longer silently defaults to zeros** when stage artifacts are missing — a missing artifact now surfaces as an explicit disclosure line instead of a quiet zero count.
+
 ## [0.15.0] — 2026-07-03
 
 ### Changed
