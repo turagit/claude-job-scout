@@ -66,6 +66,13 @@ class TestValidate(unittest.TestCase):
         self.assertEqual(2, r.returncode)
         self.assertIn("verified_at", r.stderr)
 
+    def test_invalid_default_scope_rejected(self):
+        cat = json.load(open(FIXTURE))
+        cat["default_scope"] = "global"
+        r = run("validate", tmp_json(cat))
+        self.assertEqual(2, r.returncode)
+        self.assertIn("default_scope", r.stderr)
+
 
 class TestSelect(unittest.TestCase):
     def test_eu_nl_excludes_broad_only_packs(self):

@@ -29,7 +29,7 @@ def validate(cat):
     if not isinstance(cat.get("catalog_version"), int) or cat["catalog_version"] < 1:
         errs.append("catalog_version must be an int >= 1")
     if cat.get("default_scope") not in SCOPES:
-        errs.append("default_scope must be one of %s" % SCOPES)
+        errs.append("default_scope must be one of %s" % (SCOPES,))
     for k in ("identity_aliases", "retired_identities", "packs"):
         if not isinstance(cat.get(k), list):
             errs.append("%s must be a list" % k)
