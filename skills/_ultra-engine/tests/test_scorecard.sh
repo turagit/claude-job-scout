@@ -28,4 +28,29 @@ bash "$SC" "$rd2" "$tmp_tracker" "2026-06-01" > /dev/null
 assert_eq "1" "$(jq '.gating.by_kind.unknown' "$rd2/scorecard.json")" "null kind folds to unknown"
 assert_eq "1" "$(jq '.gating.by_kind["legacy-string-reason"]' "$rd2/scorecard.json")" "string violation counts under its own label"
 rm -f "$tmp_tracker"
+
+# Phase 16: five-way accounting + missing-artifact disclosures
+rd2=$(mktemp -d)
+cat > "$rd2/sweep-ok.json" <<'EOF'
+{"status":"ok","counts":{"scanned":10,"matched":3,"dropped_explicit_violation":1,"returned":2,"capped":false},"deltas":[],"errors":[],"continuation_cursor":null}
+EOF
+cat > "$rd2/sweep-blocked.json" <<'EOF'
+{"status":"ok","counts":{"scanned":0,"matched":0,"dropped_explicit_violation":0,"returned":0,"capped":false},"deltas":[],"errors":[{"code":"login_required","message":"Malt needs sign-in — sign in in the open Chrome tab, then run /ultramode source Malt"}],"continuation_cursor":null}
+EOF
+cat > "$rd2/sweep-dead.json" <<'EOF'
+{"status":"ok","counts":{"scanned":0,"matched":0,"dropped_explicit_violation":0,"returned":0,"capped":false},"deltas":[],"errors":[{"code":"sweep_failed","message":"layout dead"}],"continuation_cursor":null}
+EOF
+echo '{"picked":["Malt"],"rotated_out":["Toptal","YunoJuno"],"mode":"super"}' > "$rd2/rotation.json"
+echo '{"jobs":{}}' > "$rd2/tracker-empty.json"
+out2=$(bash "$SC" "$rd2" "$rd2/tracker-empty.json" 2026-07-14)
+assert_eq "super" "$(printf '%s' "$out2" | jq -r .accounting.mode)" "mode from rotation.json"
+assert_eq "3" "$(printf '%s' "$out2" | jq -r .accounting.attempted)" "attempted counts envelopes"
+assert_eq "1" "$(printf '%s' "$out2" | jq -r .accounting.completed)" "completed excludes blocked+failed"
+assert_eq "1" "$(printf '%s' "$out2" | jq -r .accounting.login_blocked)" "login_required counted"
+assert_eq "1" "$(printf '%s' "$out2" | jq -r .accounting.failed)" "failure counted"
+assert_eq "2" "$(printf '%s' "$out2" | jq -r .accounting.rotated_out)" "rotated_out from rotation.json"
+assert_eq "1" "$(printf '%s' "$out2" | jq '[.disclosures[]|select(test("jd-fetch.json artifact missing"))]|length')" "missing jd-fetch disclosed"
+assert_eq "1" "$(printf '%s' "$out2" | jq '[.disclosures[]|select(test("merge.json artifact missing"))]|length')" "missing merge disclosed"
+rm -rf "$rd2"
+
 finish

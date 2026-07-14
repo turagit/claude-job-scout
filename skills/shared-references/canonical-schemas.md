@@ -397,6 +397,7 @@ Both caches are **regenerable and deletable** — they hold no source-of-truth s
 | `ats_unresolved` | sweep | an ATS company's slug did not resolve keylessly; queue an extension-lane sweep. |
 | `extension_lane_deferred` | sweep | the source is `extension`-lane; the dispatcher runs it on the main thread. |
 | `lane_unconfirmed` | discovery | a user-supplied source could not be reached to classify; retained with a note, not dropped. |
+| `login_required` | sweep | an extension-lane source needs the user to sign in in Chrome. The envelope is a valid zero-count return (`scanned: 0`, `returned: 0`), never a fabrication; the message names the source and the rerun command (`/ultramode source <name>`). The dispatcher records the observation via `auth_state.sh set <name> <auth-required|session-expired> <now>`. |
 
 An empty or below-threshold confirmed-set **MUST** populate `errors[]` (enumerating every dry lane by name, plus round and probe-attempt counts). A `status: "ok"` with an empty `sources[]` and an empty `errors[]` is itself a defect signal.
 
