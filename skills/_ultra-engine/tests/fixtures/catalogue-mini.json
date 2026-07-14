@@ -1,0 +1,50 @@
+{
+  "catalog_version": 1,
+  "default_scope": "eu-nl",
+  "identity_aliases": [],
+  "retired_identities": ["deadboard.example|remote-board"],
+  "packs": [
+    {
+      "id": "eu-core", "priority": 1, "scopes": ["eu-nl", "eu-broad"], "countries": ["*"],
+      "sources": [
+        {
+          "name": "EU Remote Jobs", "url": "https://euremotejobs.com/", "category": "remote-board",
+          "access_lane": "html", "endpoint": "https://euremotejobs.com/",
+          "needs_key": false, "needs_slug": false,
+          "poll_method": "GET the public board; filter EU/EMEA technical roles client-side.",
+          "notes": "EU-time-zone board.",
+          "auth_required": false,
+          "evidence_url": "https://euremotejobs.com/", "evidence_checked_at": "2026-07-14T09:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "benelux", "priority": 2, "scopes": ["eu-nl", "eu-broad"], "countries": ["NL", "BE", "LU"],
+      "sources": [
+        {
+          "name": "Jobs.lu", "url": "https://www.jobs.lu/", "category": "national-board",
+          "access_lane": "html", "endpoint": "https://www.jobs.lu/en/it-jobs",
+          "needs_key": false, "needs_slug": false,
+          "poll_method": "GET the IT listing pages; filter client-side.",
+          "notes": "Luxembourg national board.",
+          "auth_required": false,
+          "evidence_url": "https://www.jobs.lu/", "evidence_checked_at": "2026-07-14T09:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "authenticated-marketplaces", "priority": 3, "scopes": ["eu-broad"], "countries": ["*"],
+      "sources": [
+        {
+          "name": "Upwork", "url": "https://www.upwork.com/", "category": "freelance-marketplace",
+          "access_lane": "extension", "endpoint": "",
+          "needs_key": false, "needs_slug": false,
+          "poll_method": "extension browse of saved searches (logged in).",
+          "notes": "Global marketplace; login required to search.",
+          "auth_required": true,
+          "evidence_url": "https://www.upwork.com/", "evidence_checked_at": "2026-07-14T09:00:00Z"
+        }
+      ]
+    }
+  ]
+}

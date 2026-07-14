@@ -24,6 +24,7 @@ Resolve `SCRIPTS` as this skill's own `scripts/` directory (e.g. `skills/_ultra-
 | payload | `bash $SCRIPTS/payload.sh $WS/tracker.json <run-dir> <today> <n-sources>` | The ultramode render payload: ordering, near-miss rail, scorecard embed. |
 | profile_hash | `bash $SCRIPTS/profile_hash.sh <user-profile.json>` | Canonical 16-hex hash of the scoring-relevant profile subset; every writer that edits titles/clusters/keywords/requirements/dimensions MUST recompute it (D11 cache invalidation). |
 | identity | `python3 $SCRIPTS/lib/identity.py normalise <url>` / `key <url> <category>` | THE host-identity normalisation (`domain\|category`); catalogue/lifecycle scripts import it — never re-derive. |
+| catalog | `python3 $SCRIPTS/catalog.py validate <catalogue>` / `select <catalogue> --scope <eu-nl\|eu-broad>` / `config-read $WS/user-profile.json` | Packaged-catalogue schema validation; deterministic scope selection (candidates annotated with `pack`); effective scope/refresh config with defaults, read-only (D7). |
 
 Single-entry tracker field updates (a score landing, a bend) use the atomic jq recipe in `../shared-references/state-validators.md`; multi-entry writes go through `merge_tracker.py` only.
 
