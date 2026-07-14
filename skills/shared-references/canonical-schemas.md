@@ -287,11 +287,13 @@ The tracker file `schema_version` is **NOT** bumped for these additions (it stay
 
 ```json
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "base_country": "string|null — copied from user-profile requirements.base_country at build time",
   "target_geography": "string|array|null — copied from requirements.target_geography at build time",
   "priority_order": ["string — source names in the order the engine should poll them"],
   "backbone": ["string — names of the always-on universal aggregator backbone sources"],
+  "identity_aliases": ["array — [{from, to}] identity-key redirects ('domain|category' strings) for domain/category migrations; default []"],
+  "retired_identities": ["array — identity keys ('domain|category') intentionally retired via /sources retire; a retired identity is never re-admitted by a rebuild. Absence from a catalogue is NOT retirement — only a tombstone here is (Phase 16)."],
   "sources": [
     {
       "name": "string — human-readable source name",
@@ -304,11 +306,16 @@ The tracker file `schema_version` is **NOT** bumped for these additions (it stay
       "priority": "number — lower polls first",
       "poll_method": "string — short note on how to poll (e.g. 'GET endpoint, paginate', 'fetch RSS', 'extension browse')",
       "notes": "string — free-text caveats, rate limits, coverage notes",
-      "verified_at": "ISO8601|null — when this source was last verified reachable. NON-NULL is the admission proof: every entry — discovered, user-supplied, OR resolved from a curated lane seed — carries a probe-time timestamp. For `api`/`rss`/`html` lanes it attests a live job-bearing probe (Gate B saw postings); for an `extension`-lane entry it attests a recognised, reachable login-wall on a corroborated-real source (job presence is confirmed at the logged-in sweep, not at discovery). A null/absent verified_at means the entry should not be in `sources[]` (the never-fabricate invariant; see `ultramode-sources.md` § Curated lane seed)."
+      "verified_at": "ISO8601|null — when this source was last verified reachable. NON-NULL is the admission proof: every entry — discovered, user-supplied, OR resolved from a curated lane seed — carries a probe-time timestamp. For `api`/`rss`/`html` lanes it attests a live job-bearing probe (Gate B saw postings); for an `extension`-lane entry it attests a recognised, reachable login-wall on a corroborated-real source (job presence is confirmed at the logged-in sweep, not at discovery). A null/absent verified_at means the entry should not be in `sources[]` (the never-fabricate invariant; see `ultramode-sources.md` § Curated lane seed).",
+      "auth_state": "public | auth-required | signed-in | session-expired — non-secret session observation (Phase 16). NEVER a credential store; sign-in lives in the user's Chrome profile. Written from observed sweep outcomes only.",
+      "auth_state_observed_at": "ISO8601 — when auth_state was last observed. Omitted until the first observation; never null.",
+      "pack": "string — provenance: the catalogue pack that admitted this entry (e.g. 'benelux', 'nl-core'). Omitted for non-catalogue sources. Packs 'benelux' and 'nl-core' get rotation/poll priority (Phase 16 D4)."
     }
   ]
 }
 ```
+
+**Phase 16 (schema_version 2):** migration is `python3 $SCRIPTS/migrate_sources.py $WS/sources.json` — run by `/sources` and `/ultramode` on load whenever `schema_version < 2` (idempotent; defaults `auth_state` from category/notes heuristics). The four catalogue-only candidate fields (`lane_tags`, `auth_required`, `evidence_url`, `evidence_checked_at`) must never appear in this file; `registry_lifecycle.py` rejects them at merge time.
 
 A worked example with four real sources lives in `sources-schema-example.json` alongside this reference. The registry's `sources[]` length MUST equal `len(backbone bodies) + len(discovered fragment.sources) + len(retained user_sources)` (+1 for the ensured LinkedIn entry) — the dispatcher asserts this before the atomic write (`sources/SKILL.md` § rebuild) so a silently-dropped or silently-empty discovery fragment cannot pass as a complete registry.
 

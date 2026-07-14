@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "base_country": "Netherlands",
+  "target_geography": ["Netherlands", "remote-EU"],
+  "priority_order": ["Malt", "RemoteOK"],
+  "backbone": ["Adzuna"],
+  "sources": [
+    {"name": "LinkedIn", "url": "https://www.linkedin.com", "category": "linkedin",
+     "access_lane": "extension", "endpoint": "", "needs_key": false, "needs_slug": false,
+     "priority": 1, "poll_method": "adapter", "notes": "The richest surface.",
+     "verified_at": "2026-07-01T00:00:00Z"},
+    {"name": "Malt", "url": "https://www.malt.nl", "category": "freelance-marketplace",
+     "access_lane": "extension", "endpoint": "", "needs_key": false, "needs_slug": false,
+     "priority": 2, "poll_method": "extension browse", "notes": "Login required to search projects.",
+     "verified_at": "2026-07-01T00:00:00Z", "last_swept_at": "2026-07-01"},
+    {"name": "RemoteOK", "url": "https://remoteok.com", "category": "remote-board",
+     "access_lane": "api", "endpoint": "https://remoteok.com/api", "needs_key": false,
+     "needs_slug": false, "priority": 3, "poll_method": "GET the JSON feed",
+     "notes": "Whole-board remote feed.", "verified_at": "2026-07-01T00:00:00Z"}
+  ]
+}

@@ -17,6 +17,8 @@ Resolve `SCRIPTS` as this skill's own `scripts/` directory (e.g. `skills/_ultra-
 | namespace_id | `bash $SCRIPTS/namespace_id.sh <provider> <board> <ext-id>` (or `--from-url <provider> <board> <url>`) | Collision-proof external ids; slugs `[a-z0-9-]`. |
 | validate_delta | `python3 $SCRIPTS/validate_delta.py --ws $WS <delta.json>` | Rejects prose sources, malformed ids, undisclosed caps, missing JD blobs. Run on EVERY sweep return before merge. |
 | merge_tracker | `python3 $SCRIPTS/merge_tracker.py --ws $WS --tracker $WS/tracker.json --today <YYYY-MM-DD> <delta...>` | Serial merge, canonical selection + `also_seen_on`, URL upgrade, atomic write. All-or-nothing: any invalid delta aborts untouched. |
+| migrate_sources | `python3 $SCRIPTS/migrate_sources.py $WS/sources.json` | sources.json v1→v2 (auth_state + lifecycle lists), idempotent, atomic. Orchestrators run it on load when `schema_version < 2`. |
+| auth_state | `bash $SCRIPTS/auth_state.sh set $WS/sources.json <name> <state> <ISO>` / `get <name>` | Observed auth-state transitions (`public\|auth-required\|signed-in\|session-expired`) + timestamp; never inferred, never secret-bearing. |
 | rotation | `bash $SCRIPTS/rotation.sh pick <sources.json> 4` / `mark <sources.json> <name> <date>` | Staleness-ordered extension-lane rotation (D8). |
 | jd_queue | `bash $SCRIPTS/jd_queue.sh push|pop|count $WS/cache/jd-queue.json ...` | Deferred JD-fetch queue; budget default 75 (D9). |
 | checkpoint | `bash $SCRIPTS/checkpoint.sh init|save|stage|find-incomplete ...` | Run-dir stage manifest under `$WS/cache/run/<id>/`; `find-incomplete` powers resume (D7). |
