@@ -53,4 +53,20 @@ assert_eq "1" "$(printf '%s' "$out2" | jq '[.disclosures[]|select(test("jd-fetch
 assert_eq "1" "$(printf '%s' "$out2" | jq '[.disclosures[]|select(test("merge.json artifact missing"))]|length')" "missing merge disclosed"
 rm -rf "$rd2"
 
+# Phase 16 final-review: similar-jobs expansion excluded from five-way counters
+rd3=$(mktemp -d)
+cat > "$rd3/sweep-linkedin.json" <<'EOF'
+{"status":"ok","counts":{"scanned":5,"matched":3,"dropped_explicit_violation":0,"returned":2,"capped":false},"deltas":[],"errors":[],"continuation_cursor":null}
+EOF
+cat > "$rd3/sweep-linkedin-similar.json" <<'EOF'
+{"status":"ok","counts":{"scanned":3,"matched":1,"dropped_explicit_violation":0,"returned":1,"capped":false},"deltas":[],"errors":[],"continuation_cursor":null}
+EOF
+echo '{"picked":[],"rotated_out":[],"mode":"bare"}' > "$rd3/rotation.json"
+echo '{"jobs":{}}' > "$rd3/tracker-empty.json"
+out3=$(bash "$SC" "$rd3" "$rd3/tracker-empty.json" 2026-07-14)
+assert_eq "1" "$(printf '%s' "$out3" | jq -r .accounting.attempted)" "similar-jobs sweep excluded from attempted"
+assert_eq "1" "$(printf '%s' "$out3" | jq -r .accounting.completed)" "similar-jobs sweep excluded from completed"
+assert_eq "true" "$(printf '%s' "$out3" | jq '.sources | has("linkedin-similar")')" "similar-jobs still present in sources breakdown"
+rm -rf "$rd3"
+
 finish

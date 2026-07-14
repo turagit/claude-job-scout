@@ -30,7 +30,7 @@ jq -n --arg today "$today" --argjson sweeps "$sweeps" --argjson merge "$merge" \
               url_upgrades: ($merge.url_upgrades // 0), skipped_known: ($merge.skipped_known // 0)},
      jd_fetch: $jdf, rotation: $rot,
      accounting:
-       ( [ $sweeps[] ] as $sw
+       ( ([ $sweeps[] | select(.key != "linkedin-similar") ]) as $sw
        | ([ $sw[] | select(.value.codes | index("login_required")) ] | length) as $blocked
        | ([ $sw[] | select((.value.codes | length) > 0
                            and (.value.codes | index("login_required") | not)

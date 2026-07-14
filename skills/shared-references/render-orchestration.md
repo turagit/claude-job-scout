@@ -187,7 +187,7 @@ A 2–3 line summary printed even when HTML rendering succeeds. Format depends o
 | `funnel-report` | `✓ Pipeline snapshot for week of {{date}} — report delivered` |
 | `check-inbox` | `✓ {{N}} threads — {{unread}} unread — report delivered` |
 | `interview-prep` | `✓ Prep dossier for {{role}} at {{company}} — report delivered` |
-| `ultramode` | `✓ Ultramode — {{N_sources}} sources · {{N_new}} new jobs — A:{{a}} B:{{b}} C:{{c}} · Filtered:{{gated}} — report delivered` |
+| `ultramode` | `✓ Ultramode — {{N_sources}} sources · {{N_new}} new roles — A:{{a}} B:{{b}} C:{{c}} · Filtered:{{gated}} — report delivered` |
 
 When falling back to markdown, replace the trailing clause with `— rendered above`.
 

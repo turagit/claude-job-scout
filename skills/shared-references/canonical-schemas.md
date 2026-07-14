@@ -398,6 +398,8 @@ Both caches are **regenerable and deletable** — they hold no source-of-truth s
 | `extension_lane_deferred` | sweep | the source is `extension`-lane; the dispatcher runs it on the main thread. |
 | `lane_unconfirmed` | discovery | a user-supplied source could not be reached to classify; retained with a note, not dropped. |
 | `login_required` | sweep | an extension-lane source needs the user to sign in in Chrome. The envelope is a valid zero-count return (`scanned: 0`, `returned: 0`), never a fabrication; the message names the source and the rerun command (`/ultramode source <name>`). The dispatcher records the observation via `auth_state.sh set <name> <auth-required|session-expired> <now>`. |
+| `sweep_failed` | sweep | a source failed validation twice, or could not be swept at all. The envelope is a zero-count return (`scanned: 0`, `returned: 0`); the message carries the detail. |
+| `no_api_key` | sweep | a `needs_key` source was skipped because no API key is configured. The message names the provider (e.g. `Skipped <provider> (no API key)`). |
 
 An empty or below-threshold confirmed-set **MUST** populate `errors[]` (enumerating every dry lane by name, plus round and probe-attempt counts). A `status: "ok"` with an empty `sources[]` and an empty `errors[]` is itself a defect signal.
 
