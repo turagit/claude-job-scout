@@ -360,6 +360,23 @@ A **persistent** alias dictionary that maps a canonical term to the surface form
 
 Both caches are **regenerable and deletable** — they hold no source-of-truth state. The capability graph rebuilds from the CV; the jargon normaliser rebuilds (more slowly) from observed JD and CV vocabulary. Their absence is a cache miss, never an error.
 
+## `alerts.json` (alert ledger — Phase 17)
+
+```json
+{ "schema_version": 1,
+  "alerts": { "<alert_key>": { "keywords": "string", "geo_id": "string", "since_epoch": 1788218797, "since": "ISO8601",
+    "params": "string — the alert link's query string minus currentJobId/originToLandingJobPostings",
+    "first_seen": "YYYY-MM-DD", "status": "partial | complete", "last_page": 0,
+    "stop_reason": "divider | drift | valve | no_next | null",
+    "cards_seen": 0, "before_divider": 0, "known": 0, "reposts": 0, "new": 0, "run_id": "string" } } }
+```
+
+`alert_key = sha1("<keywords>|<geo_id>|<since_epoch>")[:16]`. Written only by `_ultra-engine/scripts/alerts_ledger.py`. Records older than 30 days are pruned on every run.
+
+**Tracker additions (Phase 17, additive, no bump):** `matched_query` (the alert keywords that surfaced the role), `alert_key`. The daily driver writes the structured `source` (`board ∈ Job Alert | Top Picks | Saved | Similar`).
+
+**`config.json` additions:** `jd_budget_per_run` (integer, default 150) — the per-run cap on job-description reads; overflow is queued to `cache/jd-queue.json`.
+
 ## Canonical enums (single source of truth)
 
 | Field | Allowed values |

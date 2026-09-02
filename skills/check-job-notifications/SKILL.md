@@ -1,256 +1,154 @@
 ---
 name: check-job-notifications
-description: Check LinkedIn notifications for new job alerts, analyse matches against CV and requirements, and report best opportunities
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+description: Walk every LinkedIn job alert to its real end, plus Top Picks and Saved, dedupe against the tracker, read only new descriptions, gate and score them, and deliver the report and phone digest — unattended
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Agent
 disable-model-invocation: true
+version: 1.0.0
 ---
 
-Check LinkedIn job alert notifications, analyse each opportunity against the user's CV and requirements, and produce a prioritised report of the best matches — saved for future `/apply` use.
+The daily driver. Every mechanical step is one engine script call with a fixed contract; you sequence them, drive the browser, and make exactly two judgement calls (the drift check when a script asks, and nothing else — gating and scoring run in pinned subagents). Never improvise a step, a selector, a cap, or a prompt. Nothing here waits on a human; this runs unattended.
 
-All filtering comes from the user's declared `requirements` and `deal_breakers[]` (set at `/analyze-cv` discovery) and is enforced uniformly by `_gate-engine`. This command carries no built-in defaults of its own.
-
-## Browser policy (read first)
-
-All browser work in this command uses **the Claude Chrome extension exclusively**. Never request computer use. Never suggest Playwright, Selenium, or any other automation framework. See `shared-references/browser-policy.md` for the full policy. If the Chrome extension is not available in the current session, stop and report it — do not escalate to any other mechanism.
-
-## Step 0: Bootstrap workspace
-
-Follow `shared-references/workspace-layout.md` to ensure `.job-scout/` exists in the current workspace. All paths below are inside `.job-scout/`. Then follow `shared-references/render-orchestration.md` Step G (lifecycle cleanup) to archive expired report files and prune old archives — cheap directory scan; runs at the start of every Tier 1 command.
-
-## Step 0a: Daily-driver context line
-
-Read `.job-scout/tracker.json`. Compute and display a one-line situational summary as the first user-visible output:
-
-**If `tracker.stats.last_run` is set (prior runs exist):**
+## Constants
 
 ```
-📊 Last run [N] days ago. Tracker: [seen] seen, [A-tier] A-tier, [applied] applied.
-   New since last run: [M] alerts.
+PLUGIN   = this plugin's root (the directory containing skills/ and agents/)
+SCRIPTS  = $PLUGIN/skills/_ultra-engine/scripts
+WS       = <workspace>/.job-scout            (absolute)
+TODAY    = date +%F ;  RUN_ID = date +%F-%H%M
+BUDGET   = jq -r '.jd_budget_per_run // 150' $WS/config.json
+VALVE    = 10 ;  FP_DAYS = 45
 ```
 
-Where:
-- `[N]` = days between today and `tracker.stats.last_run`.
-- `[seen]` = count of tracker entries with `status: "seen"`.
-- `[A-tier]` = count of tracker entries with `tier: "A"`.
-- `[applied]` = `tracker.stats.applied`.
-- `[M]` = best-effort count of new alerts on the notifications page since `last_run`. If this can't be computed cheaply at this point, omit the second line.
+## Browser adapter (D2) — built-in pane first, Chrome extension fallback
 
-**If `tracker.stats.last_run` is null (first run):**
+| Action | Built-in browser pane | Chrome extension |
+|---|---|---|
+| navigate | `mcp__Claude_Browser__navigate {url}` | `mcp__claude-in-chrome__navigate {url}` |
+| run page script (returns the script's last expression) | `mcp__Claude_Browser__javascript_tool {action:"javascript_exec", text}` | `mcp__claude-in-chrome__javascript_tool {action:"javascript_exec", text}` |
+| read page text | `mcp__Claude_Browser__get_page_text` | `mcp__claude-in-chrome__get_page_text` |
+| click a card (by ref from `find`) | `mcp__Claude_Browser__find` + `computer left_click` | `mcp__claude-in-chrome__find` + `computer left_click` |
+
+Pick the pane if its `tabs_context` call succeeds; otherwise the extension; otherwise STOP with `no_scrape` reason `browser unavailable`. Page scripts are the files under `$SCRIPTS/page/` pasted **verbatim** into the run-page-script tool. Forbidden: screenshots for discovery, any LinkedIn internal or undocumented API, any other automation. A login wall → STOP `no_scrape` reason `linkedin login required`.
+
+## Step 0 — Preflight (no browser yet)
+
+1. `[ -f $WS/user-profile.json ] && jq -e '.discovery_complete == true and (.requirements|type=="object")' $WS/user-profile.json` else STOP `no_scrape` reason `profile missing or incomplete — run /analyze-cv`. A missing `$WS` is the same stop (`workspace missing`).
+2. Follow `../shared-references/render-orchestration.md` Step G (report lifecycle cleanup).
+3. `rd=$(bash $SCRIPTS/checkpoint.sh init $WS $RUN_ID)`; `python3 $SCRIPTS/alerts_ledger.py prune --ledger $WS/alerts.json --today $TODAY`.
+4. `bash $SCRIPTS/snapshot.sh $WS/tracker.json $WS/cache/ultramode-snapshot.json`; `bash $SCRIPTS/checkpoint.sh save $rd snapshot $WS/cache/ultramode-snapshot.json`. Build the 45-day fingerprint set once: `jq -c -L $SCRIPTS/lib --arg cut $(date -v-${FP_DAYS}d +%F 2>/dev/null || date -d "-${FP_DAYS} days" +%F) 'include "fingerprint"; [.jobs[] | select((.status//"seen")!="rejected" and (.last_seen//"0000") >= $cut) | fp((.company//""); (.title//""); (.location//""))] | unique' $WS/tracker.json > $rd/fp-45d.json`.
+5. Choose the browser surface (adapter table). Any STOP here → jump to Step 8 with `run_status=no_scrape`.
+
+## Step 1 — Drain yesterday's queue first (D8)
+
+`n=$(bash $SCRIPTS/jd_queue.sh count $WS/cache/jd-queue.json)`; if `n > 0`: `bash $SCRIPTS/jd_queue.sh pop $WS/cache/jd-queue.json $BUDGET > $rd/queue-pop.json` (on non-zero exit treat as empty). For each popped entry run **Step 4's JD read** and collect its delta into `$rd/sweep-queue.json` (envelope shape in Step 5, `source.board` = the entry's `board`). `used` starts at the number read here.
+
+## Step 2 — Parse the notifications page
+
+Navigate to `https://www.linkedin.com/notifications/?filter=jobs_all`; run `page/notifications.js`; save the returned JSON to `$rd/notifications-dump.json`. Then:
 
 ```
-🚀 First run. Setting up tracker.
+python3 $SCRIPTS/alerts_parse.py < $rd/notifications-dump.json > $rd/alerts.json
+python3 $SCRIPTS/alerts_ledger.py plan --ledger $WS/alerts.json --alerts $rd/alerts.json --today $TODAY > $rd/walk-plan.json
 ```
 
-This step is read-only. Cost is one tracker.json read plus one timestamp diff. No browser interaction.
+If the dump has `exhausted: false`, record `{"stage":"notifications","message":"Load more not exhausted after 25 clicks"}` in `$rd/pipeline-errors.json` and continue. Zero alerts with `exhausted: true` is a valid quiet day.
 
-## Step 1: Load CV & Profile
+## Step 3 — Walk every alert in `walk-plan.json` (D5, D6, D7)
 
-Follow `shared-references/cv-loading.md`. If no profile exists, the user should be redirected to `/analyze-cv` for the full discovery interview (segment declaration, dealbreakers, voice, dimensions). This command must not fabricate defaults — `_gate-engine` and `_job-matcher` need user-declared `requirements` and `segment` to function correctly.
+For each `{alert_key, resume_page}` (extract that alert's record from `$rd/alerts.json` into `$rd/alert-<key>.json`):
 
-## Step 2: Collect candidate job IDs (NO extraction yet)
+1. `python3 $SCRIPTS/alerts_ledger.py start --ledger $WS/alerts.json --alert-json $rd/alert-<key>.json --today $TODAY --run-id $RUN_ID`.
+2. `page = resume_page`. Loop:
+   a. Navigate to `<results_url>&start=$(( (page-1)*25 ))`; run `page/results.js`; save to `$rd/page-<key>-<page>.json`.
+   b. `python3 $SCRIPTS/cards_parse.py --surface alert < $rd/page-<key>-<page>.json > $rd/cards-<key>-<page>.json`. Exit 3 (`extractor_mismatch`) → append `{"stage":"walk","message":"extractor_mismatch <key> page <page>"}` to `$rd/pipeline-errors.json`, leave the alert `partial`, and move to the next alert — never continue on an empty read.
+   c. Dedupe the cards **before the divider** (the leaf element reading `We found more results related to your search…`; `before_divider: true`): known = id in snapshot `known_ids`; repost = not known and `bash $SCRIPTS/fingerprint.sh "<company>" "<title>" "<location>"` is in `$rd/fp-45d.json` (append `{id, matched_id: <the tracker id with that fingerprint via jq>, alert_key, title, company, location}` to `$rd/reposts.json`); new = the rest → append `{card…, alert_key}` to `$rd/new-cards.json` (skip ids already there from an earlier alert; first alert wins). Cards with `parse_warning: true` are still processed like any other card; their count is disclosed via `pipeline-errors.json`, not dropped.
+   d. `python3 $SCRIPTS/alerts_ledger.py page --ledger $WS/alerts.json --key <key> --page <page> --cards-seen <cards> --before-divider <n> --known <k> --reposts <r> --new <new>`.
+   e. `python3 $SCRIPTS/walk_stop.py --alert $rd/alert-<key>.json --page $rd/cards-<key>-<page>.json --page-no <page> --valve $VALVE > $rd/stop-<key>-<page>.json`. If `needs_model_check` is true, answer ONE question yourself from the card titles in `undecided_ids`: "Do any of these titles plausibly match the alert keywords `<keywords>`?" and re-run with `--model-says-match true|false`. Record your answer in `$rd/pipeline-errors.json` as `{"stage":"walk","message":"model drift check <key> page <page>: <true|false>"}` (it is a disclosure, not an error).
+   f. `stop: true` → `python3 $SCRIPTS/alerts_ledger.py complete --ledger $WS/alerts.json --key <key> --reason <reason>`; break. Else `page += 1`.
+3. `bash $SCRIPTS/checkpoint.sh save $rd walk-<key>`.
 
-Navigate to `https://www.linkedin.com/notifications/?filter=jobs_all`. Scroll 2-3 times to load recent alerts.
+## Step 4 — Read descriptions for new cards, within budget (D7, D8)
 
-Identify **every unread job alert notification** (highlighted in blue). Do NOT stop after the first one.
+Order: queue drain (done), then alert cards in `$rd/new-cards.json` order, then Top Picks, then Saved. For each card while `used < BUDGET`:
 
-For each unread alert: open the alert and collect the **job IDs and URLs** of every individual listing inside it. Tag source as `"Job Alert"`. Do not extract full details yet.
+1. Navigate to `https://www.linkedin.com/jobs/search-results/?currentJobId=<id>` (alerts) or `https://www.linkedin.com/jobs/view/<id>/` (Top Picks / Saved / Similar); read page text; take everything from `About the job` to the end of the description block. If the text has an expander (`…more` / `Show more`), `find` it, click it, re-read.
+2. `mkdir -p $WS/jds; printf '%s\n' "<text>" > $WS/jds/<id>.txt.tmp && mv $WS/jds/<id>.txt.tmp $WS/jds/<id>.txt`. `used += 1`.
+3. Emit the delta (Step 5 shape) with `jd_path: "jds/<id>.txt"`.
 
-## Step 2b: Sweep Top picks (v0.9.0+)
+Cards left when the budget is exhausted: write them to `$rd/queued.json` and `bash $SCRIPTS/jd_queue.sh push $WS/cache/jd-queue.json $rd/queued.json` (entries `{id, title, company, location, url, board, alert_key}`). Always write `$rd/jd-fetch.json` = `{"budget": BUDGET, "used": used, "deferred": <queue count after push>}` and `bash $SCRIPTS/checkpoint.sh save $rd jd-fetch $rd/jd-fetch.json`, even when nothing was read.
 
-After notifications, navigate to `https://www.linkedin.com/jobs/collections/recommended/`. Scroll 1-2 times to load the first page of recommendations. Collect all visible job IDs and URLs. Tag source as `"Top Picks"`. Do not extract full details yet.
+## Step 5 — Envelopes, validation, merge (all-or-nothing)
 
-## Step 2c: Sweep Saved jobs (v0.9.0+)
-
-Navigate to `https://www.linkedin.com/my-items/saved-jobs/`. Scroll until all saved entries are loaded (saved-jobs list is typically small — under 50). Collect all job IDs and URLs. Tag source as `"Saved"`. Do not extract full details yet.
-
-## Step 3: Dedupe against tracker FIRST
-
-Combine the candidate ID lists from Steps 2 (Job Alerts), 2b (Top Picks), and 2c (Saved). Each ID carries the source that surfaced it; if the same ID appears from multiple sources, preserve the source priority `Job Alert > Top Picks > Saved`.
-
-Load `.job-scout/tracker.json` (see `shared-references/tracker-schema.md`). For each candidate job ID:
-
-- **Already in tracker** (seen / approved / applied / rejected) → bump `last_seen`, do NOT re-extract, do NOT re-score. Skip.
-- **New ID** → check the **repost fingerprint** per `../shared-references/linkedin-search.md` §5: `lower(company)|lower(title)|lower(location)` against non-rejected tracker entries (company/title/location are visible on the listing card — no extraction needed). On a match, treat as a repost: bump the existing entry's `last_seen`, append `repost id: <new_id> (<date>)` to its notes, and drop the candidate.
-- **Genuinely new** → keep in the to-process list with the assigned source.
-
-This is the primary token-saving step. Never extract a job you already know — across all three surfaces, by ID or by fingerprint.
-
-## Step 4: Extract details for new jobs only
-
-For each *new* job: open it and extract title, company, location (remote/hybrid/on-site + city), salary/rate, contract type, experience level, required skills, preferred skills, full description text, Easy Apply status, posting date, applicant count, job URL.
-
-**JD persistence (required).** Immediately after extracting a job's full description text, persist it via the hybrid-storage contract in `../shared-references/jd-storage.md`:
-
-```bash
-mkdir -p .job-scout/jds
-printf '%s\n' "$JD_TEXT" > ".job-scout/jds/$JOB_ID.txt.tmp"
-mv ".job-scout/jds/$JOB_ID.txt.tmp" ".job-scout/jds/$JOB_ID.txt"
-```
-
-Set `jd_path: "jds/<job_id>.txt"` and `source` (one of `Job Alert | Top Picks | Saved`) on the tracker entry in the same atomic write. Skills that need the full JD downstream (`/cover-letter`, `/interview-prep`, `_job-matcher` evidence-quote extraction) read it from this path. The inline `description` field is removed from the canonical v2 tracker schema — do not write it.
-
-**Corpus enrichment:** after extraction, run the JD keyword extraction procedure from `../shared-references/jd-keyword-extraction.md` on each new job's description. Merges keywords into `.job-scout/cache/jd-keyword-corpus.json`.
-
-## Step 5: Gate + score new jobs (v0.8.0+)
-
-Load `_job-matcher` (which transitively loads `_gate-engine`). For every newly extracted job from Step 4:
-
-1. **`_gate-engine` runs first.** It evaluates the job against `user-profile.requirements` (work_arrangement, contract_type, seniority_floor, location, industries_to_avoid, companies_to_avoid, rate/salary floors, and the declared `deal_breakers[]`). If `gate_violations` is non-empty → set `tier: D`, `tier_reason: "gated: <kinds>"`, persist `gate_violations`, skip dimension scoring.
-2. **If not gated** → the segment-aware rubric (per `user-profile.segment`) produces per-dimension tiers + evidence quotes. Persist `tier`, `dimensions`, `tier_reason`, `rubric_version: "v1"` to the tracker entry and the score cache.
-
-Daily-driver display: top section shows A-tier with full dimension breakdown; B-tier with one-line dimension highlights; C/D summary counts collapsed. Gated jobs go to a collapsed "Filtered out" group below, each with a one-line "Gated: <kinds>" banner.
-
-The default-requirements filter from previous versions is removed; the same conditions are now expressed as user-declared `deal_breakers[]` (set at `/analyze-cv` discovery) and enforced uniformly via `_gate-engine`.
-
-## Step 5b: Similar-jobs expansion from A-tier hits (v0.9.0+)
-
-After Step 5 scoring completes, iterate every job in this run that came out at `tier: "A"` (not gated). For each A-tier survivor:
-
-1. The agent is already on (or can return to) that job's listing page. Scroll to the "Similar jobs" rail (LinkedIn typically shows 4-6 below the JD body).
-2. Collect the IDs and URLs from that rail.
-3. Filter against `tracker.json` to drop known IDs.
-4. For each new ID, open the listing and run the full extract → JD persist → `_gate-engine` → score chain. Tag `source: "Similar"`. Also tag `notes` with `"expanded from: <seed_job_id>"` so the lineage is traceable.
-
-Cap: at most 5 new similar-jobs per A-tier seed (LinkedIn's rail length). If a workspace's daily run produces 0 A-tier survivors, this step is a no-op.
-
-The expansion fires gates the same way as primary jobs — a similar-job from a real A-tier hit can still be gated and end up in "Filtered out".
-
-## Step 6: Parallel scoring fan-out
-
-When Step 5 has more than ~5 new jobs to score, batch them into groups of 5 (the last batch may be smaller) and dispatch one subagent per batch per the contract in `../shared-references/subagent-protocol.md`:
+Group deltas into envelopes: one per alert (`$rd/sweep-alert-<key>.json`), plus `sweep-queue`, `sweep-toppicks`, `sweep-saved`. Envelope:
 
 ```json
-{
-  "task": "score-job-batch",
-  "inputs": {
-    "jobs": [ /* extracted job blobs */ ],
-    "user_profile": { "segment": "...", "cv_summary": "...", "requirements": "...", "dimensions": [], "master_keyword_list": "..." },
-    "cv_hash": "...",
-    "profile_hash": "...",
-    "rubric_version": "v1"
-  },
-  "budget_lines": 200,
-  "allowed_tools": ["Read"]
-}
+{"status":"ok","counts":{"scanned":<cards seen>,"matched":<new>,"dropped_explicit_violation":0,"returned":<deltas>,"capped":false},
+ "deltas":[{"id":"4460908564","url":"https://www.linkedin.com/jobs/view/4460908564/","title":"…","company":"…","location":"Germany (Remote)",
+            "source":{"lane":"linkedin","provider":"linkedin","board":"Job Alert"},"fingerprint":"<fingerprint.sh output>",
+            "posted_at":"<YYYY-MM-DD from posted_ago, else empty>","jd_path":"jds/4460908564.txt","signals":{"remote":"remote"},
+            "matched_query":"linux engineer Contract Remote","alert_key":"<key>","tags":[]}],
+ "errors":[],"continuation_cursor":null}
 ```
 
-Each subagent loads `_job-matcher` (which loads `_gate-engine` first) and returns v1 deltas:
+`board` ∈ `Job Alert | Top Picks | Saved | Similar`; `signals.remote` from the card's `workplace` (`unknown` when absent). Deltas whose JD was queued carry `jd_path: null`. Then:
+
+```
+for f in $rd/sweep-*.json; do python3 $SCRIPTS/validate_delta.py --ws $WS $f || { echo "REFUSED $f"; exit 1; }; done
+python3 $SCRIPTS/merge_tracker.py --ws $WS --tracker $WS/tracker.json --today $TODAY $rd/sweep-*.json > $rd/merge.json
+bash $SCRIPTS/checkpoint.sh save $rd merge $rd/merge.json
+```
+
+A merge failure: append `{"stage":"merge","message":"<first stderr line>"}` to `$rd/pipeline-errors.json` and continue to Step 8 (always render). Then set `matched_query` and `alert_key` on each merged entry with the single-entry atomic recipe in `../shared-references/state-validators.md`.
+
+## Step 6 — Top Picks and Saved (after every alert is complete or partial)
+
+Top Picks: navigate `https://www.linkedin.com/jobs/collections/recommended/`; run `page/toppicks.js`; `cards_parse.py --surface toppicks`; dedupe as Step 3c; Step 4 within budget; envelope `sweep-toppicks` (`board: "Top Picks"`). Saved: navigate `https://www.linkedin.com/jobs-tracker/`; run `page/saved.js`; `cards_parse.py --surface saved` (`note: "saved_empty"` is a clean zero); same path; `board: "Saved"`. Both merge in Step 5's second pass (`merge_tracker.py` again with only the new envelopes).
+
+## Step 7 — Gate, then score (D14)
+
+Batch this run's merged entries that have a `jd_path` into groups of 5. For each batch dispatch `Agent` with `subagent_type: "gate-batch"` and the envelope from `../shared-references/subagent-protocol.md`:
 
 ```json
-{
-  "status": "ok",
-  "deltas": [
-    { "job_id": "...", "tier": "A", "tier_reason": null,
-      "dimensions": { "<dim_name>": {"tier": "A", "evidence": ["…"]} },
-      "gate_violations": [],
-      "rubric_version": "v1" }
-  ]
-}
+{"task":"gate-batch","inputs":{"plugin_root":"$PLUGIN","workspace":"$WS","jobs":[{"id":"…","title":"…","company":"…","location":"…","workplace":"remote","salary_text":"…","jd_path":"jds/….txt"}],
+ "requirements":<user-profile.requirements>,"profile_hash":"<bash $SCRIPTS/profile_hash.sh $WS/user-profile.json>","cv_hash":"<user-profile.cv_hash>","rubric_version":"v1"},
+ "budget_lines":200,"allowed_tools":["Read"]}
 ```
 
-The main thread merges all deltas into `.job-scout/cache/scores.json` keyed by `(job_id, cv_hash, profile_hash, rubric_version)` and persists each result to the tracker entry.
+Persist each delta atomically (`gate_violations`, `signals`; `tier: "D"`, `tier_reason: "gated: <kinds>"` when gated with ≥2 kinds). Jobs with zero violations, and jobs with exactly one violated kind (flag `near_miss_candidate: true`), go to `subagent_type: "score-batch"` in batches of 5 with the same envelope plus `"dimensions": <user-profile.dimensions>`, `"segment"`, `"cv_summary"`. Persist `tier`, `tier_reason`, `dimensions`, `rubric_version`, and the optional fields when present; near-miss candidates keep `tier: "D"` and gain `near_miss` + `near_miss_would_be_tier` when the rubric says A/B. Write the score cache entry keyed `(id, cv_hash, profile_hash, rubric_version)`. `bash $SCRIPTS/checkpoint.sh save $rd scoring`.
 
-**Ordering preference:** within the same tier, jobs that disclose compensation sort above those that don't (flag the latter "Does not mention rate"); then by `posted_at` descending, with the freshness flag per `../shared-references/linkedin-search.md` §6.
+**Similar jobs (one round):** for each this-run entry now at `tier: "A"`, navigate to its `url`, read page text, collect up to 5 ids from the "Similar jobs" rail via `find`/page text (`/jobs/view/<id>/` links), dedupe against the snapshot, Step 4 within budget, envelope `sweep-linkedin-similar` (`board: "Similar"`, `notes: "expanded from: <seed id>"`), validate → merge → gate → score exactly as above. Expansion roles never seed further expansion.
 
-**Fallback:** if the `Agent` tool is unavailable in this session, fall back to sequential in-thread scoring. Log the fallback.
-
-## Step 6b: Reverse-Boolean discoverability check (A-tier only)
-
-For each job the rubric tiers at A:
-1. Extract from the JD: role title, top 3 required skills, location preference.
-2. Construct the likely recruiter Boolean query using templates from `../_profile-optimizer/references/recruiter-search-patterns.md`: `"<role>" AND ("<skill1>" OR "<skill2>") AND "<skill3>"`.
-3. Load the user's cached LinkedIn profile from `.job-scout/cache/linkedin-profile.json`. Check for each Boolean term in: headline, current job title, skills list, about section, experience descriptions.
-4. Classify: **Match** or **Miss** with specific missing keywords.
-5. Append to the A-tier match card in the report (same format as match-jobs Step 4b).
-
-## Step 7: Present results
-
-Markdown summary grouped by tier (A, B, C — gated jobs in a collapsed "Filtered out" group). Per job: title, company, rate (or "Does not mention rate"), location, contract type, posting date, tier, top 3 skill matches, notable gaps, job URL. A-tier gets the full dimension breakdown with evidence quotes. B-tier gets one line per dimension. C-tier gets a compact one-line table — no paragraph rationales.
-
-Include a summary line: candidates collected, already known (skipped), newly extracted, after filters, matches per tier.
-
-## Step 8: Save report
-
-Write `.job-scout/reports/[YYYY-MM-DD]-new-jobs.md`: header/stats, profile summary, full ranked list with score breakdowns, filtered-out summary. If today's report exists, append counter.
-
-## Step 9: Update tracker
-
-Merge new jobs into `.job-scout/tracker.json` per the schema in `shared-references/tracker-schema.md`. Update `stats.last_run`. Never overwrite the whole file — read, merge, write.
-
-When the user approves applications, update status to "approved". `/apply` will move it to "applied".
-
-## Step 10: Offer "Top job picks for you" sweep
-
-After saving, **ask the user**: "Done with notifications. Want me to continue and analyse/rank jobs from LinkedIn's 'Top job picks for you' feed at https://www.linkedin.com/jobs/, iterating through pages for any never-before-seen listings?"
-
-If declined, skip to Next Steps.
-
-If accepted:
-1. Navigate to `https://www.linkedin.com/jobs/` and locate **"Top job picks for you"**.
-2. Load `tracker.json` once and snapshot into memory — every subagent receives this snapshot.
-3. For pages 1..5 (or until a stop condition fires): dispatch one subagent per page, each with `subagent_type: "general-purpose"` per `../shared-references/subagent-protocol.md`:
-
-   ```json
-   {
-     "task": "top-picks-page",
-     "inputs": {
-       "page_number": 1,
-       "tracker_snapshot_ids": ["..."],
-       "source": "Top Picks"
-     },
-     "budget_lines": 200,
-     "allowed_tools": ["Read"]
-   }
-   ```
-
-   The subagent receives the page URL pattern in its prompt and extracts job blobs for any id not in `tracker_snapshot_ids`. It returns:
-
-   ```json
-   {
-     "status": "ok",
-     "deltas": [
-       { "job_id": "...", "title": "...", "company": "...", "raw_blob": "...", "source": "Top Picks" }
-     ]
-   }
-   ```
-
-   Note: page-fetching in Phase 1 still happens via the main thread's Chrome extension (subagents do not have browser access). The main thread fetches the raw HTML or listing JSON for each page, then dispatches the subagent with that data in `inputs`. Subagents dedupe and parse only.
-
-4. Collect all subagent deltas. Dedupe again against the live tracker (in case concurrent runs updated it).
-5. Stop early if: any page's subagent returns zero new jobs, the user says stop, or the 5-page cap is hit.
-6. Hand the collected new-job blobs to Step 6's scoring fan-out. Append to today's report under a **"Top Picks Sweep"** section rather than overwriting.
-7. Present the new A/B/C matches.
-
-**Fallback:** if the `Agent` tool is unavailable, fall back to the sequential in-thread loop (fetch → dedupe → extract → score) page by page.
-
-## Step 11: Build results payload
-
-Construct a `data` payload for the render layer. Tiers come straight from the `_job-matcher` v1 rubric — uppercase `A | B | C | D`, no aggregate score. Gated (D-tier) jobs appear only in the collapsed "Filtered out" group. View-specific fields:
-
-- `title`: "Today's notifications".
-- `subtitle`: "{{N}} new · {{unread}} unread · A:{{a}} B:{{b}} C:{{c}} · Filtered:{{gated}}".
-- `filename`: "check-job-notifications-latest.html".
-- `unread_count`: integer count of `seen: false` items.
-- `tier_counts`: `{ a, b, c, d, total }`.
-- `results[]`: each item is `{ id, title, company, location, received_at, posted_at, source, tier, tier_reason, dimensions, gate_violations, fresh, seen, preview, url }` plus the OPTIONAL Phase-12 scoring fields `{ competitiveness, competitiveness_evidence, confidence, match_explanation_tag }`. `dimensions` is the per-dimension `{tier, evidence[]}` map from the rubric. `fresh` per `../shared-references/linkedin-search.md` §6. The `preview` is the first 140 chars of the notification body. The `url` is an absolute LinkedIn job URL captured during extraction — optional: when present, the templates render a "View posting ↗" link in HTML and a clickable title in markdown; when omitted, the templates fall back to plain title text via `{% if note.url %}` guards. The four scoring fields pass through verbatim from the tracker / score cache when present and are **omitted entirely when absent** — never `null` (see `../shared-references/canonical-schemas.md` § "Written lazily").
-- **Within-tier ordering (Phase 12).** The COMMAND pre-sorts `results[]` here, before dispatch, so the template renders in supplied order and never re-sorts. Within each tier, order by `confidence` high → med → low (absent `confidence` sorts after any explicit value, treated as lowest), then keep the existing within-tier preference (compensation-disclosing roles above non-disclosing — see Step 9's ordering note) and `posted_at` descending as the final tie-breaker.
-
-## Step 12: Render
-
-Follow `../shared-references/render-orchestration.md` end-to-end (Step G already ran in Step 0):
-
-1. Step A — payload built in Step 11 above.
-2. Steps B–F — read render config, dispatch `_visualizer`, deliver the report (or fall back), handle errors.
-3. Step E — print the summary line:
+## Step 8 — Scorecard, payload, render, digest — ALWAYS
 
 ```
-✓ {{N}} notifications — {{unread}} unread — report delivered
+python3 $SCRIPTS/coverage.py --ledger $WS/alerts.json --run-id $RUN_ID --reposts $rd/reposts.json --out $rd/coverage.json
+bash $SCRIPTS/scorecard.sh $rd $WS/tracker.json $TODAY > $rd/scorecard.json
+bash $SCRIPTS/payload_notifications.sh $WS/tracker.json $rd $TODAY <fresh|no_scrape> ["<reason>"] > $rd/payload.json
 ```
 
-Then, per render-orchestration.md § Step E, one line per surfaced A/B/C role: `{{tier}} · {{title}} — {{company}} → {{canonical url}}` — the direct links are mandatory in every render mode.
+Render per `../shared-references/render-orchestration.md` Steps B–F with `view: "check-job-notifications"` and `$rd/payload.json` (Hard Rule 8). Then:
 
-Fall back to pre-v0.7.0 markdown table if `Agent` tool is unavailable.
+```
+python3 $SCRIPTS/digest.py --payload $rd/payload.json --profile $WS/user-profile.json --out $WS/reports/check-job-notifications-$TODAY-digest.txt --last-success "$(jq -r '.stats.last_run // "unknown"' $WS/tracker.json)"
+bash $SCRIPTS/checkpoint.sh save $rd render
+```
 
-## Next Steps
+A `no_scrape` run performs only this step (no tracker writes) and still writes the digest.
 
-After presenting results, ask which jobs to apply to (offer `/apply`), whether to refine alerts (`/create-alerts`), or check recruiter messages (`/check-inbox`).
+## Step 9 — Print
+
+1. `✓ {{alerts}} alerts walked · {{cards}} cards · {{new}} new — A:{{a}} B:{{b}} C:{{c}} · Filtered:{{d}} · Queued:{{queued}} — report delivered` (or `✓ No fresh scrape — {{reason}} — digest written`).
+2. One line per A/B/C role: `{{tier}} · {{title}} — {{company}} → {{url}}`.
+3. `Digest: $WS/reports/check-job-notifications-$TODAY-digest.txt` and every `pipeline-errors.json` message as a disclosure line.
+4. Next steps as text, never a question: `/apply <id>` for approved roles, `/bend <id>` for near misses, `/ultramode` for the wider market.
+
+## Failure table (all disclosed, none silent)
+
+| Condition | Action |
+|---|---|
+| Workspace or profile missing | STOP `no_scrape`; digest + report say why |
+| No browser surface / login wall | STOP `no_scrape`; no tracker writes |
+| `extractor_mismatch` on a page | Alert stays `partial`; disclosed; next alert |
+| Validator refuses an envelope | Fix nothing by hand; disclose; the envelope is excluded from the merge |
+| Merge fails | Disclose; still render with whatever completed |
+| Budget exhausted | Queue the rest; report "Queued for tomorrow" |

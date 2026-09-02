@@ -1,14 +1,16 @@
 # Browser Interaction Policy
 
-Every command in this plugin that touches LinkedIn (or any other website) does so **exclusively through the Claude Chrome extension** running in the user's own logged-in browser. This is the only sanctioned browser mechanism for the plugin.
+Every command in this plugin that touches LinkedIn (or any other website) does so through one of two sanctioned browser surfaces, in order: the built-in Claude browser pane (primary) and the Claude Chrome extension (fallback), both Anthropic-operated, both driving the user's own logged-in session. No other browser mechanism is permitted for the plugin.
 
 ## Hard rules
 
-1. **Never request, suggest, or enable "computer use."** Computer use takes control of the user's entire screen/mouse/keyboard and is strictly out of scope for this plugin. The Chrome extension is sufficient for every task the plugin performs, and asking for computer use makes users (rightly) nervous about intent. If the Chrome extension tools appear unavailable in the current session, **stop and tell the user** — do not offer computer use as a fallback.
+1. **Never request, suggest, or enable "computer use."** Computer use takes control of the user's entire screen/mouse/keyboard and is strictly out of scope for this plugin. The built-in browser pane and the Chrome extension are sufficient for every task the plugin performs, and asking for computer use makes users (rightly) nervous about intent. If neither sanctioned surface is available in the current session, **stop and tell the user** — do not offer computer use as a fallback.
 
-2. **Never install, suggest, or enable any other browser-automation framework** (Playwright, Selenium, Puppeteer, headless Chrome, MCP browser servers other than the official Claude Chrome extension, etc.). The user has a logged-in LinkedIn session in their personal browser — the Chrome extension is how we use it.
+2. **Never install, suggest, or enable any other browser-automation framework** (Playwright, Selenium, Puppeteer, headless Chrome, MCP browser servers other than the built-in Claude browser pane and the official Claude Chrome extension, etc.). The user has a logged-in LinkedIn session in their personal browser — the browser pane or the Chrome extension is how we use it.
 
 3. **Never send sensitive data through the browser automation.** No SSN, no bank details, no passwords, no session tokens. If a LinkedIn form asks for any of these, stop and hand off to the user.
+
+4. **Never call LinkedIn's internal APIs.** Voyager and any other undocumented endpoint are forbidden even from inside the page context. Job descriptions are read from the rendered page only. Calling internal endpoints at volume from the user's account is the pattern that triggers automated-activity restrictions, and a restricted account ends the job search.
 
 ## Read-only `WebFetch` carve-out (ultramode public sources)
 
@@ -34,7 +36,7 @@ The plugin's trust model is: "Claude is my helper inside the browser I already u
 
 ## If a command says "navigate to X"
 
-Read it as: "use the Claude Chrome extension to navigate the user's existing browser tab to X." Nothing more. If the Chrome extension's navigation tool is not available in the current session, report that to the user and stop — do not escalate to any other mechanism.
+Read it as: "use the Claude Chrome extension to navigate the user's existing browser tab to X." Nothing more. If the Chrome extension's navigation tool is not available in the current session, report that to the user and stop — do not escalate to any other mechanism. When a command names an adapter step (e.g. `check-job-notifications`'s Browser adapter table), use whichever of the two surfaces the command selected in its adapter step.
 
 ## For the user (transparency)
 
