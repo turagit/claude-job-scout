@@ -33,7 +33,9 @@ def lane_for(provider, sources):
     for s in sources:
         name = s.get("name") or s.get("provider") or ""
         n_slug = slug(name)
-        if p_slug and (n_slug.startswith(p_slug) or p_slug.startswith(n_slug) or n_slug == p_slug):
+        if p_slug and n_slug == p_slug:
+            return s.get("category") or "aggregator"
+        if p_slug and len(p_slug) >= 6 and (n_slug.startswith(p_slug) or p_slug.startswith(n_slug)):
             return s.get("category") or "aggregator"
     return "aggregator"
 
@@ -53,7 +55,7 @@ def fix(key, e, sources, today, by):
                 elif text.strip() == "Inbox": board = "Inbox"
                 else: board = "html"
             e["source"] = {"lane": lane_for(provider, sources), "provider": provider, "board": board}
-            if isinstance(src, str) and src.strip().lower() != provider.lower(): note(e, f"source(legacy): {src.strip()}")
+            if isinstance(src, str) and src.strip().lower() not in (provider.lower(), board.lower()): note(e, f"source(legacy): {src.strip()}")
         else:
             b = board_of(text); e["source"] = {"lane": "linkedin", "provider": "linkedin", "board": b}
             if isinstance(src, str) and src.strip().lower() != b.lower(): note(e, f"source(legacy): {src.strip()}")
@@ -108,13 +110,13 @@ def main():
     by = {k: 0 for k in ("id", "source", "status", "tier", "rubric_version", "gate_violations", "dates", "adhoc_fields", "skipped_non_dict")}
     n_before = len(jobs)
     non_dict_count = 0
+    changed = 0
     for k, e in jobs.items():
         if isinstance(e, dict):
-            if fix(k, e, sources, today, by): pass
+            if fix(k, e, sources, today, by): changed += 1
         else:
             non_dict_count += 1
             by["skipped_non_dict"] += 1
-    changed = sum(by[k] for k in ("id", "source", "status", "tier", "rubric_version", "gate_violations", "dates", "adhoc_fields"))
     if non_dict_count > 0: print(f"migrate: warning: {non_dict_count} non-dict entries left untouched", file=sys.stderr)
     if len(jobs) != n_before: print("migrate: entry count changed — aborting", file=sys.stderr); sys.exit(2)
     t["schema_version"] = 3

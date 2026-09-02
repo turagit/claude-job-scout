@@ -5,17 +5,17 @@ class T(unittest.TestCase):
     def setUp(self):
         self.d = tempfile.mkdtemp(); self.t = os.path.join(self.d, "tracker.json")
         shutil.copy(os.path.join(HERE, "fixtures", "p17-tracker-drifted.json"), self.t)
-        json.dump({"schema_version": 2, "sources": [{"name": "Greenhouse", "provider": "greenhouse", "category": "ats-provider"}, {"name": "JustJoin.it", "category": "aggregator"}, {"name": "IT-Contracts.nl", "category": "freelance-marketplace"}]}, open(os.path.join(self.d, "sources.json"), "w"))
+        json.dump({"schema_version": 2, "sources": [{"name": "Greenhouse", "provider": "greenhouse", "category": "ats-provider"}, {"name": "JustJoin.it", "category": "aggregator"}, {"name": "IT-Contracts.nl", "category": "freelance-marketplace"}, {"name": "Leverage Partners", "category": "recruiter-agency"}, {"name": "Lever", "category": "ats-provider"}]}, open(os.path.join(self.d, "sources.json"), "w"))
     def run_it(self, *extra):
         p = subprocess.run(["python3", os.path.join(S, "migrate_tracker_v3.py"), "--tracker", self.t, "--sources", os.path.join(self.d, "sources.json"), *extra], capture_output=True, text=True)
         self.assertEqual(p.returncode, 0, p.stderr); return json.loads(p.stdout)
     def test_dry_run_changes_nothing(self):
         before = open(self.t).read(); s = self.run_it("--dry-run")
-        self.assertEqual(open(self.t).read(), before); self.assertTrue(s["dry_run"]); self.assertIsNone(s["backup"]); self.assertGreater(s["changed"], 0)
+        self.assertEqual(open(self.t).read(), before); self.assertTrue(s["dry_run"]); self.assertIsNone(s["backup"]); self.assertGreater(s["changed"], 0); self.assertLessEqual(s["changed"], s["entries"])
     def test_migration(self):
         s = self.run_it(); t = json.load(open(self.t)); j = t["jobs"]
         self.assertEqual(s["entries"], 6); self.assertEqual(len(j), 6); self.assertTrue(os.path.isfile(s["backup"]))
-        self.assertEqual(t["schema_version"], 3); self.assertEqual(t["stats"]["closed_applications"], 7)
+        self.assertEqual(t["schema_version"], 3); self.assertEqual(t["stats"]["closed_applications"], 7); self.assertLessEqual(s["changed"], s["entries"])
         a = j["4401921503"]
         self.assertEqual(a["id"], "4401921503"); self.assertEqual(a["source"], {"lane": "linkedin", "provider": "linkedin", "board": "Top Picks"})
         self.assertEqual((a["status"], a["tier"]), ("seen", "D")); self.assertEqual(a["first_seen"], "2026-09-02"); self.assertEqual(a["last_seen"], "2026-09-02")
@@ -77,11 +77,23 @@ class T(unittest.TestCase):
         t = json.load(open(self.t)); t["jobs"]["verda__7998465"] = {"id": "verda__7998465", "title": "Test", "company": "Test Co", "source": "Inbox", "status": "seen"}
         with open(self.t, "w") as f: json.dump(t, f)
         s = self.run_it(); result = json.load(open(self.t)); e = result["jobs"]["verda__7998465"]
-        self.assertEqual(e["source"]["board"], "Inbox"); self.assertEqual(e["source"]["provider"], "verda")
+        self.assertEqual(e["source"]["board"], "Inbox"); self.assertEqual(e["source"]["provider"], "verda"); self.assertEqual(e["notes"], "")
     def test_slug_matching_itcontracts(self):
         t = json.load(open(self.t)); t["jobs"]["itcontracts__287911"] = {"id": "itcontracts__287911", "title": "Test", "company": "Test Co", "source": "aggregator", "status": "seen"}
         with open(self.t, "w") as f: json.dump(t, f)
         s = self.run_it(); result = json.load(open(self.t)); e = result["jobs"]["itcontracts__287911"]
         self.assertEqual(e["source"]["lane"], "freelance-marketplace"); self.assertEqual(e["source"]["provider"], "itcontracts")
+    def test_slug_prefix_guard_short_provider(self):
+        t = json.load(open(self.t)); t["jobs"]["lever__999"] = {"id": "lever__999", "title": "Test", "company": "Test Co", "source": "search", "status": "seen"}
+        with open(self.t, "w") as f: json.dump(t, f)
+        json.dump({"schema_version": 2, "sources": [{"name": "Leverage Partners", "category": "recruiter-agency"}]}, open(os.path.join(self.d, "sources.json"), "w"))
+        s = self.run_it(); result = json.load(open(self.t)); e = result["jobs"]["lever__999"]
+        self.assertEqual(e["source"]["lane"], "aggregator"); self.assertEqual(e["source"]["provider"], "lever")
+    def test_slug_exact_match_lever(self):
+        t = json.load(open(self.t)); t["jobs"]["lever__999"] = {"id": "lever__999", "title": "Test", "company": "Test Co", "source": "search", "status": "seen"}
+        with open(self.t, "w") as f: json.dump(t, f)
+        json.dump({"schema_version": 2, "sources": [{"name": "Lever", "category": "ats-provider"}]}, open(os.path.join(self.d, "sources.json"), "w"))
+        s = self.run_it(); result = json.load(open(self.t)); e = result["jobs"]["lever__999"]
+        self.assertEqual(e["source"]["lane"], "ats-provider"); self.assertEqual(e["source"]["provider"], "lever")
 if __name__ == "__main__":
     unittest.main()
