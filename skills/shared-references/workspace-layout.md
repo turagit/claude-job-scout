@@ -10,9 +10,11 @@ Every command in this plugin reads and writes state inside a single per-project 
   user-profile.json     # canonical v2 — see canonical-schemas.md (segment, requirements, tone, deal_breakers, ultramode)
   tracker.json          # canonical v2/v3 — see canonical-schemas.md (status/tier enums, dimensions, rubric_version, structured source)
   sources.json          # ultramode source registry (Phase 11) — see canonical-schemas.md; absent until ultramode discovery runs
+  alerts.json           # Phase 17 alert ledger — see canonical-schemas.md
   jds/                  # per-job JD blobs, one file per job named for the job id — see jd-storage.md
     4012345678.txt          # example: JD text for job id 4012345678
   reports/              # YYYY-MM-DD-*.md and HTML run reports (notifications sweeps, match runs, CV analyses)
+    check-job-notifications-YYYY-MM-DD-digest.txt   # plain-text phone digest (digest.py)
   archive/              # tracker-YYYY.json — aged seen-status jobs rotated out of tracker.json
   cache/
     cv-a1b2c3.json          # parsed CV text + extracted keywords, one file per CV content hash (cv- prefix)
@@ -174,6 +176,10 @@ Applies when the migration runner reads `version: 3` from `.job-scout/schema-ver
    - The runner writes `{ "version": 4, "upgraded_at": "<ISO>" }` to `.job-scout/schema-version`.
 
 This migration is safe to run repeatedly: each per-step write is idempotent, and the runner's `current < target` guard prevents re-execution once `version: 4` lands.
+
+### Phase 17 (alert walk; no workspace version bump)
+
+`alerts.json` (the alert ledger — see `canonical-schemas.md`) and the phone digest under `reports/` are new, but both are additive: `alerts.json` is created lazily by `alerts_ledger.py` on first write and its absence is a valid cold-start, exactly like `sources.json`. Neither addition changes an existing file's shape, so the workspace `schema-version` stays at `4` and no migration step runs.
 
 ## Template macro contract: `source_chip(source)`
 

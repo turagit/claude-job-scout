@@ -69,4 +69,13 @@ assert_eq "1" "$(printf '%s' "$out3" | jq -r .accounting.completed)" "similar-jo
 assert_eq "true" "$(printf '%s' "$out3" | jq '.sources | has("linkedin-similar")')" "similar-jobs still present in sources breakdown"
 rm -rf "$rd3"
 
+# Phase 17: coverage + budget embedding
+rd17=$(mktemp -d); printf '{"rows":[{"alert_key":"k1"}],"totals":{"alerts":1},"reposts_disclosed":0}' > "$rd17/coverage.json"
+printf '{"budget":150,"used":12,"deferred":3}' > "$rd17/jd-fetch.json"
+sc17=$(bash "$SC" "$rd17" "$(dirname "$0")/fixtures/tracker-mini.json" 2026-09-02)
+assert_eq "1" "$(echo "$sc17" | jq '.coverage.rows|length')" "coverage embedded"
+assert_json_eq '{"limit":150,"used":12,"queued":3}' "$(echo "$sc17" | jq -c '.budget')" "budget embedded"
+rd18=$(mktemp -d)
+assert_eq "0" "$(bash "$SC" "$rd18" "$(dirname "$0")/fixtures/tracker-mini.json" 2026-09-02 | jq '.coverage.rows|length')" "absent coverage is empty rows"
+
 finish

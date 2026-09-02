@@ -4,6 +4,30 @@ All notable changes to the LinkedIn Job Hunter plugin are documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0] — 2026-09-02
+
+### Added
+- **The alert walk** — `/check-job-notifications` now parses every job alert from the notifications page in one read and walks each alert's results pages until LinkedIn's "We found more results…" divider (or a whole drifted page, or a 10-page valve), so every exact-match listing is seen. A single alert on 2026-09-02 held 24 exact matches of which the old command saw 10.
+- **Alert ledger** (`.job-scout/alerts.json`) — which alerts were walked, how far, and why they stopped; partial walks resume; completed alerts are never re-walked.
+- **Per-alert coverage table** in the report and scorecard: cards seen, exact matches, known, reposts, new, pages, stop reason.
+- **Phone digest** (`reports/check-job-notifications-<date>-digest.txt`) — plain text, bare URLs, trimmed to 7,500 characters, produced by `digest.py`; the nightly calendar event is built from it.
+- **JD budget with carry-over** — 150 descriptions per run (`config.json` `jd_budget_per_run`); overflow is queued and listed as "Queued for tomorrow", never dropped.
+- **Pinned-model subagents** — `gate-batch` (Sonnet) and `score-batch` (Opus) shipped under `agents/`.
+- **Engine scripts**: `alerts_parse.py`, `cards_parse.py`, `walk_stop.py`, `alerts_ledger.py`, `coverage.py`, `payload_notifications.sh`, `digest.py`, `migrate_tracker_v3.py`, and the four in-page scripts under `scripts/page/`, all under `tests/run.sh`.
+
+### Changed
+- **Browser surfaces**: the built-in browser pane is primary, the Chrome extension is the fallback; discovery reads pages through in-page scripts, never screenshots. Internal LinkedIn endpoints (Voyager) are explicitly forbidden.
+- `/check-job-notifications` is **unattended by design** — no prompts in any mode; a missing workspace, profile, or browser is a disclosed `no_scrape` stop with a digest, never a re-rank of old jobs.
+- Fingerprint (repost) dedupe now matches only entries seen in the last 45 days and every drop is disclosed with both ids.
+- Saved jobs are read from LinkedIn's Job tracker page (the old `/my-items/saved-jobs/` URL redirects there). The interactive second Top Picks sweep is removed.
+- The daily driver writes the structured `source` object (closing the long-deferred item).
+- `migrate_tracker_v3.py` now maps the legacy `closed`/`interviewing`/`in_conversation`/`awaiting_info` statuses to canonical `applied` with a legacy note, and handles two-segment namespaced ids.
+- A Tier 1 command's render step now treats an absent or `ask` render key as `always` — no prompt, per the unattended-by-design rule.
+
+### Fixed
+- The daily driver treated each alert's six-id link preview as the alert's full contents — the root cause of silently skipped roles.
+- Live trackers canonicalised by `migrate_tracker_v3.py` (free-text sources, `gated` status, string gate violations, mixed date formats).
+
 ## [0.16.0] — 2026-07-14
 
 ### Added

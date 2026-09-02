@@ -183,7 +183,7 @@ A 2–3 line summary printed even when HTML rendering succeeds. Format depends o
 |------|--------------|
 | `match-jobs` | `✓ {{N}} matches scored — A:{{a}} B:{{b}} C:{{c}} — report delivered` (or `…rendered as markdown above`) |
 | `job-search` | `✓ {{N}} jobs surfaced — A:{{a}} B:{{b}} — report delivered` |
-| `check-job-notifications` | `✓ {{N}} notifications — {{unread}} unread — report delivered` |
+| `check-job-notifications` | `✓ {{alerts}} alerts walked · {{cards}} cards · {{new}} new — A:{{a}} B:{{b}} C:{{c}} · Filtered:{{d}} · Queued:{{queued}} — report delivered` (or `✓ No fresh scrape — {{reason}} — digest written`) |
 | `funnel-report` | `✓ Pipeline snapshot for week of {{date}} — report delivered` |
 | `check-inbox` | `✓ {{N}} threads — {{unread}} unread — report delivered` |
 | `interview-prep` | `✓ Prep dossier for {{role}} at {{company}} — report delivered` |

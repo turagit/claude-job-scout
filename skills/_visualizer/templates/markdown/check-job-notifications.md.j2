@@ -13,6 +13,22 @@ _{{ data.subtitle }}_
 
 **Unread:** {{ data.unread_count }} of {{ data.tier_counts.total }}
 
+{% if data.run_status == 'no_scrape' %}
+> ⚠️ **No fresh scrape** — {{ data.no_scrape_reason or 'reason not recorded' }}. The tracker was not modified.
+{% endif %}
+{% if data.coverage and data.coverage.rows %}
+{% set t = data.coverage.totals or {} %}
+{% set b = data.budget or {} %}
+### Alert coverage
+
+{{ t.alerts or 0 }} alerts walked · {{ t.cards_seen or 0 }} cards · {{ t.new or 0 }} new{% if data.budget %} · JD budget {{ b.used or 0 }}/{{ b.limit or 0 }}{% endif %}
+
+| Alert | Pages | Stop | Cards | Exact | Known | Reposts | New |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+{% for r in data.coverage.rows %}| {{ r.keywords }}{% if r.status != 'complete' %} _(partial)_{% endif %} | {{ r.pages_walked }} | {{ r.stop_reason or '—' }} | {{ r.cards_seen }} | {{ r.before_divider }} | {{ r.known }} | {{ r.reposts }} | **{{ r.new }}** |
+{% endfor %}
+{% endif %}
+
 {% if data.results %}
 | Status | Tier | Title | Company | Source | Received |
 |:------:|:----:|-------|---------|--------|----------|
@@ -42,6 +58,27 @@ _⚡ = posted within 48 hours — apply early._
 - 🚫 **{{ note.title }}** · {{ note.company }} — gated on: {% for v in note.gate_violations %}**{{ v.kind }}**{% if v.detail %} ({{ v.detail }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
 {% endif %}{% endfor %}
 
+{% endif %}
+{% if data.near_misses %}
+### Near misses
+
+{% for j in data.near_misses %}{% set fg = j.failed_gate or {} %}- **{{ j.title }}** · {{ j.company }} · {{ j.location }} — would be **{{ j.would_be_tier }}**; failed **{{ fg.kind or 'unknown' }}**{% if fg.detail %} ({{ fg.detail }}){% endif %} · `{{ j.bend_hint }}`{% if j.url %} · {{ j.url }}{% endif %}
+{% endfor %}
+{% endif %}
+{% if data.queued %}
+### Queued for tomorrow
+
+{% for j in data.queued %}- {{ j.title }} · {{ j.company }} · {{ j.location }}{% if j.url %} · {{ j.url }}{% endif %}
+{% endfor %}
+{% endif %}
+{% if data.reposts %}
+### Treated as reposts
+
+{% for r in data.reposts %}- {{ r.title }} · {{ r.company }} · {{ r.location }} — new `{{ r.id }}` matched `{{ r.matched_id }}`
+{% endfor %}
+{% endif %}
+
+{% if data.results %}
 {% else %}
 🔕 **No notifications today.** Make sure your LinkedIn alerts are still active — `/create-alerts` can derive a fresh set from your query plan.
 {% endif %}
