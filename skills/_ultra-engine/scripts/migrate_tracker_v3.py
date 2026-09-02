@@ -5,6 +5,7 @@ import argparse, json, os, re, sys, tempfile
 from datetime import datetime, timezone
 
 STATUSES = {"seen", "approved", "applied", "rejected", "skipped"}
+STATUS_AS_APPLIED = {"closed", "interviewing", "in_conversation", "awaiting_info"}
 TIERS = {"A", "B", "C", "D", "untiered"}
 KINDS = {"work_arrangement", "contract_type", "seniority_floor", "location", "industry", "company", "rate_floor", "salary_floor", "custom"}
 BOARD_RULES = [(r"top.?pick|recommend", "Top Picks"), (r"saved", "Saved"), (r"similar", "Similar"),
@@ -24,9 +25,16 @@ def date_only(v, fallback):
     if isinstance(v, str) and re.match(r"^\d{4}-\d{2}-\d{2}", v): return v[:10]
     return fallback
 
+def slug(s):
+    return re.sub(r"[^a-z0-9]", "", s.lower())
+
 def lane_for(provider, sources):
+    p_slug = slug(provider)
     for s in sources:
-        if (s.get("provider") or s.get("name", "")).lower() == provider.lower(): return s.get("category") or "aggregator"
+        name = s.get("name") or s.get("provider") or ""
+        n_slug = slug(name)
+        if p_slug and (n_slug.startswith(p_slug) or p_slug.startswith(n_slug) or n_slug == p_slug):
+            return s.get("category") or "aggregator"
     return "aggregator"
 
 def fix(key, e, sources, today, by):
@@ -36,8 +44,16 @@ def fix(key, e, sources, today, by):
     if not (isinstance(src, dict) and all(isinstance(src.get(k), str) and src.get(k) for k in ("lane", "provider", "board"))):
         text = src if isinstance(src, str) else " ".join(str(v) for v in (src or {}).values()) if isinstance(src, dict) else ""
         parts = key.split("__")
-        if len(parts) == 3 and not key.isdigit():
-            e["source"] = {"lane": lane_for(parts[0], sources), "provider": parts[0], "board": parts[1]}
+        if len(parts) >= 2 and not key.isdigit():
+            provider = parts[0]
+            if len(parts) >= 3:
+                board = parts[1]
+            else:
+                if isinstance(src, dict) and isinstance(src.get("board"), str): board = src["board"]
+                elif text.strip() == "Inbox": board = "Inbox"
+                else: board = "html"
+            e["source"] = {"lane": lane_for(provider, sources), "provider": provider, "board": board}
+            if isinstance(src, str) and src.strip().lower() != provider.lower(): note(e, f"source(legacy): {src.strip()}")
         else:
             b = board_of(text); e["source"] = {"lane": "linkedin", "provider": "linkedin", "board": b}
             if isinstance(src, str) and src.strip().lower() != b.lower(): note(e, f"source(legacy): {src.strip()}")
@@ -45,8 +61,12 @@ def fix(key, e, sources, today, by):
     st = e.get("status")
     if st not in STATUSES:
         note(e, f"status(legacy): {st}")
-        if st == "gated" and e.get("tier") in (None, "untiered"): e["tier"] = "D"
-        e["status"] = "seen"; by["status"] += 1
+        if st in STATUS_AS_APPLIED:
+            e["status"] = "applied"
+        else:
+            if st == "gated" and e.get("tier") in (None, "untiered"): e["tier"] = "D"
+            e["status"] = "seen"
+        by["status"] += 1
     if e.get("tier") not in TIERS: e["tier"] = "untiered"; by["tier"] += 1
     if e.get("rubric_version") not in ("legacy", "v1"): e["rubric_version"] = "legacy"; by["rubric_version"] += 1
     gv = e.get("gate_violations")
@@ -55,6 +75,7 @@ def fix(key, e, sources, today, by):
         for v in gv:
             if isinstance(v, str): new.append({"kind": v if v in KINDS else "custom", "detail": v})
             elif isinstance(v, dict): new.append({"kind": v.get("kind") if v.get("kind") in KINDS else "custom", "detail": str(v.get("detail", ""))})
+            else: new.append({"kind": "custom", "detail": repr(v)})
         if new != gv: e["gate_violations"] = new; by["gate_violations"] += 1
     fs, ls = e.get("first_seen"), e.get("last_seen")
     nfs = date_only(fs, date_only(ls, today)); nls = date_only(ls, nfs)
@@ -75,11 +96,26 @@ def main():
         print(f"migrate: bad input ({type(e).__name__})", file=sys.stderr)
         sys.exit(1)
     jobs = t.get("jobs")
-    if not isinstance(jobs, dict): print("migrate: .jobs is not an object", file=sys.stderr); sys.exit(1)
-    sources = json.load(open(a.sources)).get("sources", []) if a.sources and os.path.isfile(a.sources) else []
+    if not isinstance(jobs, dict): print("migrate: bad input (jobs is not an object)", file=sys.stderr); sys.exit(1)
+    sources = []
+    if a.sources and os.path.isfile(a.sources):
+        try:
+            sources = json.load(open(a.sources)).get("sources", [])
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"migrate: bad input (sources.json: {type(e).__name__})", file=sys.stderr)
+            sys.exit(1)
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    by = {k: 0 for k in ("id", "source", "status", "tier", "rubric_version", "gate_violations", "dates", "adhoc_fields")}
-    n_before = len(jobs); changed = sum(1 for k, e in jobs.items() if isinstance(e, dict) and fix(k, e, sources, today, by))
+    by = {k: 0 for k in ("id", "source", "status", "tier", "rubric_version", "gate_violations", "dates", "adhoc_fields", "skipped_non_dict")}
+    n_before = len(jobs)
+    non_dict_count = 0
+    for k, e in jobs.items():
+        if isinstance(e, dict):
+            if fix(k, e, sources, today, by): pass
+        else:
+            non_dict_count += 1
+            by["skipped_non_dict"] += 1
+    changed = sum(by[k] for k in ("id", "source", "status", "tier", "rubric_version", "gate_violations", "dates", "adhoc_fields"))
+    if non_dict_count > 0: print(f"migrate: warning: {non_dict_count} non-dict entries left untouched", file=sys.stderr)
     if len(jobs) != n_before: print("migrate: entry count changed — aborting", file=sys.stderr); sys.exit(2)
     t["schema_version"] = 3
     backup = None

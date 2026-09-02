@@ -5,7 +5,7 @@ class T(unittest.TestCase):
     def setUp(self):
         self.d = tempfile.mkdtemp(); self.t = os.path.join(self.d, "tracker.json")
         shutil.copy(os.path.join(HERE, "fixtures", "p17-tracker-drifted.json"), self.t)
-        json.dump({"schema_version": 2, "sources": [{"name": "Greenhouse", "provider": "greenhouse", "category": "ats-provider"}]}, open(os.path.join(self.d, "sources.json"), "w"))
+        json.dump({"schema_version": 2, "sources": [{"name": "Greenhouse", "provider": "greenhouse", "category": "ats-provider"}, {"name": "JustJoin.it", "category": "aggregator"}, {"name": "IT-Contracts.nl", "category": "freelance-marketplace"}]}, open(os.path.join(self.d, "sources.json"), "w"))
     def run_it(self, *extra):
         p = subprocess.run(["python3", os.path.join(S, "migrate_tracker_v3.py"), "--tracker", self.t, "--sources", os.path.join(self.d, "sources.json"), *extra], capture_output=True, text=True)
         self.assertEqual(p.returncode, 0, p.stderr); return json.loads(p.stdout)
@@ -40,5 +40,48 @@ class T(unittest.TestCase):
         with open(self.t, "w") as f: f.write("{invalid json")
         p = subprocess.run(["python3", os.path.join(S, "migrate_tracker_v3.py"), "--tracker", self.t, "--sources", os.path.join(self.d, "sources.json")], capture_output=True, text=True)
         self.assertEqual(p.returncode, 1); self.assertIn("bad input", p.stderr); self.assertNotIn("Traceback", p.stderr)
+    def test_bad_input_jobs_not_object(self):
+        with open(self.t, "w") as f: json.dump({"schema_version": 2, "jobs": "nope"}, f)
+        p = subprocess.run(["python3", os.path.join(S, "migrate_tracker_v3.py"), "--tracker", self.t], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 1); self.assertIn("bad input", p.stderr); self.assertNotIn("Traceback", p.stderr)
+    def test_gate_violations_mixed_types(self):
+        t = json.load(open(self.t)); t["jobs"]["999"] = {"id": "999", "title": "Test", "company": "Test Co", "source": "search", "gate_violations": [None, 42, "contract_type", {"detail": "detail_x"}]}
+        with open(self.t, "w") as f: json.dump(t, f)
+        s = self.run_it(); result = json.load(open(self.t)); gv = result["jobs"]["999"]["gate_violations"]
+        self.assertEqual(len(gv), 4); self.assertEqual(gv[0], {"kind": "custom", "detail": "None"}); self.assertEqual(gv[1], {"kind": "custom", "detail": "42"}); self.assertEqual(gv[2]["kind"], "contract_type"); self.assertEqual(gv[3]["kind"], "custom")
+    def test_namespaced_legacy_note(self):
+        t = json.load(open(self.t)); t["jobs"]["greenhouse__miro__999"] = {"id": "greenhouse__miro__999", "title": "Test", "company": "Miro", "source": "greenhouse (via aggregator XYZ)", "status": "seen"}
+        with open(self.t, "w") as f: json.dump(t, f)
+        s = self.run_it(); result = json.load(open(self.t)); e = result["jobs"]["greenhouse__miro__999"]
+        self.assertEqual(e["source"], {"lane": "ats-provider", "provider": "greenhouse", "board": "miro"}); self.assertIn("source(legacy): greenhouse (via aggregator XYZ)", e["notes"])
+    def test_non_dict_entries(self):
+        t = json.load(open(self.t)); t["jobs"]["999"] = "not a dict"; t["jobs"]["888"] = None
+        with open(self.t, "w") as f: json.dump(t, f)
+        p = subprocess.run(["python3", os.path.join(S, "migrate_tracker_v3.py"), "--tracker", self.t, "--sources", os.path.join(self.d, "sources.json")], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0); s = json.loads(p.stdout); self.assertEqual(s["by_rule"]["skipped_non_dict"], 2); self.assertIn("migrate: warning: 2 non-dict entries left untouched", p.stderr)
+    def test_corrupt_sources_json(self):
+        with open(os.path.join(self.d, "sources.json"), "w") as f: f.write("{bad json")
+        p = subprocess.run(["python3", os.path.join(S, "migrate_tracker_v3.py"), "--tracker", self.t, "--sources", os.path.join(self.d, "sources.json")], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 1); self.assertIn("bad input (sources.json:", p.stderr); self.assertNotIn("Traceback", p.stderr)
+    def test_status_as_applied(self):
+        t = json.load(open(self.t)); t["jobs"]["int1"] = {"id": "int1", "title": "Test", "company": "Test Co", "source": "search", "status": "interviewing", "tier": "B"}
+        with open(self.t, "w") as f: json.dump(t, f)
+        s = self.run_it(); result = json.load(open(self.t)); e = result["jobs"]["int1"]
+        self.assertEqual(e["status"], "applied"); self.assertIn("status(legacy): interviewing", e["notes"])
+    def test_two_segment_namespaced_with_object_source(self):
+        t = json.load(open(self.t)); t["jobs"]["justjoinit__relout-linux"] = {"id": "justjoinit__relout-linux", "title": "Test", "company": "Test Co", "source": {"board": "html", "name": "JustJoin.it"}, "status": "seen"}
+        with open(self.t, "w") as f: json.dump(t, f)
+        s = self.run_it(); result = json.load(open(self.t)); e = result["jobs"]["justjoinit__relout-linux"]
+        self.assertEqual(e["source"], {"lane": "aggregator", "provider": "justjoinit", "board": "html"})
+    def test_two_segment_namespaced_with_inbox_source(self):
+        t = json.load(open(self.t)); t["jobs"]["verda__7998465"] = {"id": "verda__7998465", "title": "Test", "company": "Test Co", "source": "Inbox", "status": "seen"}
+        with open(self.t, "w") as f: json.dump(t, f)
+        s = self.run_it(); result = json.load(open(self.t)); e = result["jobs"]["verda__7998465"]
+        self.assertEqual(e["source"]["board"], "Inbox"); self.assertEqual(e["source"]["provider"], "verda")
+    def test_slug_matching_itcontracts(self):
+        t = json.load(open(self.t)); t["jobs"]["itcontracts__287911"] = {"id": "itcontracts__287911", "title": "Test", "company": "Test Co", "source": "aggregator", "status": "seen"}
+        with open(self.t, "w") as f: json.dump(t, f)
+        s = self.run_it(); result = json.load(open(self.t)); e = result["jobs"]["itcontracts__287911"]
+        self.assertEqual(e["source"]["lane"], "freelance-marketplace"); self.assertEqual(e["source"]["provider"], "itcontracts")
 if __name__ == "__main__":
     unittest.main()
