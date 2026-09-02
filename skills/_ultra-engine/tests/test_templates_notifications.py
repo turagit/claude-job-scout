@@ -14,6 +14,8 @@ def payload(status="fresh", reason=""):
         json.dump([{"id": "1777", "matched_id": "1001", "alert_key": "k1", "title": "Lead Platform Engineer", "company": "Acme", "location": "Amsterdam (Remote)"}], f)
     with open(os.path.join(rd, "queued.json"), "w") as f:
         json.dump([{"id": "1888", "title": "Queued role", "company": "Eps", "location": "Remote", "url": "https://www.linkedin.com/jobs/view/1888/"}], f)
+    with open(os.path.join(rd, "dropped-cards.json"), "w") as f:
+        json.dump([{"id": "1999", "title": "Onsite role", "company": "Onco", "location": "Berlin", "workplace": "onsite", "alert_key": "k1"}], f)
     p = subprocess.run(["bash", os.path.join(S, "payload_notifications.sh"), os.path.join(HERE, "fixtures", "p17-tracker-run.json"), rd, "2026-09-02", status, reason], capture_output=True, text=True)
     assert p.returncode == 0, p.stderr; return json.loads(p.stdout)
 
@@ -24,7 +26,7 @@ class T(unittest.TestCase):
         return env.get_template("check-job-notifications.%s.j2" % ("html" if fmt == "html" else "md")).render(data=data)
     def test_html_sections(self):
         h = self.render("html", payload())
-        for s in ("Alert coverage", "linux engineer Contract Remote", "divider", "Queued for tomorrow", "Queued role", "Treated as reposts", "1777", "Would you bend", "/bend 1003", "View posting"):
+        for s in ("Alert coverage", "linux engineer Contract Remote", "divider", "Queued for tomorrow", "Queued role", "Treated as reposts", "1777", "Would you bend", "/bend 1003", "View posting", "Dropped on card", "Onsite role"):
             self.assertIn(s, h)
         self.assertNotIn("no fresh scrape", h.lower())
     def test_html_no_scrape_banner(self):
@@ -32,10 +34,10 @@ class T(unittest.TestCase):
         self.assertIn("No fresh scrape", h); self.assertIn("browser unavailable", h)
     def test_markdown_sections(self):
         m = self.render("markdown", payload())
-        for s in ("### Alert coverage", "| linux engineer Contract Remote |", "### Queued for tomorrow", "### Treated as reposts", "### Near misses", "/bend 1003"):
+        for s in ("### Alert coverage", "| linux engineer Contract Remote |", "### Queued for tomorrow", "### Treated as reposts", "### Near misses", "/bend 1003", "Dropped on card", "Onsite role"):
             self.assertIn(s, m)
     def test_missing_optional_fields_do_not_error(self):
-        d = payload(); d.pop("coverage"); d.pop("queued"); d.pop("reposts"); d.pop("near_misses"); d.pop("budget")
+        d = payload(); d.pop("coverage"); d.pop("queued"); d.pop("reposts"); d.pop("near_misses"); d.pop("budget"); d.pop("dropped")
         self.render("html", d); self.render("markdown", d)
         d2 = payload(); d2["coverage"].pop("totals"); d2.pop("budget")
         self.render("html", d2); self.render("markdown", d2)

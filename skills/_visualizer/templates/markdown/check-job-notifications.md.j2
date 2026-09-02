@@ -23,9 +23,9 @@ _{{ data.subtitle }}_
 
 {{ t.alerts or 0 }} alerts walked · {{ t.cards_seen or 0 }} cards · {{ t.new or 0 }} new{% if data.budget %} · JD budget {{ b.used or 0 }}/{{ b.limit or 0 }}{% endif %}
 
-| Alert | Pages | Stop | Cards | Exact | Known | Reposts | New |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-{% for r in data.coverage.rows %}| {{ r.keywords }}{% if r.status != 'complete' %} _(partial)_{% endif %} | {{ r.pages_walked }} | {{ r.stop_reason or '—' }} | {{ r.cards_seen }} | {{ r.before_divider }} | {{ r.known }} | {{ r.reposts }} | **{{ r.new }}** |
+| Alert | Pages | Stop | Cards | Exact | Known | Reposts | Dropped | New |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+{% for r in data.coverage.rows %}| {{ r.keywords }}{% if r.status != 'complete' %} _(partial)_{% endif %} | {{ r.pages_walked }} | {{ r.stop_reason or '—' }} | {{ r.cards_seen }} | {{ r.before_divider }} | {{ r.known }} | {{ r.reposts }} | {{ r.dropped or 0 }} | **{{ r.new }}** |
 {% endfor %}
 {% endif %}
 
@@ -76,6 +76,13 @@ _⚡ = posted within 48 hours — apply early._
 
 {% for r in data.reposts %}- {{ r.title }} · {{ r.company }} · {{ r.location }} — new `{{ r.id }}` matched `{{ r.matched_id }}`
 {% endfor %}
+{% endif %}
+{% if data.dropped %}
+<details><summary>Dropped on card (explicit on-site/hybrid) — {{ data.dropped|length }}</summary>
+
+{% for d in data.dropped %}- {{ d.title }} · {{ d.company }} · {{ d.location }} — {{ d.workplace }}
+{% endfor %}
+</details>
 {% endif %}
 
 {% if data.results %}

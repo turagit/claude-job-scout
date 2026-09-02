@@ -3,7 +3,7 @@
 Usage: coverage.py --ledger alerts.json --run-id R --out coverage.json [--reposts reposts.json]"""
 import argparse, json, os, sys
 
-KEYS = ("cards_seen", "before_divider", "known", "reposts", "new")
+KEYS = ("cards_seen", "before_divider", "known", "reposts", "new", "dropped")
 
 def main():
     ap = argparse.ArgumentParser()

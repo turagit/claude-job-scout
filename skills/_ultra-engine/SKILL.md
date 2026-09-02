@@ -3,7 +3,7 @@ name: _ultra-engine
 description: Internal deterministic engine for the ultramode pipeline — scripts for snapshots, fingerprints, IDs, delta validation, tracker merges, rotation, JD budgeting, checkpoints, scorecard, and payload assembly. Loaded by orchestrator skills; never user-invoked.
 allowed-tools: Read, Bash, Grep, Glob
 disable-model-invocation: true
-version: 0.1.0
+version: 0.2.0
 ---
 
 The deterministic spine of the ultramode pipeline (Phase 14, spec 2026-07-02). Orchestrator skills MUST call these scripts for every mechanical operation — hand-rolled snapshots, merges, ID minting, ordering, or budget accounting are defects, not style choices. Scripts print machine-readable output, exit non-zero on any violation, and never write state non-atomically.
@@ -20,7 +20,7 @@ Resolve `SCRIPTS` as this skill's own `scripts/` directory (e.g. `skills/_ultra-
 | migrate_sources | `python3 $SCRIPTS/migrate_sources.py $WS/sources.json` | sources.json v1→v2 (auth_state + lifecycle lists), idempotent, atomic. Orchestrators run it on load when `schema_version < 2`. |
 | auth_state | `bash $SCRIPTS/auth_state.sh set $WS/sources.json <name> <state> <ISO>` / `get <name>` | Observed auth-state transitions (`public\|auth-required\|signed-in\|session-expired`) + timestamp; never inferred, never secret-bearing. |
 | rotation | `bash $SCRIPTS/rotation.sh pick <sources.json> 4` / `pick-all <sources.json>` / `mark <sources.json> <name> <date>` | Extension-lane order: BENELUX packs (`benelux`, `nl-core`) first, then stalest, then name (D4/D8). `pick` = rotation subset; `pick-all` = the `/ultramode super` worklist. |
-| jd_queue | `bash $SCRIPTS/jd_queue.sh push|pop|count $WS/cache/jd-queue.json ...` | Deferred JD-fetch queue; budget default 75 (D9). |
+| jd_queue | `bash $SCRIPTS/jd_queue.sh push|pop|count $WS/cache/jd-queue.json ... [origin]` | Deferred JD-fetch queue; budget default 75 (D9). Namespaced by origin: an explicit `[origin]` (e.g. `notifications`) scopes push/pop/count to that origin only; omitted = legacy/`ultramode`'s own entries. |
 | checkpoint | `bash $SCRIPTS/checkpoint.sh init|save|stage|find-incomplete ...` | Run-dir stage manifest under `$WS/cache/run/<id>/`; `find-incomplete` powers resume (D7). |
 | scorecard | `bash $SCRIPTS/scorecard.sh <run-dir> $WS/tracker.json <today>` | The per-run accounting incl. `disclosures[]` (D12). |
 | payload | `bash $SCRIPTS/payload.sh $WS/tracker.json <run-dir> <today> <n-sources>` | The ultramode render payload: ordering, near-miss rail, scorecard embed. |

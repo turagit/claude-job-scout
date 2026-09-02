@@ -11,6 +11,7 @@
      - data.coverage
      - data.queued
      - data.reposts
+     - data.dropped
      - data.near_misses
      - data.budget
      - data.run_status
@@ -34,9 +35,9 @@
 {% set b = data.budget or {} %}
 <details open style="margin:12px 0"><summary><strong>Alert coverage</strong> — {{ t.alerts or 0 }} alerts walked · {{ t.cards_seen or 0 }} cards · {{ t.new or 0 }} new{% if data.budget %} · JD budget {{ b.used or 0 }}/{{ b.limit or 0 }}{% if b.queued %} · {{ b.queued }} queued{% endif %}{% endif %}</summary>
 <table class="dim-table" style="width:100%;margin-top:8px;font-size:13px;border-collapse:collapse">
-  <tr><th style="text-align:left;padding:4px 8px">Alert</th><th style="padding:4px 8px">Pages</th><th style="padding:4px 8px">Stop</th><th style="padding:4px 8px">Cards</th><th style="padding:4px 8px">Exact</th><th style="padding:4px 8px">Known</th><th style="padding:4px 8px">Reposts</th><th style="padding:4px 8px">New</th></tr>
+  <tr><th style="text-align:left;padding:4px 8px">Alert</th><th style="padding:4px 8px">Pages</th><th style="padding:4px 8px">Stop</th><th style="padding:4px 8px">Cards</th><th style="padding:4px 8px">Exact</th><th style="padding:4px 8px">Known</th><th style="padding:4px 8px">Reposts</th><th style="padding:4px 8px">Dropped</th><th style="padding:4px 8px">New</th></tr>
   {% for r in data.coverage.rows %}
-  <tr class="dim-row"><td style="padding:4px 8px">{{ r.keywords }}<div style="font-size:11px;color:var(--text-muted)">since {{ r.since }}{% if r.status != 'complete' %} · <strong>partial</strong>{% endif %}</div></td><td style="text-align:center">{{ r.pages_walked }}</td><td style="text-align:center">{{ r.stop_reason or '—' }}</td><td style="text-align:center">{{ r.cards_seen }}</td><td style="text-align:center">{{ r.before_divider }}</td><td style="text-align:center">{{ r.known }}</td><td style="text-align:center">{{ r.reposts }}</td><td style="text-align:center"><strong>{{ r.new }}</strong></td></tr>
+  <tr class="dim-row"><td style="padding:4px 8px">{{ r.keywords }}<div style="font-size:11px;color:var(--text-muted)">since {{ r.since }}{% if r.status != 'complete' %} · <strong>partial</strong>{% endif %}</div></td><td style="text-align:center">{{ r.pages_walked }}</td><td style="text-align:center">{{ r.stop_reason or '—' }}</td><td style="text-align:center">{{ r.cards_seen }}</td><td style="text-align:center">{{ r.before_divider }}</td><td style="text-align:center">{{ r.known }}</td><td style="text-align:center">{{ r.reposts }}</td><td style="text-align:center">{{ r.dropped or 0 }}</td><td style="text-align:center"><strong>{{ r.new }}</strong></td></tr>
   {% endfor %}
 </table></details>
 {% endif %}
@@ -103,6 +104,10 @@
 {% if data.reposts %}
 <details style="margin:12px 0"><summary><strong>Treated as reposts</strong> — {{ data.reposts|length }} skipped by fingerprint (both IDs shown; open one if it looks wrong)</summary>
 <ul>{% for r in data.reposts %}<li>{{ r.title }} · {{ r.company }} · {{ r.location }} — new id <code>{{ r.id }}</code> matched tracked <code>{{ r.matched_id }}</code></li>{% endfor %}</ul></details>
+{% endif %}
+{% if data.dropped %}
+<details style="margin:12px 0"><summary><strong>Dropped on card (explicit on-site/hybrid)</strong> — {{ data.dropped|length }}</summary>
+<ul>{% for d in data.dropped %}<li>{{ d.title }} · {{ d.company }} · {{ d.location }} — {{ d.workplace }}</li>{% endfor %}</ul></details>
 {% endif %}
 {% if data.results %}
 {% else %}

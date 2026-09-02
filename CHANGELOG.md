@@ -4,6 +4,16 @@ All notable changes to the LinkedIn Job Hunter plugin are documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.1] — 2026-09-02
+
+### Changed
+- The deferred JD-fetch queue (`jd_queue.sh`) is now namespaced by `origin`, so `/check-job-notifications` and `/ultramode` each own their own slice of `.job-scout/cache/jd-queue.json` and never drain each other's leftovers.
+- `/check-job-notifications` Step 1 caps its queue drain at a third of the JD budget per run (50 at the default 150), so the alert walk always keeps at least two thirds of the budget for itself; a capped drain is disclosed with the counts.
+- A card whose visible workplace type is explicit (on-site/hybrid) and outside the user's declared `work_arrangement` allow-list is now dropped before its JD is even read — cheaper than the existing JD-text gate, and disclosed per page and in a collapsed report section; `unknown` workplace is never dropped.
+
+### Fixed
+- The daily driver (`/check-job-notifications`) no longer drains `/ultramode`'s leftover JD queue, and vice versa.
+
 ## [0.17.0] — 2026-09-02
 
 ### Added
