@@ -18,7 +18,7 @@ jq -n --arg today "$today" --arg status "$status" --arg reason "$reason" \
   def is_valid_date: (.posted_at // "") | test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$");
   def date_num: ((.posted_at // "") | if test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$") then gsub("-"; "") | tonumber else 0 end);
   def board: if (.source | type) == "object" then (.source.board // "Job Alert") else ((.source // "Job Alert") | tostring) end;
-  def days_old: (($today | strptime("%Y-%m-%d") | mktime) - ((.posted_at // "1970-01-01") | strptime("%Y-%m-%d") | mktime)) / 86400;
+  def days_old: try ((($today | strptime("%Y-%m-%d") | mktime) - ((.posted_at // "1970-01-01") | strptime("%Y-%m-%d") | mktime)) / 86400) catch 999999;
   def opt(k): if (.[k] // null) == null then {} else {(k): .[k]} end;
   def card: {id: .id, title: .title, company: .company, location: (.location // ""), received_at: .first_seen,
              posted_at: (.posted_at // ""), source: board, tier: (.tier // "untiered"), tier_reason: (.tier_reason // null),

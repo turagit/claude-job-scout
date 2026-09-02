@@ -132,7 +132,7 @@ Every LinkedIn search the plugin runs follows `skills/shared-references/linkedin
 
 ### Visual reports (v0.7.0+)
 
-Six Tier 1 commands — `/match-jobs`, `/job-search`, `/check-job-notifications`, `/funnel-report`, `/check-inbox`, `/interview-prep` — now render their output as a self-contained HTML report (Modern Cards aesthetic, light interactivity) that auto-opens in your Chrome via the existing Claude Chrome extension.
+Six Tier 1 commands — `/match-jobs`, `/job-search`, `/check-job-notifications`, `/funnel-report`, `/check-inbox`, `/interview-prep` — now render their output as a self-contained HTML report (Modern Cards aesthetic, light interactivity). Reports are delivered through the harness's file panel (or your OS's default opener) rather than auto-opening a browser tab; any browser work the plugin itself performs uses the built-in browser pane first, falling back to the Chrome extension only when the pane is unavailable.
 
 Reports are saved under `.job-scout/reports/`. Snapshot views (match-jobs, job-search, check-job-notifications, check-inbox) write `<view>-latest.html`, overwriting on each run. Time-series views (funnel-report, interview-prep) write timestamped files; old files auto-archive after 90 days.
 
@@ -260,7 +260,7 @@ In Claude Desktop / Claude Code, go to Settings → Plugins → "Install from fo
 
 ### Daily workflow (once set up)
 
-1. `/check-job-notifications` — walks every job alert to LinkedIn's results divider, scores new jobs, writes a ranked report with a per-alert coverage table and a phone digest. Runs fully unattended (no prompts). Offers to continue into LinkedIn's "Top job picks for you" feed for a deeper sweep.
+1. `/check-job-notifications` — walks every job alert to LinkedIn's results divider, scores new jobs, writes a ranked report with a per-alert coverage table and a phone digest. Runs fully unattended (no prompts).
 2. Review the matches and tell Claude which ones to apply to.
 3. Optionally run `/check-inbox` for recruiter messages.
 4. **Weekly:** run `/ultramode` again for the full-market sweep.

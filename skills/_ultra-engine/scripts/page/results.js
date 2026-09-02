@@ -2,11 +2,15 @@
 // Returns the page dump for cards_parse.py --surface alert. Anchors: evidence §2 only.
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const isScroller = e => { const s = getComputedStyle(e); return /(auto|scroll)/.test(s.overflowY) && e.scrollHeight > e.clientHeight + 100; };
+const outerCount = () => [...document.querySelectorAll('[componentkey^="job-card-component-ref-"]')]
+  .filter(c => !(c.parentElement && c.parentElement.closest('[componentkey^="job-card-component-ref-"]'))).length;
 let pane = null;
 for (const c of document.querySelectorAll('[componentkey^="job-card-component-ref-"]')) {
   let n = c.parentElement; while (n && !isScroller(n)) n = n.parentElement; if (n) { pane = n; break; }
 }
-if (pane) { for (let i = 0; i < 6; i++) { pane.scrollTop = pane.scrollHeight; await sleep(500); } pane.scrollTop = 0; await sleep(300); }
+let last = -1;
+for (let i = 0; i < 12 && outerCount() !== last; i++) { last = outerCount(); if (pane) pane.scrollTop = pane.scrollHeight; else window.scrollTo(0, document.body.scrollHeight); await sleep(500); }
+if (pane) { pane.scrollTop = 0; await sleep(300); }
 const all = [...document.querySelectorAll('[componentkey^="job-card-component-ref-"]')];
 const outer = all.filter(c => !(c.parentElement && c.parentElement.closest('[componentkey^="job-card-component-ref-"]')));
 const divider = [...document.querySelectorAll('p,span,div')].find(e => e.children.length === 0 && /^We found more results related to your search/.test(e.textContent.trim()));

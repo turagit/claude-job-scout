@@ -45,5 +45,15 @@ class T(unittest.TestCase):
         p = run({"surface": "notifications"})
         self.assertEqual(p.returncode, 1); self.assertNotIn("Traceback", p.stderr)
 
+    def test_dropped_unparseable_counts_broken_viewjobs_links_only(self):
+        # the fixture's non-alert /feed/ link is not counted; its alertAction=viewjobs link
+        # missing keywords/f_TPR is.
+        self.assertEqual(self.out["dropped_unparseable"], 1)
+
+    def test_dropped_unparseable_absent_when_all_links_clean(self):
+        clean = {"surface": "notifications", "url": "x", "load_more_clicks": 0, "exhausted": True, "alerts": self.dump["alerts"][:1]}
+        o = json.loads(run(clean).stdout)
+        self.assertEqual(o["dropped_unparseable"], 0)
+
 if __name__ == "__main__":
     unittest.main()

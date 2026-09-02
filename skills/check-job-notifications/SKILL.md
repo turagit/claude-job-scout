@@ -32,12 +32,12 @@ Pick the pane if its `tabs_context` call succeeds; otherwise the extension; othe
 
 ## Step 0 — Preflight (no browser yet)
 
-1. `[ -f $WS/user-profile.json ] && jq -e '.discovery_complete == true and (.requirements|type=="object")' $WS/user-profile.json` else STOP `no_scrape` reason `profile missing or incomplete — run /analyze-cv`. A missing `$WS` is the same stop (`workspace missing`).
-2. Follow `../shared-references/render-orchestration.md` Step G (report lifecycle cleanup).
-3. `rd=$(bash $SCRIPTS/checkpoint.sh init $WS $RUN_ID)`; `python3 $SCRIPTS/alerts_ledger.py prune --ledger $WS/alerts.json --today $TODAY`.
-4. Initialise this run's working files: `[ -f $rd/pipeline-errors.json ] || echo '{"errors": []}' > $rd/pipeline-errors.json`; `echo '[]' > $rd/reposts.json`; `echo '[]' > $rd/new-cards.json`; `echo '[]' > $rd/queued.json`. Every disclosure below uses one idiom — `jq --argjson e '<obj>' '.errors += [$e]' $rd/pipeline-errors.json > $rd/pipeline-errors.json.tmp && mv $rd/pipeline-errors.json.tmp $rd/pipeline-errors.json` — and the same shape with `. += [$e]` (no `.errors` wrapper) appends to `reposts.json`, `new-cards.json`, `queued.json`.
+1. `[ -d $WS ]` else this is a terminal stop, not a `no_scrape` one: print `✗ No fresh scrape — workspace missing at <path> — nothing written` and stop the command entirely — there is no `$rd` yet, so nothing is written and no digest is produced.
+2. `rd=$(bash $SCRIPTS/checkpoint.sh init $WS $RUN_ID)`; `python3 $SCRIPTS/alerts_ledger.py prune --ledger $WS/alerts.json --today $TODAY`. Initialise this run's working files: `[ -f $rd/pipeline-errors.json ] || echo '{"errors": []}' > $rd/pipeline-errors.json`; `echo '[]' > $rd/reposts.json`; `echo '[]' > $rd/new-cards.json`; `echo '[]' > $rd/queued.json`. Every disclosure below uses one idiom — `jq --argjson e '<obj>' '.errors += [$e]' $rd/pipeline-errors.json > $rd/pipeline-errors.json.tmp && mv $rd/pipeline-errors.json.tmp $rd/pipeline-errors.json` — and the same shape with `. += [$e]` (no `.errors` wrapper) appends to `reposts.json`, `new-cards.json`, `queued.json`.
+3. `[ -f $WS/user-profile.json ] && jq -e '.discovery_complete == true and (.requirements|type=="object")' $WS/user-profile.json` else STOP `no_scrape` reason `profile missing or incomplete — run /analyze-cv` and jump to Step 8 (`$rd` already exists, so the digest and report still get written).
+4. Follow `../shared-references/render-orchestration.md` Step G (report lifecycle cleanup).
 5. `bash $SCRIPTS/snapshot.sh $WS/tracker.json $WS/cache/ultramode-snapshot.json`; `bash $SCRIPTS/checkpoint.sh save $rd snapshot $WS/cache/ultramode-snapshot.json`. Build the 45-day fingerprint set: `jq -c -L $SCRIPTS/lib --arg cut $(date -v-${FP_DAYS}d +%F 2>/dev/null || date -d "-${FP_DAYS} days" +%F) 'include "fingerprint"; [.jobs[] | select((.status//"seen")!="rejected" and (.last_seen//"0000") >= $cut) | fp((.company//""); (.title//""); (.location//""))] | unique' $WS/tracker.json > $rd/fp-45d.json`. Build the fingerprint→id map once: `jq -c -L $SCRIPTS/lib 'include "fingerprint"; [.jobs[]|select((.status//"seen")!="rejected")|{(fp((.company//"");(.title//"");(.location//""))): .id}] | add // {}' $WS/tracker.json > $rd/fp-map.json`.
-6. Choose the browser surface (adapter table). Any STOP here → jump to Step 8 with `run_status=no_scrape`.
+6. Choose the browser surface (adapter table). Any STOP here → jump to Step 8 with `run_status=no_scrape` (`$rd` already exists).
 
 ## Step 1 — Drain yesterday's queue first (D8)
 
@@ -52,7 +52,7 @@ python3 $SCRIPTS/alerts_parse.py < $rd/notifications-dump.json > $rd/alerts.json
 python3 $SCRIPTS/alerts_ledger.py plan --ledger $WS/alerts.json --alerts $rd/alerts.json --today $TODAY > $rd/walk-plan.json
 ```
 
-If the dump has `exhausted: false`, disclose `{"stage":"notifications","message":"Load more not exhausted after 25 clicks"}` and continue. Zero alerts with `exhausted: true` is a valid quiet day.
+If the dump has `exhausted: false`, disclose `{"stage":"notifications","message":"Load more not exhausted after 25 clicks"}` and continue. When `alerts.json`'s `dropped_unparseable > 0`, disclose `{"stage":"notifications","message":"<n> alert links could not be parsed — LinkedIn link format may have changed"}`. When the dump's own `alerts[]` had ≥1 entry but `alerts.json`'s `alerts` is empty, that is `extractor_mismatch` for the notifications page: disclose `{"stage":"notifications","message":"extractor_mismatch notifications page"}` and STOP the alert walk for this run (skip Step 3 entirely), continuing to Step 6 onward. Zero alerts with `exhausted: true` and a raw dump with no alert links at all is a valid quiet day.
 
 ## Step 3 — Walk every alert in `walk-plan.json`'s `.walk[]` (D5, D6, D7)
 
@@ -61,8 +61,8 @@ For each `{alert_key, resume_page}` (extract that alert's record from `$rd/alert
 1. `python3 $SCRIPTS/alerts_ledger.py start --ledger $WS/alerts.json --alert-json $rd/alert-<key>.json --today $TODAY --run-id $RUN_ID`.
 2. `page = resume_page`. Loop:
    a. Navigate to `<results_url>&start=$(( (page-1)*25 ))`; run `page/results.js`; save to `$rd/page-<key>-<page>.json`.
-   b. `python3 $SCRIPTS/cards_parse.py --surface alert --today $TODAY < $rd/page-<key>-<page>.json > $rd/cards-<key>-<page>.json`. Exit 3 (`extractor_mismatch`) → disclose `{"stage":"walk","message":"extractor_mismatch <key> page <page>"}`, leave the alert `partial`, and move to the next alert — never continue on an empty read. `low_confidence > 0` → disclose `{"stage":"walk","message":"<n> low-confidence cards on <key> page <page>"}`.
-   c. Dedupe the cards **before the divider** (the leaf element reading `We found more results related to your search…`; `before_divider: true`): known = id in snapshot `known_ids`; repost = not known and `fp=$(bash $SCRIPTS/fingerprint.sh "<company>" "<title>" "<location>")` is a key in `$rd/fp-map.json` (append `{id, matched_id: <fp-map.json[$fp]>, alert_key, title, company, location}` to `$rd/reposts.json`); new = the rest → append `{card…, alert_key}` to `$rd/new-cards.json` (skip ids already there from an earlier alert; first alert wins). Cards with `parse_warning: true` are still processed like any other card, never dropped.
+   b. `python3 $SCRIPTS/cards_parse.py --surface alert --today $TODAY < $rd/page-<key>-<page>.json > $rd/cards-<key>-<page>.json`. Exit 3 (`extractor_mismatch`) → disclose `{"stage":"walk","message":"extractor_mismatch <key> page <page>"}`, leave the alert `partial`, and move to the next alert — never continue on an empty read. Exit 0 with `zero_cards: true` → disclose `{"stage":"walk","message":"zero cards on <key> page <page> (claimed: <claimed_results>)"}`, leave the alert `partial`, and move to the next alert — never run `walk_stop.py` on it. `low_confidence > 0` → disclose `{"stage":"walk","message":"<n> low-confidence cards on <key> page <page>"}`.
+   c. Dedupe the cards **before the divider** (the leaf element reading `We found more results related to your search…`; `before_divider: true`): known = id in snapshot `known_ids`; repost = not known and `fp=$(bash $SCRIPTS/fingerprint.sh "<company>" "<title>" "<location>")` is a member of `$rd/fp-45d.json` (the 45-day fingerprint set from Step 0) — use `$rd/fp-map.json` only to resolve `matched_id: <fp-map.json[$fp]>` for disclosure, never to decide repost-ness — append `{id, matched_id, alert_key, title, company, location}` to `$rd/reposts.json`; new = the rest → append `{card…, alert_key}` to `$rd/new-cards.json` (skip ids already there from an earlier alert; first alert wins). Cards with `parse_warning: true` are still processed like any other card, never dropped.
    d. `python3 $SCRIPTS/alerts_ledger.py page --ledger $WS/alerts.json --key <key> --page <page> --cards-seen <cards> --before-divider <n> --known <k> --reposts <r> --new <new>`.
    e. `python3 $SCRIPTS/walk_stop.py --alert $rd/alert-<key>.json --page $rd/cards-<key>-<page>.json --page-no <page> --valve $VALVE > $rd/stop-<key>-<page>.json`. If `needs_model_check` is true, answer ONE question yourself from the card titles in `undecided_ids`: "Do any of these titles plausibly match the alert keywords `<keywords>`?" and re-run with `--model-says-match true|false`. Disclose your answer as `{"stage":"walk","message":"model drift check <key> page <page>: <true|false>"}` (a disclosure, not an error).
    f. `stop: true` → `python3 $SCRIPTS/alerts_ledger.py complete --ledger $WS/alerts.json --key <key> --reason <reason>`; break. Else `page += 1`.
@@ -95,17 +95,24 @@ Group deltas into envelopes: one per alert (`$rd/sweep-alert-<key>.json`), plus 
 `board` ∈ `Job Alert | Top Picks | Saved | Similar`; `signals.remote` from the card's `workplace` (`unknown` when absent). Deltas whose JD was queued (Step 4) carry `jd_path: null`. Then:
 
 ```
-for f in $rd/sweep-*.json; do python3 $SCRIPTS/validate_delta.py --ws $WS $f || { echo "REFUSED $f"; exit 1; }; done
-python3 $SCRIPTS/merge_tracker.py --ws $WS --tracker $WS/tracker.json --today $TODAY $rd/sweep-*.json > $rd/merge-1.json
+survivors=""
+for f in $rd/sweep-*.json; do
+  if python3 $SCRIPTS/validate_delta.py --ws $WS "$f" 2>$rd/validate-err.txt; then
+    survivors="$survivors $f"
+  else
+    mv "$f" "$rd/refused-$(basename "$f")"
+  fi
+done
+python3 $SCRIPTS/merge_tracker.py --ws $WS --tracker $WS/tracker.json --today $TODAY $survivors > $rd/merge-1.json
 bash $SCRIPTS/checkpoint.sh save $rd merge-1 $rd/merge-1.json
 bash $SCRIPTS/snapshot.sh $WS/tracker.json $WS/cache/ultramode-snapshot.json
 ```
 
-A merge failure: write `$rd/merge-1.json` as `{"merged":0,"collisions_also_seen":0,"url_upgrades":0,"skipped_known":0}` (the neutral element for Step 7's sum), disclose `{"stage":"merge","message":"<first stderr line>"}`, and continue to Step 8 (always render). Then set `matched_query` and `alert_key` on each merged entry with the single-entry atomic recipe in `../shared-references/state-validators.md`.
+A validator refusal never gets fixed by hand: `mv` the refused envelope to `$rd/refused-<name>.json`, disclose `{"stage":"validate","message":"refused <name>: <first stderr line>"}`, and merge only the survivors — by their explicit filenames (`$survivors` above), never a re-globbed `$rd/sweep-*.json` (a refusal must never silently re-enter the merge). A merge failure: write `$rd/merge-1.json` as `{"merged":0,"collisions_also_seen":0,"url_upgrades":0,"skipped_known":0}` (the neutral element for Step 7's sum), disclose `{"stage":"merge","message":"<first stderr line>"}`, and continue to Step 8 (always render). Then set `matched_query` and `alert_key` on each merged entry with the single-entry atomic recipe in `../shared-references/state-validators.md`.
 
 ## Step 6 — Top Picks and Saved (after every alert is complete or partial)
 
-Top Picks: navigate `https://www.linkedin.com/jobs/collections/recommended/`; run `page/toppicks.js`; `cards_parse.py --surface toppicks --today $TODAY`; dedupe as Step 3c (fp-map for `matched_id`); Step 4 within budget; envelope `sweep-toppicks` (`board: "Top Picks"`). Saved: navigate `https://www.linkedin.com/jobs-tracker/`; run `page/saved.js`; `cards_parse.py --surface saved --today $TODAY` (`note: "saved_empty"` is a clean zero); same path; `board: "Saved"`. Merge this pass exactly as Step 5 (only the new envelopes) → `$rd/merge-2.json` (same zero-fill on failure), then rebuild the snapshot again so Step 7's similar-jobs expansion dedupes against fresh ids.
+Top Picks: navigate `https://www.linkedin.com/jobs/collections/recommended/`; run `page/toppicks.js`; `cards_parse.py --surface toppicks --today $TODAY`; dedupe as Step 3c (fp-map for `matched_id`); Step 4 within budget; envelope `sweep-toppicks` (`board: "Top Picks"`). Saved: navigate `https://www.linkedin.com/jobs-tracker/`; run `page/saved.js`; `cards_parse.py --surface saved --today $TODAY` (`note: "saved_empty"` is a clean zero); same path; `board: "Saved"`. Merge this pass with Step 5's validate-then-merge recipe, naming `$rd/sweep-toppicks.json $rd/sweep-saved.json` explicitly (never a `sweep-*` glob) → `$rd/merge-2.json` (same zero-fill on failure), then rebuild the snapshot again so Step 7's similar-jobs expansion dedupes against fresh ids.
 
 ## Step 7 — Gate, then score (D14)
 
@@ -119,11 +126,11 @@ Batch this run's merged entries that have a `jd_path` into groups of 5, plus eve
 
 `Agent` unavailable → run the batch sequentially in-thread per `subagent-protocol.md`'s fallback. A batch returning `status: "error"` or an unparsable body → disclose `{"stage":"gate"|"score","message":"<batch ids>: <reason>"}` and leave those entries `tier: "untiered"` (retried next run via the selection above) — never guess a tier.
 
-Persist each delta atomically (`gate_violations`, `signals`; `tier: "D"`, `tier_reason: "gated: <kinds>"` when gated with ≥2 kinds). Jobs with zero violations, and jobs with exactly one violated kind (flag `near_miss_candidate: true`), go to `subagent_type: "score-batch"` in batches of 5 with the same envelope plus `"dimensions"`, `"segment"`, `"cv_summary"` (all three read from `user-profile.json`). Persist `tier`, `tier_reason`, `dimensions`, `rubric_version`, and the optional fields when present; near-miss candidates keep `tier: "D"` and gain `near_miss` + `near_miss_would_be_tier` when the rubric says A/B. Write the score cache entry (`cache/scores.json`, keyed `(id, cv_hash, profile_hash, rubric_version)`). `bash $SCRIPTS/checkpoint.sh save $rd scoring`.
+Persist each gate delta atomically — `gate_violations` and `signals` (including `rate`, the JD-disclosed compensation figure verbatim, e.g. `"€800/day"`, or `"unknown"`) are persisted verbatim onto the tracker entry; `tier: "D"`, `tier_reason: "gated: <kinds>"` when gated with ≥2 kinds. Jobs with zero violations, and jobs with exactly one violated kind (flag `near_miss_candidate: true`), go to `subagent_type: "score-batch"` in batches of 5 with the same envelope plus `"dimensions"`, `"segment"`, `"cv_summary"` (all three read from `user-profile.json`). Persist `tier`, `tier_reason`, `dimensions`, `rubric_version`, and the optional fields when present; near-miss candidates keep `tier: "D"` and gain `near_miss` + `near_miss_would_be_tier` when the rubric says A/B. Write the score cache entry (`cache/scores.json`, keyed `(id, cv_hash, profile_hash, rubric_version)`). `bash $SCRIPTS/checkpoint.sh save $rd scoring`.
 
-**Similar jobs (one round):** for each this-run entry now at `tier: "A"`, navigate to its `url`, read page text, collect up to 5 ids from the "Similar jobs" rail via `find`/page text (`/jobs/view/<id>/` links), dedupe against the rebuilt snapshot. For each new id: navigate to `https://www.linkedin.com/jobs/view/<id>/`, read page text — title = the first heading line, company and location = the next two lines of the header block — then read the JD as in Step 4, fingerprint via `fingerprint.sh`. Step 4 within budget; envelope `sweep-linkedin-similar` (`board: "Similar"`); validate → merge (`$rd/merge-3.json`, same zero-fill on failure, rebuild snapshot) → gate → score exactly as above. `merge_tracker.py` writes `notes: ""`, so after this merge set `notes: "expanded from: <seed id>"` together with `matched_query`/`alert_key` in the single-entry atomic recipe. Expansion roles never seed further expansion.
+**Similar jobs (one round):** for each this-run entry now at `tier: "A"`, navigate to its `url`, read page text, collect up to 5 ids from the "Similar jobs" rail via `find`/page text (`/jobs/view/<id>/` links), dedupe against the rebuilt snapshot. For each new id: navigate to `https://www.linkedin.com/jobs/view/<id>/`, read page text — title = the first heading line, company and location = the next two lines of the header block — then read the JD as in Step 4, fingerprint via `fingerprint.sh`. Step 4 within budget; envelope `sweep-linkedin-similar` (`board: "Similar"`); validate → merge, naming `$rd/sweep-linkedin-similar.json` explicitly (`$rd/merge-3.json`, same zero-fill and refused-envelope handling as Step 5 on failure, rebuild snapshot) → gate → score exactly as above. `merge_tracker.py` writes `notes: ""`, so after this merge set `notes: "expanded from: <seed id>"` together with `matched_query`/`alert_key` in the single-entry atomic recipe. Expansion roles never seed further expansion.
 
-Before Step 8: `jq -s '{merged:(map(.merged//0)|add),collisions_also_seen:(map(.collisions_also_seen//0)|add),url_upgrades:(map(.url_upgrades//0)|add),skipped_known:(map(.skipped_known//0)|add)}' $rd/merge-*.json > $rd/merge.json`.
+Before Step 8: `jq -s '{merged:(map(.merged//0)|add),collisions_also_seen:(map(.collisions_also_seen//0)|add),url_upgrades:(map(.url_upgrades//0)|add),skipped_known:(map(.skipped_known//0)|add)}' $rd/merge-*.json > $rd/merge.json`. Re-write `$rd/jd-fetch.json` = `{"budget": BUDGET, "used": <final used>, "deferred": <final queue count>}` (`deferred` from `bash $SCRIPTS/jd_queue.sh count $WS/cache/jd-queue.json`), so the Top Picks, Saved, and Similar reads from Steps 6–7 are counted, not just the alert walk's.
 
 ## Step 8 — Scorecard, payload, render, digest — ALWAYS
 
@@ -136,7 +143,7 @@ bash $SCRIPTS/payload_notifications.sh $WS/tracker.json $rd $TODAY <fresh|no_scr
 Render per `../shared-references/render-orchestration.md` Steps B–F with `view: "check-job-notifications"` and `$rd/payload.json` (Hard Rule 8), with these overrides: an absent or `ask` `render` key is treated as `always`; a Step F render error takes the markdown branch without prompting. Nothing in this command waits on a human. Then:
 
 ```
-python3 $SCRIPTS/digest.py --payload $rd/payload.json --profile $WS/user-profile.json --out $WS/reports/check-job-notifications-$TODAY-digest.txt --last-success "$(jq -r '.stats.last_run // "unknown"' $WS/tracker.json)"
+python3 $SCRIPTS/digest.py --payload $rd/payload.json --profile $WS/user-profile.json --out $WS/reports/check-job-notifications-$TODAY-digest.txt --last-success "$(jq -r '.stats.last_run // "unknown"' $WS/tracker.json)" --workspace-name "$(basename "$(dirname "$WS")")"
 bash $SCRIPTS/checkpoint.sh save $rd render
 ```
 
@@ -153,12 +160,16 @@ A `no_scrape` run performs only this step (no tracker writes) and still writes t
 
 | Condition | Action |
 |---|---|
-| Workspace or profile missing | STOP `no_scrape`; digest + report say why |
+| Workspace missing | Terminal stop before `$rd` exists — print and stop; nothing written, no digest |
+| Profile missing or incomplete | STOP `no_scrape`; digest + report say why |
 | No browser surface / login wall | STOP `no_scrape`; no tracker writes |
 | `extractor_mismatch` on a page | Alert stays `partial`; disclosed; next alert |
-| Validator refuses an envelope | Fix nothing by hand; disclose; the envelope is excluded from the merge |
+| Zero cards parsed on an alert page (`zero_cards: true`) | Alert stays `partial`; disclosed; next alert — never run `walk_stop.py` |
+| Validator refuses an envelope | Fix nothing by hand; `mv` to `$rd/refused-<name>.json`; disclose; merged only by explicit surviving filenames |
 | Merge fails | Disclose; zero-filled counters; still render with whatever completed |
 | A JD read fails (no page / no `About the job`) | Re-push to the queue; disclose; not counted against budget |
 | A gate-batch/score-batch errors or returns unparsable output | Disclose; entry stays `untiered`; retried next run |
 | `Agent` tool unavailable | Disclose; gate/score run sequentially in-thread |
 | Budget exhausted | Queue the rest; report "Queued for tomorrow" |
+| An alert link parses but `f_TPR`/`keywords` is bad or missing | Counted in `dropped_unparseable`; disclosed once with a count |
+| Alert links present but `alerts` parses empty | Treated as `extractor_mismatch` for the notifications page; disclosed; alert walk stopped for this run |

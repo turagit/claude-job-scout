@@ -111,5 +111,15 @@ class T(unittest.TestCase):
         for card in o["cards"]:
             self.assertNotIn("posted_at", card)
 
+    def test_zero_cards_true_when_claimed_results_null_and_no_cards(self):
+        payload = {"surface": "alert", "claimed_results": None, "page": 1, "divider_index": None, "has_next": False, "saved_count": None, "cards": []}
+        p = run(payload, "alert"); self.assertEqual(p.returncode, 0, p.stderr)
+        o = json.loads(p.stdout)
+        self.assertTrue(o["zero_cards"])
+
+    def test_zero_cards_false_on_normal_dump(self):
+        o = json.loads(run(fix("p17-results-page1.json"), "alert").stdout)
+        self.assertFalse(o["zero_cards"])
+
 if __name__ == "__main__":
     unittest.main()

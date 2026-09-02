@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Page dump -> card records. stdlib only.
 Usage: cards_parse.py --surface alert|toppicks|saved [--today YYYY-MM-DD] < dump.json
-Exit 0: {"surface","page","claimed_results","cards":[...],"divider_seen","cards_before_divider","has_next","note","dropped_bad_id"}
+Exit 0: {"surface","page","claimed_results","cards":[...],"divider_seen","cards_before_divider","has_next","note","dropped_bad_id","zero_cards"}
 Exit 3: extractor_mismatch (page claims results, zero cards parsed). Exit 1: bad input.
 With --today, each card also gets "posted_at": minutes/hours/"just now" -> today; "N day(s)" -> today-N;
 "N week(s)" -> today-7N; "N month(s)" -> today-30N; unparseable/absent -> "". Without --today the key is absent."""
@@ -129,7 +129,8 @@ def main():
     low_conf = sum(1 for r in out if r.get("parse_warning", False))
     print(json.dumps({"surface": a.surface, "page": dump.get("page", 1), "claimed_results": claimed, "cards": out,
                       "divider_seen": divider_seen, "cards_before_divider": sum(1 for r in out if r["before_divider"]),
-                      "has_next": bool(dump.get("has_next")), "note": note, "dropped_bad_id": bad, "low_confidence": low_conf}, ensure_ascii=False))
+                      "has_next": bool(dump.get("has_next")), "note": note, "dropped_bad_id": bad, "low_confidence": low_conf,
+                      "zero_cards": len(out) == 0}, ensure_ascii=False))
 
 if __name__ == "__main__":
     main()
