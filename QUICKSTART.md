@@ -5,7 +5,7 @@ A five-minute setup to go from "plugin installed" to your first ranked list of m
 ## Before you begin
 
 - **Claude Code** with the `linkedin-job-hunter` plugin installed.
-- **The Claude Chrome extension**, signed in to **your own LinkedIn account** in that browser. This is how the plugin works *inside the browser you already use* — it never takes over your screen or asks for your password. (`/ultramode`'s external sources read public job APIs directly and need no extension; LinkedIn itself still goes through it.)
+- **The built-in Claude browser pane**, or **the Claude Chrome extension** as a fallback, signed in to **your own LinkedIn account**. This is how the plugin works *inside the browser you already use* — it never takes over your screen or asks for your password. (`/ultramode`'s external sources read public job APIs directly and need no browser; LinkedIn itself still goes through the pane or the extension.)
 - **Your CV** as a file (PDF, DOCX, DOC, TXT, or Markdown).
 - Optionally, **supporting documents** — diplomas, certificates, conference talks, architecture decks, recommendations, case studies, portfolio pieces.
 
@@ -56,7 +56,7 @@ Once your first report is in, `/optimize-profile` aligns your LinkedIn profile w
 
 Then settle into a rhythm:
 
-- **Daily:** **`/check-job-notifications`** — your driver. Scans new LinkedIn alerts + recommendations, scores the new roles, writes a fresh ranked report.
+- **Daily:** **`/check-job-notifications`** — your driver. Walks every alert to LinkedIn's results divider (not just the six-id preview), scores the new roles, writes a fresh ranked report with a per-alert coverage table, and drops a phone digest. Keeps an alert ledger so partial walks resume and completed alerts are never re-walked. Runs fully unattended — no prompts — using the built-in browser pane first, with the Chrome extension as fallback.
 - **Weekly:** **`/ultramode`** — the full-market sweep again: LinkedIn plus every verified source, deduped into one ranking.
 - **Between sweeps:** **`/tune`** — show and adjust titles, keywords, exclusions, and hard gates, without a full re-interview.
 - **Per role you like:** **`/cover-letter <job>`** (three tailored angles, citing your supporting docs) and **`/interview-prep <tracker-id>`** (SPAR stories, likely questions, questions to ask).

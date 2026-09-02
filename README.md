@@ -24,7 +24,7 @@ All commands are user-invoked slash commands. The model will **not** auto-trigge
 | Command | Description |
 |---------|-------------|
 | `/ultramode` | **The weekly full-market sweep** — LinkedIn + every verified source, one ranking, near-miss rail, run scorecard (scopes: `linkedin` · `external` · `source <name>` · `super`) |
-| `/check-job-notifications` | **Daily driver** — check notifications + Top picks + Saved jobs, expand similar-jobs from A-tier hits, score new listings, save a ranked report |
+| `/check-job-notifications` | **Daily driver** — walks every job alert to LinkedIn's results divider (not just the six-id preview), keeps an alert ledger and a per-alert coverage table, writes a phone digest, and runs fully unattended — plus Top picks, Saved jobs, similar-jobs from A-tier hits, scoring, and a ranked report |
 | `/sources` | Manage where it looks: `list` · `add <url\|name>` · `scope [eu-nl\|eu-broad]` · `retire <name>` · `rebuild` · `onboarding` |
 | `/tune` | Show and adjust titles, keywords, exclusions, and hard gates — no full re-interview |
 | `/bend` | Re-score a near-miss job with its one failed gate relaxed — the "would you bend?" action from the report |
@@ -104,6 +104,18 @@ The plugin ships a packaged **EU/NL/BENELUX source catalogue** — evidence-stam
 **Login handoff, not stored credentials.** The plugin reuses your existing Chrome session where one exists — it never stores, enters, or remembers a password. If a source needs sign-in, `/ultramode` skips it without stalling the run and tells you: sign in yourself in the open Chrome tab, then rerun `/ultramode source <name>` to sweep just that source once you're in.
 
 **Reports deliver through the harness file panel now** — no more `file://` navigation in Chrome, which was unreliable on some setups; the plugin falls back to your OS's default file opener if the harness delivery path isn't available. Every summary — weekly sweep, daily driver, everything — now carries a direct apply-at-source link per role, so you can act on a result without opening the HTML at all.
+
+---
+
+### The alert walk (v0.17.0)
+
+`/check-job-notifications` used to read only the six-id link preview LinkedIn shows for each alert on the notifications page, and treated that preview as the alert's full contents. A single alert on 2026-09-02 held 24 exact matches on its first results page alone — the old command saw 10. **The daily driver now walks every alert properly**: it parses every job alert from the notifications page in one read, then walks each alert's results pages until LinkedIn's "We found more results…" divider (or a whole page that's drifted off-topic, or a 10-page valve), so every exact-match listing is seen.
+
+An **alert ledger** (`.job-scout/alerts.json`) tracks which alerts were walked, how far, and why they stopped — a partial walk resumes where it left off, and a completed alert is never re-walked. Each report and scorecard carries a **per-alert coverage table**: cards seen, exact matches, known, reposts, new, pages walked, and the stop reason, so under-coverage is disclosed rather than silent.
+
+A trimmed, plain-text **phone digest** (`reports/check-job-notifications-<date>-digest.txt`, bare URLs, capped at 7,500 characters) is written on every run and feeds the nightly calendar event. Full-JD fetching runs against a per-run budget (`jd_budget_per_run` in `config.json`, default 150) with carry-over — anything over budget is queued and listed as "Queued for tomorrow", never dropped.
+
+`/check-job-notifications` is **unattended by design**: it never prompts, in any mode. A missing workspace, profile, or browser produces a disclosed `no_scrape` stop with a digest, not a silent re-rank of old jobs. It runs against **the built-in browser pane first, with the Chrome extension as a fallback** — see the browser-surfaces note under [Requirements](#requirements).
 
 ---
 
@@ -191,6 +203,19 @@ The first time you run any command in a new project, the plugin will ask:
 
 **Say yes.** The plugin will create the folder, write a stub `user-profile.json` and an empty `tracker.json`, and proceed. If you decline, the plugin will fall back to legacy behaviour (writing loose files at your workspace root) for that session only, and will not nag you again in the same session.
 
+### Configuration (`config.json`)
+
+Per-workspace settings live in `.job-scout/config.json`, viewed and changed with `/config` (see [Commands](#commands)). Keys not set fall back to their default.
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `render` | *(unset until first Tier 1 run)* | How Tier 1 command output is displayed: `always` (HTML, auto-opened), `never` (styled markdown inline), `ask` (choose per run). |
+| `render_retention_days` | `90` | How long snapshot-view reports (`match-jobs`, `job-search`, `check-job-notifications`, `check-inbox`) are kept before archiving. |
+| `render_archive_days` | `365` | How long archived time-series reports (`funnel-report`, `interview-prep`) are kept. |
+| `jd_budget_per_run` | `150` | Full job-description fetches `/check-job-notifications` will make in one run before queueing the rest as "Queued for tomorrow" instead of dropping them. |
+
+Ultramode provider keys are set separately with `/config ultramode key <provider> <token>` and live in `user-profile.json` under `ultramode.api_keys`, never in `config.json`.
+
 ---
 
 ## Installation
@@ -206,12 +231,12 @@ In Claude Desktop / Claude Code, go to Settings → Plugins → "Install from fo
 ## Requirements
 
 - **Claude Code or Claude Desktop**
-- **The Claude Chrome extension** — this is the *only* browser mechanism the plugin uses. See the box below.
+- **The built-in Claude browser pane, or the Claude Chrome extension as a fallback** — these are the *only* two browser mechanisms the plugin uses. See the box below.
 - **LinkedIn account** — you must be logged in to LinkedIn in your browser
 - **Your CV** — place it anywhere in the project workspace; the plugin will find it by name (`cv.*`, `resume.*`, `curriculum.*`) or ask you to point to it
 
 > **The plugin does NOT use "computer use."**
-> Every browser interaction goes through the Claude Chrome extension running in your own logged-in browser tab. The plugin never takes control of your screen, mouse, or keyboard, and it will never ask you to enable computer use. If you ever see a prompt asking to enable computer use while running a command from this plugin, **something is wrong** — decline it and report it as a bug. The full policy lives at `skills/shared-references/browser-policy.md`.
+> Every browser interaction goes through one of two sanctioned surfaces in your own logged-in browser: the built-in Claude browser pane (primary) and the Claude Chrome extension (fallback). The plugin never takes control of your screen, mouse, or keyboard, and it will never ask you to enable computer use. If you ever see a prompt asking to enable computer use while running a command from this plugin, **something is wrong** — decline it and report it as a bug. The full policy lives at `skills/shared-references/browser-policy.md`.
 
 ## Getting Started
 
@@ -235,7 +260,7 @@ In Claude Desktop / Claude Code, go to Settings → Plugins → "Install from fo
 
 ### Daily workflow (once set up)
 
-1. `/check-job-notifications` — scans unread alerts, scores new jobs, writes a ranked report. Offers to continue into LinkedIn's "Top job picks for you" feed for a deeper sweep.
+1. `/check-job-notifications` — walks every job alert to LinkedIn's results divider, scores new jobs, writes a ranked report with a per-alert coverage table and a phone digest. Runs fully unattended (no prompts). Offers to continue into LinkedIn's "Top job picks for you" feed for a deeper sweep.
 2. Review the matches and tell Claude which ones to apply to.
 3. Optionally run `/check-inbox` for recruiter messages.
 4. **Weekly:** run `/ultramode` again for the full-market sweep.
