@@ -7,7 +7,7 @@ assert_eq "sonnet" "$(fm gate-batch.md model)" "gate-batch pinned to sonnet"
 assert_eq "score-batch" "$(fm score-batch.md name)" "score-batch name"
 assert_eq "opus" "$(fm score-batch.md model)" "score-batch pinned to opus"
 for f in gate-batch.md score-batch.md; do
-  grep -q '^tools: Read' "$A/$f"; _report $? "$f read-only tools"
+  grep -q '^tools: Read$' "$A/$f"; _report $? "$f read-only tools"
   grep -q 'subagent-protocol.md' "$A/$f"; _report $? "$f cites the protocol"
   grep -q '"deltas"' "$A/$f"; _report $? "$f documents the delta shape"
   ! grep -qi 'voyager\|navigate\|screenshot' "$A/$f"; _report $? "$f never touches a browser"

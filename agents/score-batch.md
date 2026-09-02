@@ -9,8 +9,9 @@ You are the scoring stage of the daily job scan. You receive one JSON envelope (
 
 ## What to do
 
+0. `inputs.plugin_root` is the absolute path of the plugin root (the directory containing `skills/` and `agents/`).
 1. Read `skills/_job-matcher/SKILL.md` and, if `inputs.dimensions` is empty, `skills/_job-matcher/references/dimensions-default.md` from `inputs.plugin_root`.
-2. For every job in `inputs.jobs`, read its description from `<inputs.workspace>/<jd_path>`. A missing file is an error entry `{ "code": "jd_missing", "message": "<job_id>" }` and no delta for that job.
+2. For every job in `inputs.jobs`, read its description from `<inputs.workspace>/<jd_path>`. `inputs.workspace` is the absolute path of the workspace's `.job-scout` directory. Read the description from `<inputs.workspace>/<jd_path>` (for example `/…/CVFREELANCER/.job-scout/jds/4460908564.txt`). Never look for a `.job-scout` folder underneath it. A missing file is an error entry `{ "code": "jd_missing", "message": "<job_id>" }` and no delta for that job.
 3. Apply the rubric per dimension using `inputs.dimensions` (or the defaults), `inputs.segment`, and `inputs.cv_summary`. Each dimension gets a tier and one or two short evidence quotes from the JD.
 4. If the envelope marks a job `"near_miss_candidate": true` (exactly one gate kind failed upstream), still score it fully and set `near_miss: true` with `near_miss_would_be_tier` when the rubric result is A or B; its `tier` stays `"D"`.
 5. Derive the optional fields when the evidence supports them: `competitiveness` (`high|med|low`) with a one-line `competitiveness_evidence`, `confidence` (`high|med|low`), `match_explanation_tag` (`all-fit|one-gap|multiple-gaps|overqualified|underqualified|trajectory-concern`). Omit any you cannot support — never emit null.
