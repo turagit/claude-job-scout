@@ -18,10 +18,11 @@ merge='{}'; [ -f "$rd/merge.json" ] && merge=$(cat "$rd/merge.json")
 jdf='{"budget": 0, "used": 0, "deferred": 0}'; [ -f "$rd/jd-fetch.json" ] && jdf=$(cat "$rd/jd-fetch.json")
 rot='{"picked": [], "rotated_out": []}'; [ -f "$rd/rotation.json" ] && rot=$(cat "$rd/rotation.json")
 pipe='{"errors": []}'; [ -f "$rd/pipeline-errors.json" ] && pipe=$(cat "$rd/pipeline-errors.json")
+cov='{"rows": [], "totals": {}, "reposts_disclosed": 0}'; [ -f "$rd/coverage.json" ] && cov=$(cat "$rd/coverage.json")
 jdf_missing=false; [ -f "$rd/jd-fetch.json" ] || jdf_missing=true
 merge_missing=false; [ -f "$rd/merge.json" ] || merge_missing=true
 jq -n --arg today "$today" --argjson sweeps "$sweeps" --argjson merge "$merge" \
-      --argjson jdf "$jdf" --argjson rot "$rot" --argjson pipe "$pipe" \
+      --argjson jdf "$jdf" --argjson rot "$rot" --argjson pipe "$pipe" --argjson cov "$cov" \
       --argjson jdf_missing "$jdf_missing" --argjson merge_missing "$merge_missing" --slurpfile t "$tracker" '
   [ $t[0].jobs | to_entries[] | .value | select(.first_seen == $today) ] as $new
   | {date: $today,
@@ -29,6 +30,8 @@ jq -n --arg today "$today" --argjson sweeps "$sweeps" --argjson merge "$merge" \
      dedupe: {merged: ($merge.merged // 0), collisions_also_seen: ($merge.collisions_also_seen // 0),
               url_upgrades: ($merge.url_upgrades // 0), skipped_known: ($merge.skipped_known // 0)},
      jd_fetch: $jdf, rotation: $rot,
+     coverage: $cov,
+     budget: {limit: ($jdf.budget // 0), used: ($jdf.used // 0), queued: ($jdf.deferred // 0)},
      accounting:
        ( ([ $sweeps[] | select(.key != "linkedin-similar") ]) as $sw
        | ([ $sw[] | select(.value.codes | index("login_required")) ] | length) as $blocked
