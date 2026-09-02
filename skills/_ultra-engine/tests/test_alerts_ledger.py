@@ -46,6 +46,37 @@ class T(unittest.TestCase):
         sh("start", "--ledger", self.L, "--alert-json", tmpjson(A1), "--today", "2026-09-02", "--run-id", "r")
         p = subprocess.run(["python3", os.path.join(S, "alerts_ledger.py"), "complete", "--ledger", self.L, "--key", A1["alert_key"], "--reason", "tired"], capture_output=True, text=True)
         self.assertNotEqual(p.returncode, 0)
+    def test_corrupt_ledger_bad_input_error(self):
+        with open(self.L, "w") as fh: fh.write("{not valid json")
+        p = subprocess.run(["python3", os.path.join(S, "alerts_ledger.py"), "plan", "--ledger", self.L, "--alerts", self.parsed, "--today", "2026-09-02"], capture_output=True, text=True)
+        self.assertNotEqual(p.returncode, 0)
+        self.assertNotIn("Traceback", p.stderr)
+        self.assertIn("bad input", p.stderr)
+    def test_missing_alerts_file_bad_input_error(self):
+        bad_alerts = "/nonexistent/file.json"
+        p = subprocess.run(["python3", os.path.join(S, "alerts_ledger.py"), "plan", "--ledger", self.L, "--alerts", bad_alerts, "--today", "2026-09-02"], capture_output=True, text=True)
+        self.assertNotEqual(p.returncode, 0)
+        self.assertNotIn("Traceback", p.stderr)
+        self.assertIn("bad input", p.stderr)
+    def test_prune_bad_date_bad_input_error(self):
+        sh("start", "--ledger", self.L, "--alert-json", tmpjson(A1), "--today", "2026-09-02", "--run-id", "r")
+        p = subprocess.run(["python3", os.path.join(S, "alerts_ledger.py"), "prune", "--ledger", self.L, "--today", "not-a-date"], capture_output=True, text=True)
+        self.assertNotEqual(p.returncode, 0)
+        self.assertNotIn("Traceback", p.stderr)
+        self.assertIn("bad input", p.stderr)
+    def test_alert_json_missing_key_bad_input_error(self):
+        bad_alert = dict(A1, alert_key=None); del bad_alert["alert_key"]
+        p = subprocess.run(["python3", os.path.join(S, "alerts_ledger.py"), "start", "--ledger", self.L, "--alert-json", tmpjson(bad_alert), "--today", "2026-09-02", "--run-id", "r"], capture_output=True, text=True)
+        self.assertNotEqual(p.returncode, 0)
+        self.assertNotIn("Traceback", p.stderr)
+        self.assertIn("bad input", p.stderr)
+    def test_prune_malformed_records(self):
+        sh("start", "--ledger", self.L, "--alert-json", tmpjson(A1), "--today", "2026-09-02", "--run-id", "r1")
+        sh("start", "--ledger", self.L, "--alert-json", tmpjson(A2), "--today", "2026-09-02", "--run-id", "r2")
+        with open(self.L) as fh: ledger = json.load(fh)
+        del ledger["alerts"][A2["alert_key"]]["first_seen"]
+        with open(self.L, "w") as fh: json.dump(ledger, fh)
+        r = sh("prune", "--ledger", self.L, "--today", "2026-09-02"); self.assertEqual((r["pruned"], r["kept"], r["malformed"]), (0, 1, 1))
 
 if __name__ == "__main__":
     unittest.main()
