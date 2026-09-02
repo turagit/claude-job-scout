@@ -7,10 +7,10 @@ printf '[{"id":"1777","matched_id":"1001","alert_key":"k1","title":"Lead Platfor
 printf '[{"id":"1888","title":"Queued role","company":"Eps","location":"Remote","url":"https://www.linkedin.com/jobs/view/1888/","alert_key":"k1"}]' > "$rd/queued.json"
 out=$(bash "$P" "$T" "$rd" 2026-09-02 fresh)
 assert_eq "check-job-notifications-2026-09-02.html" "$(echo "$out" | jq -r .filename)" "filename"
-assert_eq "1001 1002 1003" "$(echo "$out" | jq -r '[.results[].id]|join(" ")')" "today only, tier order, D last"
+assert_eq "1001 1002" "$(echo "$out" | jq -r '[.results[].id]|join(" ")')" "today only, tier order, near miss excluded"
 assert_json_eq '{"a":1,"b":1,"c":0,"d":1,"total":3}' "$(echo "$out" | jq -c .tier_counts)" "tier counts"
 assert_eq "Job Alert" "$(echo "$out" | jq -r '.results[0].source')" "structured source rendered as board string"
-assert_eq "Job Alert" "$(echo "$out" | jq -r '.results[2].source')" "legacy string source passes through"
+assert_eq "Job Alert" "$(echo "$out" | jq -r '.near_misses[0].source')" "legacy string source in near-miss rail"
 assert_eq "true" "$(echo "$out" | jq -r '.results[0].fresh')" "A-tier posted today is fresh"
 assert_eq "false" "$(echo "$out" | jq -r '.results[1].fresh')" "B-tier 8 days old is not fresh"
 assert_eq "null" "$(echo "$out" | jq -r '.results[1].confidence // "null"')" "absent optional field omitted"

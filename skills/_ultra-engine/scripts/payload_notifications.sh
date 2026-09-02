@@ -28,7 +28,7 @@ jq -n --arg today "$today" --arg status "$status" --arg reason "$reason" \
   ([ $t[0].jobs | to_entries[] | .value | select(.first_seen == $today) ]
      | if $status == "no_scrape" then [] else . end) as $new
   | [ $new[] | select(.near_miss == true) ] as $nm
-  | [ $new[] ] | sort_by([tier_rank, conf_rank, comp_rank, (0 - date_num)]) as $sorted
+  | [ $new[] | select(.near_miss != true) ] | sort_by([tier_rank, conf_rank, comp_rank, (0 - date_num)]) as $sorted
   | ([ $new[] | (.tier // "untiered") ] | group_by(.) | map({(.[0]): length}) | add // {}) as $tc
   | { title: "Today'"'"'s notifications",
       subtitle: ("\($new | length) new · A:\($tc.A // 0) B:\($tc.B // 0) C:\($tc.C // 0) · Filtered:\($tc.D // 0) · alerts walked: \($sc.coverage.totals.alerts // 0)"),
