@@ -45,6 +45,18 @@ Alongside the universal fields and the `ultramode`-specific `tier_counts` / `sou
 
 Both fields render **outside** the `data.results` empty/non-empty branch — a run can have near-misses or scorecard disclosures even when `data.results` is empty, so the rail and strip are never gated on `data.results` being truthy.
 
+### `check-job-notifications` payload — additive fields (Phase 17)
+
+Produced by `_ultra-engine/scripts/payload_notifications.sh`; templates render each only when present:
+
+- `run_status: "fresh" | "no_scrape"` and `no_scrape_reason` — a `no_scrape` run renders a banner, no results, and still the coverage/gates context.
+- `coverage: { rows: [{alert_key, keywords, since, pages_walked, stop_reason, status, cards_seen, before_divider, known, reposts, new}], totals: {…}, reposts_disclosed }` — the per-alert table ("Alert coverage").
+- `queued: [{id, title, company, location, url}]` — roles over the JD budget, deferred to the next run.
+- `reposts: [{id, matched_id, alert_key, title, company, location}]` — fingerprint drops, disclosed with both ids.
+- `near_misses: [...]` — same shape as the `ultramode` rail (`would_be_tier`, `failed_gate`, `bend_hint`).
+- `budget: {limit, used, queued}`.
+- `results[].source` is the LinkedIn **board string** (`Job Alert | Top Picks | Saved | Similar`), not the structured object — the daily-driver template interpolates it directly.
+
 ## Output shape
 
 ```json
