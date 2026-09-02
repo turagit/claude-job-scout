@@ -12,6 +12,10 @@ def stop(alert, page, page_no, extra=()):
                         "--page-no", str(page_no), "--valve", "10", *extra], capture_output=True, text=True)
     assert p.returncode == 0, p.stderr
     return json.loads(p.stdout)
+def bad_input(alert, page, page_no):
+    p = subprocess.run(["python3", os.path.join(S, "walk_stop.py"), "--alert", tmpjson(alert), "--page", tmpjson(page),
+                        "--page-no", str(page_no), "--valve", "10"], capture_output=True, text=True)
+    return p.returncode, p.stderr
 REMOTE = {"alert_key": "k1", "keywords": "linux engineer Contract Remote", "qualifiers": ["remote"]}
 NOQUAL = {"alert_key": "k2", "keywords": "ipa kerberos", "qualifiers": []}
 
@@ -45,6 +49,17 @@ class T(unittest.TestCase):
     def test_divider_beats_everything(self):
         pg = parsed("p17-results-page1.json"); pg["has_next"] = False
         self.assertEqual(stop(REMOTE, pg, 10)["reason"], "divider")
+    def test_bad_alert_shape_returns_error(self):
+        rc, stderr = bad_input([], parsed("p17-results-page2.json"), 1)
+        self.assertEqual(rc, 1); self.assertNotIn("Traceback", stderr); self.assertIn("bad input", stderr)
+    def test_bad_keywords_type_returns_error(self):
+        bad_alert = {"alert_key": "k4", "keywords": 42, "qualifiers": []}
+        rc, stderr = bad_input(bad_alert, parsed("p17-results-page2.json"), 1)
+        self.assertEqual(rc, 1); self.assertNotIn("Traceback", stderr); self.assertIn("bad input", stderr)
+    def test_empty_page_no_model_check(self):
+        alert = {"alert_key": "k5", "keywords": "engineer", "qualifiers": []}
+        r = stop(alert, {"cards": [], "has_next": True}, 1)
+        self.assertFalse(r["stop"]); self.assertFalse(r["needs_model_check"]); self.assertEqual(r["undecided_ids"], [])
 
 if __name__ == "__main__":
     unittest.main()
