@@ -24,7 +24,7 @@ jq -n --arg today "$today" --arg status "$status" --arg reason "$reason" \
              dimensions: (.dimensions // {}), gate_violations: (.gate_violations // []),
              fresh: ((.tier == "A" or .tier == "B") and (.posted_at // "") != "" and days_old <= 2),
              seen: false, preview: "", url: (.url // "")}
-            + opt("competitiveness") + opt("competitiveness_evidence") + opt("confidence") + opt("match_explanation_tag");
+            + opt("competitiveness") + opt("competitiveness_evidence") + opt("confidence") + opt("match_explanation_tag") + opt("salary_text") + opt("salary") + opt("signals");
   ([ $t[0].jobs | to_entries[] | .value | select(.first_seen == $today) ]
      | if $status == "no_scrape" then [] else . end) as $new
   | [ $new[] | select(.near_miss == true) ] as $nm
