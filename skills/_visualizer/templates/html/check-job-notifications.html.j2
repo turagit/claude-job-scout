@@ -30,7 +30,9 @@
 </div>
 {% endif %}
 {% if data.coverage and data.coverage.rows %}
-<details open style="margin:12px 0"><summary><strong>Alert coverage</strong> — {{ data.coverage.totals.alerts }} alerts walked · {{ data.coverage.totals.cards_seen }} cards · {{ data.coverage.totals.new }} new{% if data.budget %} · JD budget {{ data.budget.used }}/{{ data.budget.limit }}{% if data.budget.queued %} · {{ data.budget.queued }} queued{% endif %}{% endif %}</summary>
+{% set t = data.coverage.totals or {} %}
+{% set b = data.budget or {} %}
+<details open style="margin:12px 0"><summary><strong>Alert coverage</strong> — {{ t.alerts or 0 }} alerts walked · {{ t.cards_seen or 0 }} cards · {{ t.new or 0 }} new{% if data.budget %} · JD budget {{ b.used or 0 }}/{{ b.limit or 0 }}{% if b.queued %} · {{ b.queued }} queued{% endif %}{% endif %}</summary>
 <table class="dim-table" style="width:100%;margin-top:8px;font-size:13px;border-collapse:collapse">
   <tr><th style="text-align:left;padding:4px 8px">Alert</th><th style="padding:4px 8px">Pages</th><th style="padding:4px 8px">Stop</th><th style="padding:4px 8px">Cards</th><th style="padding:4px 8px">Exact</th><th style="padding:4px 8px">Known</th><th style="padding:4px 8px">Reposts</th><th style="padding:4px 8px">New</th></tr>
   {% for r in data.coverage.rows %}
@@ -92,7 +94,7 @@
 {% endif %}
 {% if data.near_misses %}
 <details style="margin:12px 0"><summary><strong>Would you bend?</strong> — {{ data.near_misses|length }} near miss{% if data.near_misses|length != 1 %}es{% endif %}</summary>
-<ul>{% for j in data.near_misses %}<li><strong>{{ j.title }}</strong> · {{ j.company }} · {{ j.location }} — would be <strong>{{ j.would_be_tier }}</strong>; failed <strong>{{ j.failed_gate.kind }}</strong>{% if j.failed_gate.detail %} ({{ j.failed_gate.detail }}){% endif %} · <code>{{ j.bend_hint }}</code>{% if j.url %} · <a href="{{ j.url }}" target="_blank" rel="noopener noreferrer">View posting ↗</a>{% endif %}</li>{% endfor %}</ul></details>
+<ul>{% for j in data.near_misses %}{% set fg = j.failed_gate or {} %}<li><strong>{{ j.title }}</strong> · {{ j.company }} · {{ j.location }} — would be <strong>{{ j.would_be_tier }}</strong>; failed <strong>{{ fg.kind or 'unknown' }}</strong>{% if fg.detail %} ({{ fg.detail }}){% endif %} · <code>{{ j.bend_hint }}</code>{% if j.url %} · <a href="{{ j.url }}" target="_blank" rel="noopener noreferrer">View posting ↗</a>{% endif %}</li>{% endfor %}</ul></details>
 {% endif %}
 {% if data.queued %}
 <details style="margin:12px 0"><summary><strong>Queued for tomorrow</strong> — {{ data.queued|length }} role{% if data.queued|length != 1 %}s{% endif %} over the JD budget</summary>

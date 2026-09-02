@@ -37,5 +37,17 @@ class T(unittest.TestCase):
     def test_missing_optional_fields_do_not_error(self):
         d = payload(); d.pop("coverage"); d.pop("queued"); d.pop("reposts"); d.pop("near_misses"); d.pop("budget")
         self.render("html", d); self.render("markdown", d)
+        d2 = payload(); d2["coverage"].pop("totals"); d2.pop("budget")
+        self.render("html", d2); self.render("markdown", d2)
+        d3 = payload()
+        for j in d3["near_misses"]:
+            j.pop("failed_gate")
+        h3 = self.render("html", d3); m3 = self.render("markdown", d3)
+        self.assertIn("unknown", h3); self.assertIn("unknown", m3)
+    def test_markdown_disclosures_render_without_results(self):
+        d = payload(); d["results"] = []
+        m = self.render("markdown", d)
+        for s in ("### Near misses", "### Queued for tomorrow", "### Treated as reposts", "No notifications today."):
+            self.assertIn(s, m)
 if __name__ == "__main__":
     unittest.main()
