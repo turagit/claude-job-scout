@@ -19,5 +19,16 @@ class T(unittest.TestCase):
         d = tempfile.mkdtemp(); out = os.path.join(d, "coverage.json")
         p = subprocess.run(["python3", os.path.join(S, "coverage.py"), "--ledger", os.path.join(d, "none.json"), "--run-id", "r1", "--out", out], capture_output=True, text=True)
         self.assertEqual(p.returncode, 0); self.assertEqual(json.load(open(out))["rows"], [])
+    def test_corrupt_ledger(self):
+        d = tempfile.mkdtemp(); L = os.path.join(d, "alerts.json"); open(L, "w").write("{not valid json")
+        out = os.path.join(d, "coverage.json")
+        p = subprocess.run(["python3", os.path.join(S, "coverage.py"), "--ledger", L, "--run-id", "r1", "--out", out], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 1, p.stderr); self.assertNotIn("Traceback", p.stderr); self.assertIn("bad input", p.stderr)
+    def test_corrupt_reposts(self):
+        d = tempfile.mkdtemp(); L = os.path.join(d, "alerts.json"); json.dump(LEDGER, open(L, "w"))
+        R = os.path.join(d, "reposts.json"); open(R, "w").write('{"not": "a list"}')
+        out = os.path.join(d, "coverage.json")
+        p = subprocess.run(["python3", os.path.join(S, "coverage.py"), "--ledger", L, "--run-id", "r1", "--reposts", R, "--out", out], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 1); self.assertNotIn("Traceback", p.stderr); self.assertIn("bad input", p.stderr)
 if __name__ == "__main__":
     unittest.main()
