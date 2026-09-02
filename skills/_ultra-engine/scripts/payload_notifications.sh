@@ -10,8 +10,10 @@ rep='[]'; [ -f "$rd/reposts.json" ] && rep=$(cat "$rd/reposts.json")
 jq -e . <<<"$rep" 2>/dev/null >/dev/null || { echo "payload_notifications: bad input ($rd/reposts.json)" >&2; exit 1; }
 que='[]'; [ -f "$rd/queued.json" ] && que=$(cat "$rd/queued.json")
 jq -e . <<<"$que" 2>/dev/null >/dev/null || { echo "payload_notifications: bad input ($rd/queued.json)" >&2; exit 1; }
+dro='[]'; [ -f "$rd/dropped-cards.json" ] && dro=$(cat "$rd/dropped-cards.json")
+jq -e . <<<"$dro" 2>/dev/null >/dev/null || { echo "payload_notifications: bad input ($rd/dropped-cards.json)" >&2; exit 1; }
 jq -n --arg today "$today" --arg status "$status" --arg reason "$reason" \
-      --argjson sc "$sc" --argjson rep "$rep" --argjson que "$que" --slurpfile t "$tracker" '
+      --argjson sc "$sc" --argjson rep "$rep" --argjson que "$que" --argjson dro "$dro" --slurpfile t "$tracker" '
   def tier_rank: {"A": 0, "B": 1, "C": 2, "D": 3, "untiered": 4}[.tier // "untiered"] // 4;
   def conf_rank: {"high": 0, "med": 1, "low": 2}[.confidence // "absent"] // 3;
   def comp_rank: if ((.salary_text // "") != "" or ((.signals // {}).rate // "") != "") then 0 else 1 end;
@@ -41,7 +43,7 @@ jq -n --arg today "$today" --arg status "$status" --arg reason "$reason" \
                                      failed_gate: (((.gate_violations // [])[0]) // {"kind": "unknown", "detail": ""}),
                                      bend_hint: "/bend \(.id)"} ],
       coverage: ($sc.coverage // {"rows": [], "totals": {}, "reposts_disclosed": 0}),
-      queued: $que, reposts: $rep,
+      queued: $que, reposts: $rep, dropped: $dro,
       budget: ($sc.budget // {"limit": 0, "used": 0, "queued": 0}),
       run_status: $status, no_scrape_reason: (if $status == "no_scrape" then $reason else null end),
       scorecard: $sc }

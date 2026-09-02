@@ -26,9 +26,17 @@ class T(unittest.TestCase):
         self.assertIn("B · SRE — Beta · rate not disclosed · Berlin (Remote) · https://www.linkedin.com/jobs/view/1002/", txt)
         self.assertIn("would be B; failed work_arrangement: hybrid stated; /bend 1003", txt)
         self.assertIn("REPOSTS SKIPPED: 2", txt); self.assertIn("Alerts walked: 3 (complete 2, partial 1)", txt)
+        self.assertIn("DROPPED ON CARD: 0", txt)
+        self.assertLess(txt.index("REPOSTS SKIPPED"), txt.index("DROPPED ON CARD")); self.assertLess(txt.index("DROPPED ON CARD"), txt.index("Alerts walked"))
         self.assertIn("Gates: work_arrangement=remote; contract_type=freelance, detachering; rate_floor=650 (EUR/day)", txt)
         self.assertIn("Styled report: iCloud Drive", txt); self.assertNotIn("](", txt); self.assertNotIn("**", txt)
         self.assertFalse(meta["trimmed"])
+    def test_dropped_count_reflected(self):
+        json.dump([{"id": "1999", "title": "Onsite role", "company": "Onco", "location": "Berlin", "workplace": "onsite", "alert_key": "k1"},
+                   {"id": "2000", "title": "Hybrid role", "company": "Hyco", "location": "Munich", "workplace": "hybrid", "alert_key": "k1"}],
+                  open(os.path.join(self.d, "dropped-cards.json"), "w"))
+        txt, _ = self.run_digest(payload(self.d))
+        self.assertIn("DROPPED ON CARD: 2", txt)
     def test_no_scrape_digest(self):
         txt, _ = self.run_digest(payload(self.d, "no_scrape", "browser unavailable"), ("--last-success", "2026-09-01"))
         self.assertTrue(txt.startswith("NO FRESH SCRAPE — browser unavailable. Last successful run: 2026-09-01."))

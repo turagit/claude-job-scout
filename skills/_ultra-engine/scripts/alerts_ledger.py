@@ -6,6 +6,7 @@ from datetime import date
 
 REASONS = ("divider", "drift", "valve", "no_next")
 COUNTS = ("cards_seen", "before_divider", "known", "reposts", "new")
+OPT_COUNTS = ("dropped",)
 
 def load(path):
     if not os.path.isfile(path): return {"schema_version": 1, "alerts": {}}
@@ -21,7 +22,7 @@ def rec_of(alert, today, run_id):
     return {"keywords": alert["keywords"], "geo_id": alert.get("geo_id", ""), "since_epoch": alert["since_epoch"],
             "since": alert.get("since"), "params": alert.get("params", ""), "first_seen": today, "status": "partial",
             "last_page": 0, "stop_reason": None, "cards_seen": 0, "before_divider": 0, "known": 0, "reposts": 0, "new": 0,
-            "run_id": run_id}
+            "dropped": 0, "run_id": run_id}
 
 def main():
     try:
@@ -30,6 +31,7 @@ def main():
         s = sub.add_parser("start"); s.add_argument("--ledger", required=True); s.add_argument("--alert-json", required=True); s.add_argument("--today", required=True); s.add_argument("--run-id", required=True)
         g = sub.add_parser("page"); g.add_argument("--ledger", required=True); g.add_argument("--key", required=True); g.add_argument("--page", type=int, required=True)
         for c in COUNTS: g.add_argument("--" + c.replace("_", "-"), type=int, required=True)
+        for c in OPT_COUNTS: g.add_argument("--" + c.replace("_", "-"), type=int, default=0)
         c = sub.add_parser("complete"); c.add_argument("--ledger", required=True); c.add_argument("--key", required=True); c.add_argument("--reason", required=True, choices=REASONS)
         r = sub.add_parser("prune"); r.add_argument("--ledger", required=True); r.add_argument("--today", required=True); r.add_argument("--days", type=int, default=30)
         a = ap.parse_args()
@@ -72,7 +74,7 @@ def main():
             if a.key not in al: print(f"alerts_ledger: unknown key {a.key}", file=sys.stderr); sys.exit(1)
             rec = al[a.key]
             if a.cmd == "page":
-                for cnt in COUNTS: rec[cnt] = int(rec.get(cnt, 0)) + int(getattr(a, cnt))
+                for cnt in COUNTS + OPT_COUNTS: rec[cnt] = int(rec.get(cnt, 0)) + int(getattr(a, cnt))
                 rec["last_page"] = a.page
             else:
                 rec["status"] = "complete"; rec["stop_reason"] = a.reason

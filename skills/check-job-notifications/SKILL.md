@@ -3,7 +3,7 @@ name: check-job-notifications
 description: Walk every LinkedIn job alert to its real end, plus Top Picks and Saved, dedupe against the tracker, read only new descriptions, gate and score them, and deliver the report and phone digest — unattended
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Agent
 disable-model-invocation: true
-version: 1.1.0
+version: 1.2.0
 ---
 
 The daily driver. Every mechanical step is one engine script call with a fixed contract; you sequence them, drive the browser, and make exactly two judgement calls (the drift check when a script asks, and nothing else — gating and scoring run in pinned subagents). Never improvise a step, a selector, a cap, or a prompt. Nothing here waits on a human; this runs unattended.
@@ -38,10 +38,11 @@ Pick the pane if its `tabs_context` call succeeds; otherwise the extension; othe
 4. Follow `../shared-references/render-orchestration.md` Step G (report lifecycle cleanup).
 5. `bash $SCRIPTS/snapshot.sh $WS/tracker.json $WS/cache/ultramode-snapshot.json`; `bash $SCRIPTS/checkpoint.sh save $rd snapshot $WS/cache/ultramode-snapshot.json`. Build the 45-day fingerprint set: `jq -c -L $SCRIPTS/lib --arg cut $(date -v-${FP_DAYS}d +%F 2>/dev/null || date -d "-${FP_DAYS} days" +%F) 'include "fingerprint"; [.jobs[] | select((.status//"seen")!="rejected" and (.last_seen//"0000") >= $cut) | fp((.company//""); (.title//""); (.location//""))] | unique' $WS/tracker.json > $rd/fp-45d.json`. Build the fingerprint→id map once: `jq -c -L $SCRIPTS/lib 'include "fingerprint"; [.jobs[]|select((.status//"seen")!="rejected")|{(fp((.company//"");(.title//"");(.location//""))): .id}] | add // {}' $WS/tracker.json > $rd/fp-map.json`.
 6. Choose the browser surface (adapter table). Any STOP here → jump to Step 8 with `run_status=no_scrape` (`$rd` already exists).
+7. `ALLOWED_WT=$(jq -c '[(.requirements.deal_breakers[]? | select(.kind=="work_arrangement") | .values[]?)] | map(ascii_downcase | if .=="on-site" then "onsite" else . end) | unique' $WS/user-profile.json)` — the declared work-arrangement allow-list, lower-cased, `on-site`/`onsite` folded together. `[]` (no such deal-breaker entry) means no card drops this run.
 
 ## Step 1 — Drain yesterday's queue first (D8)
 
-`n=$(bash $SCRIPTS/jd_queue.sh count $WS/cache/jd-queue.json)`; if `n > 0`: `bash $SCRIPTS/jd_queue.sh pop $WS/cache/jd-queue.json $BUDGET > $rd/queue-pop.json` (on non-zero exit treat as empty). For each popped entry run **Step 4's JD read** (its failure clause re-pushes and discloses — never silently drops) and collect the resulting delta into `$rd/sweep-queue.json` (envelope shape in Step 5, `source.board` = the entry's `board`). `used` starts at the number of successful reads here.
+`DRAIN_CAP=$(( BUDGET / 3 ))` (integer division; 50 at the default 150 — this keeps at least two thirds of `BUDGET` free for the alert walk itself). `n=$(bash $SCRIPTS/jd_queue.sh count $WS/cache/jd-queue.json notifications)`; if `n > 0`: `bash $SCRIPTS/jd_queue.sh pop $WS/cache/jd-queue.json $DRAIN_CAP notifications > $rd/queue-pop.json` (on non-zero exit treat as empty; the `notifications` origin means this only ever pops this command's own queued entries — ultramode's leftover queue is never drained here). For each popped entry run **Step 4's JD read** (its failure clause re-pushes and discloses — never silently drops) and collect the resulting delta into `$rd/sweep-queue.json` (envelope shape in Step 5, `source.board` = the entry's `board`). `used` starts at the number of successful reads here. If `n > DRAIN_CAP` (entries still remain after the pop), disclose `{"stage":"queue","message":"drained <popped> of <n> queued (cap BUDGET/3)"}`.
 
 ## Step 2 — Parse the notifications page
 
@@ -62,8 +63,8 @@ For each `{alert_key, resume_page}` (extract that alert's record from `$rd/alert
 2. `page = resume_page`. Loop:
    a. Navigate to `<results_url>&start=$(( (page-1)*25 ))`; run `page/results.js`; save to `$rd/page-<key>-<page>.json`.
    b. `python3 $SCRIPTS/cards_parse.py --surface alert --today $TODAY < $rd/page-<key>-<page>.json > $rd/cards-<key>-<page>.json`. Exit 3 (`extractor_mismatch`) → disclose `{"stage":"walk","message":"extractor_mismatch <key> page <page>"}`, leave the alert `partial`, and move to the next alert — never continue on an empty read. Exit 0 with `zero_cards: true` → disclose `{"stage":"walk","message":"zero cards on <key> page <page> (claimed: <claimed_results>)"}`, leave the alert `partial`, and move to the next alert — never run `walk_stop.py` on it. `low_confidence > 0` → disclose `{"stage":"walk","message":"<n> low-confidence cards on <key> page <page>"}`.
-   c. Dedupe the cards **before the divider** (the leaf element reading `We found more results related to your search…`; `before_divider: true`): known = id in snapshot `known_ids`; repost = not known and `fp=$(bash $SCRIPTS/fingerprint.sh "<company>" "<title>" "<location>")` is a member of `$rd/fp-45d.json` (the 45-day fingerprint set from Step 0) — use `$rd/fp-map.json` only to resolve `matched_id: <fp-map.json[$fp]>` for disclosure, never to decide repost-ness — append `{id, matched_id, alert_key, title, company, location}` to `$rd/reposts.json`; new = the rest → append `{card…, alert_key}` to `$rd/new-cards.json` (skip ids already there from an earlier alert; first alert wins). Cards with `parse_warning: true` are still processed like any other card, never dropped.
-   d. `python3 $SCRIPTS/alerts_ledger.py page --ledger $WS/alerts.json --key <key> --page <page> --cards-seen <cards> --before-divider <n> --known <k> --reposts <r> --new <new>`.
+   c. First, drop explicit workplace violations, card by card, before any dedupe and before any JD read: a card whose `workplace` is not `"unknown"` and not a member of `ALLOWED_WT` (Step 0) is dropped now — append `{id, title, company, location, workplace, alert_key}` to `$rd/dropped-cards.json`, count it as this page's `--dropped`; `unknown` workplace is never dropped. Then dedupe the remaining cards **before the divider** (the leaf element reading `We found more results related to your search…`; `before_divider: true`): known = id in snapshot `known_ids`; repost = not known and `fp=$(bash $SCRIPTS/fingerprint.sh "<company>" "<title>" "<location>")` is a member of `$rd/fp-45d.json` (the 45-day fingerprint set from Step 0) — use `$rd/fp-map.json` only to resolve `matched_id: <fp-map.json[$fp]>` for disclosure, never to decide repost-ness — append `{id, matched_id, alert_key, title, company, location}` to `$rd/reposts.json`; new = the rest → append `{card…, alert_key}` to `$rd/new-cards.json` (skip ids already there from an earlier alert; first alert wins). Cards with `parse_warning: true` are still processed like any other card, never dropped.
+   d. `python3 $SCRIPTS/alerts_ledger.py page --ledger $WS/alerts.json --key <key> --page <page> --cards-seen <cards> --before-divider <n> --known <k> --reposts <r> --new <new> --dropped <d>`.
    e. `python3 $SCRIPTS/walk_stop.py --alert $rd/alert-<key>.json --page $rd/cards-<key>-<page>.json --page-no <page> --valve $VALVE > $rd/stop-<key>-<page>.json`. If `needs_model_check` is true, answer ONE question yourself from the card titles in `undecided_ids`: "Do any of these titles plausibly match the alert keywords `<keywords>`?" and re-run with `--model-says-match true|false`. Disclose your answer as `{"stage":"walk","message":"model drift check <key> page <page>: <true|false>"}` (a disclosure, not an error).
    f. `stop: true` → `python3 $SCRIPTS/alerts_ledger.py complete --ledger $WS/alerts.json --key <key> --reason <reason>`; break. Else `page += 1`.
 3. `bash $SCRIPTS/checkpoint.sh save $rd walk-<key>`.
@@ -73,11 +74,11 @@ For each `{alert_key, resume_page}` (extract that alert's record from `$rd/alert
 Order: queue drain (done), then alert cards in `$rd/new-cards.json` order, then Top Picks, then Saved. For each card while `used < BUDGET`:
 
 1. Navigate to `https://www.linkedin.com/jobs/search-results/?currentJobId=<id>` (alerts) or `https://www.linkedin.com/jobs/view/<id>/` (Top Picks / Saved / Similar); read page text; take everything from `About the job` to the end of the description block. If the text has an expander (`…more` / `Show more`), `find` it, click it, re-read.
-2. Page didn't load, or no `About the job` block found: re-push `{id, title, company, location, url, board, alert_key}` onto the queue now (`bash $SCRIPTS/jd_queue.sh push $WS/cache/jd-queue.json <one-entry-array-file>`), disclose `{"stage":"jd-read","message":"JD read failed, re-queued: <id>"}`, and move to the next card — this card does not count against `used` and gets no delta this run.
+2. Page didn't load, or no `About the job` block found: re-push `{id, title, company, location, url, board, alert_key}` onto the queue now (`bash $SCRIPTS/jd_queue.sh push $WS/cache/jd-queue.json <one-entry-array-file> notifications`), disclose `{"stage":"jd-read","message":"JD read failed, re-queued: <id>"}`, and move to the next card — this card does not count against `used` and gets no delta this run.
 3. `mkdir -p $WS/jds; printf '%s\n' "<text>" > $WS/jds/<id>.txt.tmp && mv $WS/jds/<id>.txt.tmp $WS/jds/<id>.txt`. `used += 1`.
 4. Emit the delta (Step 5 shape) with `jd_path: "jds/<id>.txt"`.
 
-Cards left when the budget is exhausted also get a delta (Step 5 shape) with `jd_path: null`, so `returned == matched` and `capped: false` stay truthful — the queue drain owns fetching their JD next run. Write them to `$rd/queued.json` too and `bash $SCRIPTS/jd_queue.sh push $WS/cache/jd-queue.json $rd/queued.json` (entries `{id, title, company, location, url, board, alert_key}`). Always write `$rd/jd-fetch.json` = `{"budget": BUDGET, "used": used, "deferred": <queue count after push>}` and `bash $SCRIPTS/checkpoint.sh save $rd jd-fetch $rd/jd-fetch.json`, even when nothing was read.
+Cards left when the budget is exhausted also get a delta (Step 5 shape) with `jd_path: null`, so `returned == matched` and `capped: false` stay truthful — the queue drain owns fetching their JD next run. Write them to `$rd/queued.json` too and `bash $SCRIPTS/jd_queue.sh push $WS/cache/jd-queue.json $rd/queued.json notifications` (entries `{id, title, company, location, url, board, alert_key}`). Always write `$rd/jd-fetch.json` = `{"budget": BUDGET, "used": used, "deferred": <queue count after push>}` and `bash $SCRIPTS/checkpoint.sh save $rd jd-fetch $rd/jd-fetch.json`, even when nothing was read.
 
 ## Step 5 — Envelopes, validation, merge (all-or-nothing)
 
@@ -92,7 +93,7 @@ Group deltas into envelopes: one per alert (`$rd/sweep-alert-<key>.json`), plus 
  "errors":[],"continuation_cursor":null}
 ```
 
-`board` ∈ `Job Alert | Top Picks | Saved | Similar`; `signals.remote` from the card's `workplace` (`unknown` when absent). Deltas whose JD was queued (Step 4) carry `jd_path: null`. Then:
+`board` ∈ `Job Alert | Top Picks | Saved | Similar`; `signals.remote` from the card's `workplace` (`unknown` when absent). Deltas whose JD was queued (Step 4) carry `jd_path: null`. `counts.dropped_explicit_violation` = the count of `$rd/dropped-cards.json` entries with this envelope's `alert_key` (Step 3c/6). Then:
 
 ```
 survivors=""
@@ -112,7 +113,7 @@ A validator refusal never gets fixed by hand: `mv` the refused envelope to `$rd/
 
 ## Step 6 — Top Picks and Saved (after every alert is complete or partial)
 
-Top Picks: navigate `https://www.linkedin.com/jobs/collections/recommended/`; run `page/toppicks.js`; `cards_parse.py --surface toppicks --today $TODAY`; dedupe as Step 3c (fp-map for `matched_id`); Step 4 within budget; envelope `sweep-toppicks` (`board: "Top Picks"`). Saved: navigate `https://www.linkedin.com/jobs-tracker/`; run `page/saved.js`; `cards_parse.py --surface saved --today $TODAY` (`note: "saved_empty"` is a clean zero); same path; `board: "Saved"`. Merge this pass with Step 5's validate-then-merge recipe, naming `$rd/sweep-toppicks.json $rd/sweep-saved.json` explicitly (never a `sweep-*` glob) → `$rd/merge-2.json` (same zero-fill on failure), then rebuild the snapshot again so Step 7's similar-jobs expansion dedupes against fresh ids.
+Top Picks: navigate `https://www.linkedin.com/jobs/collections/recommended/`; run `page/toppicks.js`; `cards_parse.py --surface toppicks --today $TODAY`; drop explicit workplace violations first exactly as Step 3c (`ALLOWED_WT`, `$rd/dropped-cards.json`, `unknown` never dropped — `alert_key` = `"Top Picks"`); dedupe the rest as Step 3c (fp-map for `matched_id`); Step 4 within budget; envelope `sweep-toppicks` (`board: "Top Picks"`, `counts.dropped_explicit_violation` = this surface's dropped count). Saved: navigate `https://www.linkedin.com/jobs-tracker/`; run `page/saved.js`; `cards_parse.py --surface saved --today $TODAY` (`note: "saved_empty"` is a clean zero); same drop-then-dedupe path (`alert_key` = `"Saved"`); `board: "Saved"`. Merge this pass with Step 5's validate-then-merge recipe, naming `$rd/sweep-toppicks.json $rd/sweep-saved.json` explicitly (never a `sweep-*` glob) → `$rd/merge-2.json` (same zero-fill on failure), then rebuild the snapshot again so Step 7's similar-jobs expansion dedupes against fresh ids.
 
 ## Step 7 — Gate, then score (D14)
 
@@ -130,7 +131,7 @@ Persist each gate delta atomically — `gate_violations` and `signals` (includin
 
 **Similar jobs (one round):** for each this-run entry now at `tier: "A"`, navigate to its `url`, read page text, collect up to 5 ids from the "Similar jobs" rail via `find`/page text (`/jobs/view/<id>/` links), dedupe against the rebuilt snapshot. For each new id: navigate to `https://www.linkedin.com/jobs/view/<id>/`, read page text — title = the first heading line, company and location = the next two lines of the header block — then read the JD as in Step 4, fingerprint via `fingerprint.sh`. Step 4 within budget; envelope `sweep-linkedin-similar` (`board: "Similar"`); validate → merge, naming `$rd/sweep-linkedin-similar.json` explicitly (`$rd/merge-3.json`, same zero-fill and refused-envelope handling as Step 5 on failure, rebuild snapshot) → gate → score exactly as above. `merge_tracker.py` writes `notes: ""`, so after this merge set `notes: "expanded from: <seed id>"` together with `matched_query`/`alert_key` in the single-entry atomic recipe. Expansion roles never seed further expansion.
 
-Before Step 8: `jq -s '{merged:(map(.merged//0)|add),collisions_also_seen:(map(.collisions_also_seen//0)|add),url_upgrades:(map(.url_upgrades//0)|add),skipped_known:(map(.skipped_known//0)|add)}' $rd/merge-*.json > $rd/merge.json`. Re-write `$rd/jd-fetch.json` = `{"budget": BUDGET, "used": <final used>, "deferred": <final queue count>}` (`deferred` from `bash $SCRIPTS/jd_queue.sh count $WS/cache/jd-queue.json`), so the Top Picks, Saved, and Similar reads from Steps 6–7 are counted, not just the alert walk's.
+Before Step 8: `jq -s '{merged:(map(.merged//0)|add),collisions_also_seen:(map(.collisions_also_seen//0)|add),url_upgrades:(map(.url_upgrades//0)|add),skipped_known:(map(.skipped_known//0)|add)}' $rd/merge-*.json > $rd/merge.json`. Re-write `$rd/jd-fetch.json` = `{"budget": BUDGET, "used": <final used>, "deferred": <final queue count>}` (`deferred` from `bash $SCRIPTS/jd_queue.sh count $WS/cache/jd-queue.json notifications`), so the Top Picks, Saved, and Similar reads from Steps 6–7 are counted, not just the alert walk's.
 
 ## Step 8 — Scorecard, payload, render, digest — ALWAYS
 
@@ -164,6 +165,8 @@ A `no_scrape` run performs only this step (no tracker writes) and still writes t
 | Profile missing or incomplete | STOP `no_scrape`; digest + report say why |
 | No browser surface / login wall | STOP `no_scrape`; no tracker writes |
 | `extractor_mismatch` on a page | Alert stays `partial`; disclosed; next alert |
+| Card's `workplace` is explicit and outside `ALLOWED_WT` | Dropped before the JD read; counted `--dropped`; `unknown` never dropped |
+| Yesterday's queue has more than `DRAIN_CAP` entries | Only `DRAIN_CAP` popped this run; disclosed; the rest wait for tomorrow |
 | Zero cards parsed on an alert page (`zero_cards: true`) | Alert stays `partial`; disclosed; next alert — never run `walk_stop.py` |
 | Validator refuses an envelope | Fix nothing by hand; `mv` to `$rd/refused-<name>.json`; disclose; merged only by explicit surviving filenames |
 | Merge fails | Disclose; zero-filled counters; still render with whatever completed |

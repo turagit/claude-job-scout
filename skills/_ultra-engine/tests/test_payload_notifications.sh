@@ -5,7 +5,9 @@ rd=$(mktemp -d)
 printf '{"date":"2026-09-02","coverage":{"rows":[{"alert_key":"k1","keywords":"x","pages_walked":2,"stop_reason":"divider","status":"complete","cards_seen":49,"before_divider":24,"known":10,"reposts":1,"new":13}],"totals":{"alerts":1,"complete":1,"partial":0,"cards_seen":49,"before_divider":24,"known":10,"reposts":1,"new":13},"reposts_disclosed":1},"budget":{"limit":150,"used":13,"queued":0},"disclosures":[]}' > "$rd/scorecard.json"
 printf '[{"id":"1777","matched_id":"1001","alert_key":"k1","title":"Lead Platform Engineer","company":"Acme","location":"Amsterdam (Remote)"}]' > "$rd/reposts.json"
 printf '[{"id":"1888","title":"Queued role","company":"Eps","location":"Remote","url":"https://www.linkedin.com/jobs/view/1888/","alert_key":"k1"}]' > "$rd/queued.json"
+printf '[{"id":"1999","title":"Onsite role","company":"Onco","location":"Berlin","workplace":"onsite","alert_key":"k1"}]' > "$rd/dropped-cards.json"
 out=$(bash "$P" "$T" "$rd" 2026-09-02 fresh)
+assert_eq "1999" "$(echo "$out" | jq -r '.dropped[0].id')" "dropped passed through"
 assert_eq "check-job-notifications-2026-09-02.html" "$(echo "$out" | jq -r .filename)" "filename"
 assert_eq "1001 1005 1002 1004" "$(echo "$out" | jq -r '[.results[].id]|join(" ")')" "today only, tier order, malformed posted_at handled"
 assert_json_eq '{"a":1,"b":3,"c":0,"d":1,"total":5}' "$(echo "$out" | jq -c .tier_counts)" "tier counts"

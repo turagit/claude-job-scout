@@ -32,6 +32,13 @@ class T(unittest.TestCase):
         self.assertEqual((rec["status"], rec["stop_reason"]), ("complete", "divider"))
         r = sh("plan", "--ledger", self.L, "--alerts", self.parsed, "--today", "2026-09-02")
         self.assertEqual([w["alert_key"] for w in r["walk"]], [A2["alert_key"]]); self.assertEqual(r["skipped_complete"], 1)
+    def test_page_dropped_accumulates_and_defaults_zero(self):
+        rec = sh("start", "--ledger", self.L, "--alert-json", tmpjson(A1), "--today", "2026-09-02", "--run-id", "r1")
+        self.assertEqual(rec["dropped"], 0)
+        rec = sh("page", "--ledger", self.L, "--key", A1["alert_key"], "--page", 1, "--cards-seen", 25, "--before-divider", 24, "--known", 10, "--reposts", 1, "--new", 13, "--dropped", 3)
+        self.assertEqual(rec["dropped"], 3)
+        rec = sh("page", "--ledger", self.L, "--key", A1["alert_key"], "--page", 2, "--cards-seen", 25, "--before-divider", 25, "--known", 20, "--reposts", 0, "--new", 5)
+        self.assertEqual(rec["dropped"], 3)  # --dropped omitted defaults to 0, does not reset the running total
     def test_start_is_idempotent(self):
         sh("start", "--ledger", self.L, "--alert-json", tmpjson(A1), "--today", "2026-09-02", "--run-id", "r1")
         sh("page", "--ledger", self.L, "--key", A1["alert_key"], "--page", 1, "--cards-seen", 5, "--before-divider", 5, "--known", 1, "--reposts", 0, "--new", 4)

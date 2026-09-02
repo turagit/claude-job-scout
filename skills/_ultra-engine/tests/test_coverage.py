@@ -13,8 +13,17 @@ class T(unittest.TestCase):
         self.assertEqual(p.returncode, 0, p.stderr); c = json.load(open(out))
         self.assertEqual([r["alert_key"] for r in c["rows"]], ["k1", "k2"])
         self.assertEqual(c["rows"][0]["pages_walked"], 2)
-        self.assertEqual(c["totals"], {"alerts": 2, "complete": 1, "partial": 1, "cards_seen": 74, "before_divider": 49, "known": 30, "reposts": 1, "new": 18})
+        self.assertEqual(c["totals"], {"alerts": 2, "complete": 1, "partial": 1, "cards_seen": 74, "before_divider": 49, "known": 30, "reposts": 1, "new": 18, "dropped": 0})
         self.assertEqual(c["reposts_disclosed"], 1)
+    def test_dropped_column_included(self):
+        d = tempfile.mkdtemp(); L = os.path.join(d, "alerts.json")
+        ledger = json.loads(json.dumps(LEDGER)); ledger["alerts"]["k1"]["dropped"] = 4; ledger["alerts"]["k2"]["dropped"] = 2
+        json.dump(ledger, open(L, "w"))
+        out = os.path.join(d, "coverage.json")
+        p = subprocess.run(["python3", os.path.join(S, "coverage.py"), "--ledger", L, "--run-id", "r1", "--out", out], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0, p.stderr); c = json.load(open(out))
+        self.assertEqual([r["dropped"] for r in c["rows"]], [4, 2])
+        self.assertEqual(c["totals"]["dropped"], 6)
     def test_missing_ledger_gives_empty(self):
         d = tempfile.mkdtemp(); out = os.path.join(d, "coverage.json")
         p = subprocess.run(["python3", os.path.join(S, "coverage.py"), "--ledger", os.path.join(d, "none.json"), "--run-id", "r1", "--out", out], capture_output=True, text=True)

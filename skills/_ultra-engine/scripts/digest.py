@@ -43,6 +43,7 @@ def build(pl, profile, last_success, ws_name):
     q = pl.get("queued") or []
     queued = ["", f"QUEUED FOR TOMORROW ({len(q)})"] + [f"- {j.get('title','')} — {j.get('company','')} · {j.get('location','')} · {j.get('url','')}" for j in q]
     rest = ["", f"REPOSTS SKIPPED: {(pl.get('coverage') or {}).get('reposts_disclosed', 0)}",
+            f"DROPPED ON CARD: {len(pl.get('dropped') or [])}",
             f"Alerts walked: {cov.get('alerts',0)} (complete {cov.get('complete',0)}, partial {cov.get('partial',0)}) · cards {cov.get('cards_seen',0)} · new {cov.get('new',0)}", ""]
     return head + matches + near, filtered, queued, rest, tail
 
