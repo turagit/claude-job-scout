@@ -18,26 +18,26 @@ Phase 11 ultramode reads structured **public** job sources — ATS JSON boards, 
 
 To be precise about what this carve-out does and does not change:
 
-- **Hard Rule #1 still governs all *in-browser* work.** The Claude Chrome extension remains the **only** mechanism that touches the user's logged-in session — opening listings, applying, recruiter replies, and any sweep of a logged-in surface. The carve-out adds a separate, sessionless read path for public HTTP; it does not relax the in-browser rule one inch.
+- **Hard Rule #1 still governs all *in-browser* work.** The built-in browser pane and the Claude Chrome extension remain the **only** mechanisms that touch the user's logged-in session — opening listings, applying, recruiter replies, and any sweep of a logged-in surface. The carve-out adds a separate, sessionless read path for public HTTP; it does not relax the in-browser rule one inch.
 - **`WebFetch` here means: public HTTP `GET` → parse JSON/XML/HTML.** No credentials, no session tokens, no form submission, no clicking. If a source needs a login to read it, it is **not** eligible for this lane.
-- **The forbidden list is unchanged and still explicit.** No Playwright, no Selenium, no Puppeteer, no headless Chrome, no computer use, no MCP browser server other than the official Claude Chrome extension. The carve-out introduces **no** new browser-automation framework — it is the plugin's existing `WebFetch` capability, used read-only.
-- **Login-walled sources use the extension lane, never credentialed HTTP scraping.** Most freelance marketplaces, Slack/Discord communities, and some national boards/consumer aggregators sit behind a login. These are read through the Chrome extension in the user's own browser (with dedupe-before-extract), **never** by sending the user's credentials or session cookies through `WebFetch`. Per-source lane classification lives in `ultramode-sources.md`.
+- **The forbidden list is unchanged and still explicit.** No Playwright, no Selenium, no Puppeteer, no headless Chrome, no computer use, no MCP browser server other than the built-in Claude browser pane and the official Claude Chrome extension. The carve-out introduces **no** new browser-automation framework — it is the plugin's existing `WebFetch` capability, used read-only.
+- **Login-walled sources use one of the two sanctioned surfaces, never credentialed HTTP scraping.** Most freelance marketplaces, Slack/Discord communities, and some national boards/consumer aggregators sit behind a login. These are read through the browser pane or Chrome extension in the user's own browser (with dedupe-before-extract), **never** by sending the user's credentials or session cookies through `WebFetch`. Per-source lane classification lives in `ultramode-sources.md`.
 
-In short: public, sessionless HTTP reads are permitted via `WebFetch`; anything touching the user's logged-in session stays inside the Chrome extension, and every other automation framework stays forbidden.
+In short: public, sessionless HTTP reads are permitted via `WebFetch`; anything touching the user's logged-in session stays inside the browser pane or Chrome extension, and every other automation framework stays forbidden.
 
 ## Why this matters
 
-The plugin's trust model is: "Claude is my helper inside the browser I already use." The moment that boundary is crossed — computer use, external automation, or moving secrets around — the trust model breaks and users are right to panic. Keeping every browser interaction inside the Chrome extension means:
+The plugin's trust model is: "Claude is my helper inside the browser I already use." The moment that boundary is crossed — computer use, external automation, or moving secrets around — the trust model breaks and users are right to panic. Keeping every browser interaction inside the two sanctioned, Anthropic-operated surfaces means:
 
 - The user can see exactly what's happening in their own browser window.
-- Nothing runs outside the tab the extension is operating on.
-- Stopping the plugin is as simple as closing the tab or disabling the extension.
+- Nothing runs outside the tab or pane the surface is operating on.
+- Stopping the plugin is as simple as closing the tab/pane or disabling the extension.
 - The plugin cannot reach anything on the user's machine outside that browser.
 
 ## If a command says "navigate to X"
 
-Read it as: "use the Claude Chrome extension to navigate the user's existing browser tab to X." Nothing more. If the Chrome extension's navigation tool is not available in the current session, report that to the user and stop — do not escalate to any other mechanism. When a command names an adapter step (e.g. `check-job-notifications`'s Browser adapter table), use whichever of the two surfaces the command selected in its adapter step.
+Read it as: "use one of the two sanctioned browser surfaces to navigate the user's existing browser tab/pane to X." Nothing more. If neither surface's navigation tool is available in the current session, report that to the user and stop — do not escalate to any other mechanism. When a command names an adapter step (e.g. `check-job-notifications`'s Browser adapter table), use whichever of the two surfaces the command selected in its adapter step.
 
 ## For the user (transparency)
 
-This plugin only uses the Claude Chrome extension for browser work. If you ever see a prompt asking you to enable "computer use" or install any other browser-automation tool while running a command from this plugin, **something is wrong** — either the session is missing the Chrome extension, or an instruction is being misread. Please report it as a bug rather than approving it.
+This plugin only uses the built-in Claude browser pane and the Claude Chrome extension for browser work. If you ever see a prompt asking you to enable "computer use" or install any other browser-automation tool while running a command from this plugin, **something is wrong** — either the session is missing both sanctioned surfaces, or an instruction is being misread. Please report it as a bug rather than approving it.

@@ -1,9 +1,39 @@
 #!/usr/bin/env python3
 """Page dump -> card records. stdlib only.
-Usage: cards_parse.py --surface alert|toppicks|saved < dump.json
+Usage: cards_parse.py --surface alert|toppicks|saved [--today YYYY-MM-DD] < dump.json
 Exit 0: {"surface","page","claimed_results","cards":[...],"divider_seen","cards_before_divider","has_next","note","dropped_bad_id"}
-Exit 3: extractor_mismatch (page claims results, zero cards parsed). Exit 1: bad input."""
+Exit 3: extractor_mismatch (page claims results, zero cards parsed). Exit 1: bad input.
+With --today, each card also gets "posted_at": minutes/hours/"just now" -> today; "N day(s)" -> today-N;
+"N week(s)" -> today-7N; "N month(s)" -> today-30N; unparseable/absent -> "". Without --today the key is absent."""
 import argparse, json, re, sys
+from datetime import date, timedelta
+
+AGO_UNIT_RE = re.compile(r"^(\d+)\s+(second|minute|hour|day|week|month)s?\s+ago$", re.I)
+JUST_NOW_RE = re.compile(r"^just now$", re.I)
+
+def posted_at_for(posted_ago, today):
+    if not today or not posted_ago:
+        return ""
+    s = posted_ago.strip()
+    if JUST_NOW_RE.match(s):
+        return today
+    m = AGO_UNIT_RE.match(s)
+    if not m:
+        return ""
+    n, unit = int(m.group(1)), m.group(2).lower()
+    try:
+        d = date.fromisoformat(today)
+    except ValueError:
+        return ""
+    if unit in ("second", "minute", "hour"):
+        return today
+    if unit == "day":
+        d -= timedelta(days=n)
+    elif unit == "week":
+        d -= timedelta(days=7 * n)
+    elif unit == "month":
+        d -= timedelta(days=30 * n)
+    return d.isoformat()
 
 ID_RE = re.compile(r"^\d{6,}$")
 SAL_RE = re.compile(r"(\$|€|£|\bEUR\b|\bUSD\b|\bGBP\b|\bCHF\b|\bPLN\b).*(/hr|/hour|/day|/month|/yr|/year|per\s+(year|annum|month|day|hour)|p\.?a\.?)|\d+k\b.*(\$|€|£|\bEUR\b|\bUSD\b|\bGBP\b|\bCHF\b|\bPLN\b)|(/hr|/day|/month)\b", re.I)
@@ -70,6 +100,7 @@ def parse_text(text):
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--surface", required=True, choices=["alert", "toppicks", "saved"])
+    ap.add_argument("--today", default=None)
     a = ap.parse_args()
     try:
         dump = json.load(sys.stdin); cards_in = dump.get("cards"); assert isinstance(cards_in, list)
@@ -85,6 +116,8 @@ def main():
         if rec is None: bad += 1; continue
         seen.add(cid)
         rec.update({"id": cid, "surface": a.surface, "before_divider": (not divider_seen) or i < div})
+        if a.today:
+            rec["posted_at"] = posted_at_for(rec.get("posted_ago"), a.today)
         out.append(rec)
     claimed = dump.get("claimed_results"); claimed_n = 0
     if isinstance(claimed, str):

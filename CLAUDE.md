@@ -8,7 +8,7 @@ Automate the end-to-end LinkedIn job-seeking pipeline (CV → profile → search
 
 ## Hard rules (non-negotiable)
 
-1. **Browser work uses the Claude Chrome extension exclusively.** Never request "computer use". Never install or suggest Playwright, Selenium, Puppeteer, headless Chrome, or any MCP browser server other than the official Chrome extension. See `skills/shared-references/browser-policy.md`.
+1. **Browser work uses only the two Anthropic-operated surfaces — the built-in browser pane (primary) and the Claude Chrome extension (fallback).** Never request computer use; never install or suggest any other automation. See `skills/shared-references/browser-policy.md`.
 2. **Dedupe before extract.** Every command that touches LinkedIn listings loads `.job-scout/tracker.json` first, collects candidate IDs, filters against the tracker, then opens only new ones. This is the largest token saver in the plugin.
 3. **`.job-scout/` is the single source of truth for per-project state.** CV profile, tracker, caches, reports, recruiter threads. Never write state to the workspace root or anywhere else.
 4. **Every slash command carries `disable-model-invocation: true`.** Commands are user-invoked only — the model must never auto-fire browser automation, applications, or recruiter replies.

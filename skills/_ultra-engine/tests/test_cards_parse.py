@@ -4,8 +4,10 @@ SCRIPT = os.path.join(HERE, "..", "scripts", "cards_parse.py")
 def fix(n):
     with open(os.path.join(HERE, "fixtures", n)) as f:
         return json.load(f)
-def run(payload, surface):
-    return subprocess.run(["python3", SCRIPT, "--surface", surface], input=json.dumps(payload), capture_output=True, text=True)
+def run(payload, surface, today=None):
+    cmd = ["python3", SCRIPT, "--surface", surface]
+    if today: cmd += ["--today", today]
+    return subprocess.run(cmd, input=json.dumps(payload), capture_output=True, text=True)
 
 class T(unittest.TestCase):
     def test_page1_records(self):
@@ -74,6 +76,40 @@ class T(unittest.TestCase):
         o = json.loads(run(payload, "alert").stdout)
         card = o["cards"][0]
         self.assertFalse(card["parse_warning"]); self.assertEqual(o["low_confidence"], 0)
+
+    def test_posted_at_hours_is_today(self):
+        p = run(fix("p17-results-page1.json"), "alert", today="2026-09-02"); self.assertEqual(p.returncode, 0, p.stderr)
+        o = json.loads(p.stdout)
+        c = {x["id"]: x for x in o["cards"]}
+        self.assertEqual(c["4461737101"]["posted_ago"], "19 hours ago")
+        self.assertEqual(c["4461737101"]["posted_at"], "2026-09-02")
+
+    def test_posted_at_days_subtracts(self):
+        o = json.loads(run(fix("p17-toppicks-page1.json"), "toppicks", today="2026-09-02").stdout)
+        card = o["cards"][1]
+        self.assertEqual(card["posted_ago"], "2 days ago")
+        self.assertEqual(card["posted_at"], "2026-08-31")
+
+    def test_posted_at_weeks_subtracts_sevens(self):
+        payload = {"surface": "alert", "claimed_results": "1 result", "page": 1, "divider_index": None, "has_next": False, "saved_count": None,
+                   "cards": [{"id": "4461234570", "text": "Cloud Engineer\n\nAcme BV\n\nUtrecht (Hybrid)\n\n3 weeks ago"}]}
+        o = json.loads(run(payload, "alert", today="2026-09-02").stdout)
+        card = o["cards"][0]
+        self.assertEqual(card["posted_ago"], "3 weeks ago")
+        self.assertEqual(card["posted_at"], "2026-08-12")
+
+    def test_posted_at_absent_when_no_posted_ago(self):
+        payload = {"surface": "alert", "claimed_results": "1 result", "page": 1, "divider_index": None, "has_next": False, "saved_count": None,
+                   "cards": [{"id": "4461234571", "text": "Cloud Engineer\n\nAcme BV\n\nUtrecht (Hybrid)"}]}
+        o = json.loads(run(payload, "alert", today="2026-09-02").stdout)
+        card = o["cards"][0]
+        self.assertIsNone(card["posted_ago"])
+        self.assertEqual(card["posted_at"], "")
+
+    def test_posted_at_key_absent_without_today(self):
+        o = json.loads(run(fix("p17-results-page1.json"), "alert").stdout)
+        for card in o["cards"]:
+            self.assertNotIn("posted_at", card)
 
 if __name__ == "__main__":
     unittest.main()
