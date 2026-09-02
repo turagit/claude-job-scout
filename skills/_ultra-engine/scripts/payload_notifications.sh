@@ -3,26 +3,27 @@
 # The check-job-notifications render payload. Ordering lives here, never in the template or prose.
 set -eu
 tracker="$1"; rd="$2"; today="$3"; status="$4"; reason="${5-}"
-jq -e . "$tracker" >/dev/null || { echo "payload_notifications: bad input ($tracker)" >&2; exit 1; }
+jq -e . "$tracker" 2>/dev/null >/dev/null || { echo "payload_notifications: bad input ($tracker)" >&2; exit 1; }
 sc='{}'; [ -f "$rd/scorecard.json" ] && sc=$(cat "$rd/scorecard.json")
-jq -e . <<<"$sc" >/dev/null || { echo "payload_notifications: bad input ($rd/scorecard.json)" >&2; exit 1; }
+jq -e . <<<"$sc" 2>/dev/null >/dev/null || { echo "payload_notifications: bad input ($rd/scorecard.json)" >&2; exit 1; }
 rep='[]'; [ -f "$rd/reposts.json" ] && rep=$(cat "$rd/reposts.json")
-jq -e . <<<"$rep" >/dev/null || { echo "payload_notifications: bad input ($rd/reposts.json)" >&2; exit 1; }
+jq -e . <<<"$rep" 2>/dev/null >/dev/null || { echo "payload_notifications: bad input ($rd/reposts.json)" >&2; exit 1; }
 que='[]'; [ -f "$rd/queued.json" ] && que=$(cat "$rd/queued.json")
-jq -e . <<<"$que" >/dev/null || { echo "payload_notifications: bad input ($rd/queued.json)" >&2; exit 1; }
+jq -e . <<<"$que" 2>/dev/null >/dev/null || { echo "payload_notifications: bad input ($rd/queued.json)" >&2; exit 1; }
 jq -n --arg today "$today" --arg status "$status" --arg reason "$reason" \
       --argjson sc "$sc" --argjson rep "$rep" --argjson que "$que" --slurpfile t "$tracker" '
   def tier_rank: {"A": 0, "B": 1, "C": 2, "D": 3, "untiered": 4}[.tier // "untiered"] // 4;
   def conf_rank: {"high": 0, "med": 1, "low": 2}[.confidence // "absent"] // 3;
   def comp_rank: if ((.salary_text // "") != "" or ((.signals // {}).rate // "") != "") then 0 else 1 end;
-  def date_num: ((.posted_at // "") | if . == "" then "0000-00-00" else . end) | gsub("-"; "") | tonumber;
+  def is_valid_date: (.posted_at // "") | test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$");
+  def date_num: ((.posted_at // "") | if test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$") then gsub("-"; "") | tonumber else 0 end);
   def board: if (.source | type) == "object" then (.source.board // "Job Alert") else ((.source // "Job Alert") | tostring) end;
   def days_old: (($today | strptime("%Y-%m-%d") | mktime) - ((.posted_at // "1970-01-01") | strptime("%Y-%m-%d") | mktime)) / 86400;
   def opt(k): if (.[k] // null) == null then {} else {(k): .[k]} end;
   def card: {id: .id, title: .title, company: .company, location: (.location // ""), received_at: .first_seen,
              posted_at: (.posted_at // ""), source: board, tier: (.tier // "untiered"), tier_reason: (.tier_reason // null),
              dimensions: (.dimensions // {}), gate_violations: (.gate_violations // []),
-             fresh: ((.tier == "A" or .tier == "B") and (.posted_at // "") != "" and days_old <= 2),
+             fresh: ((.tier == "A" or .tier == "B") and is_valid_date and days_old <= 2),
              seen: false, preview: "", url: (.url // "")}
             + opt("competitiveness") + opt("competitiveness_evidence") + opt("confidence") + opt("match_explanation_tag") + opt("salary_text") + opt("salary") + opt("signals");
   ([ $t[0].jobs | to_entries[] | .value | select(.first_seen == $today) ]
