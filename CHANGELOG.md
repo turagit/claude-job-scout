@@ -4,6 +4,11 @@ All notable changes to the LinkedIn Job Hunter plugin are documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.2] — 2026-09-02
+
+### Fixed
+- **Fingerprints with a `|` in the company, title or location** (e.g. "Be | Shaping the Future Poland") produced a four-field fingerprint that the validator rejected, and the all-or-nothing merge then refused the whole alert envelope. The fingerprint function now folds `|` to a space in every component. On the first live v0.17.1 run this cost 58 of 91 new roles across four alerts; their descriptions were already on disk and they were re-merged after the fix.
+
 ## [0.17.1] — 2026-09-02
 
 ### Changed
