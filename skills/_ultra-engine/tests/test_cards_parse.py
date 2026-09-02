@@ -50,5 +50,30 @@ class T(unittest.TestCase):
         p = subprocess.run(["python3", SCRIPT, "--surface", "alert"], input="{", capture_output=True, text=True)
         self.assertEqual(p.returncode, 1); self.assertNotIn("Traceback", p.stderr)
 
+    def test_no_company_line_yields_parse_warning(self):
+        payload = {"surface": "alert", "claimed_results": "10 results", "page": 1, "divider_index": None, "has_next": False, "saved_count": None,
+                   "cards": [{"id": "4461234567", "text": "DevOps Engineer\n\nAmsterdam (Remote)\n\nBe an early applicant"}]}
+        o = json.loads(run(payload, "alert").stdout)
+        card = o["cards"][0]
+        self.assertIsNone(card["company"]); self.assertEqual(card["location"], "Amsterdam (Remote)")
+        self.assertEqual(card["workplace"], "remote"); self.assertTrue(card["parse_warning"])
+        self.assertEqual(o["low_confidence"], 1)
+
+    def test_unmatched_salary_format_doesnt_shift_location(self):
+        payload = {"surface": "alert", "claimed_results": "10 results", "page": 1, "divider_index": None, "has_next": False, "saved_count": None,
+                   "cards": [{"id": "4461234568", "text": "Backend Engineer\n\nTech Corp\n\nEUR 50,000 per year\n\nBerlin (On-site)"}]}
+        o = json.loads(run(payload, "alert").stdout)
+        card = o["cards"][0]
+        self.assertEqual(card["salary_text"], "EUR 50,000 per year"); self.assertEqual(card["location"], "Berlin (On-site)")
+        self.assertEqual(card["company"], "Tech Corp"); self.assertEqual(card["workplace"], "onsite")
+        self.assertFalse(card["parse_warning"]); self.assertEqual(o["low_confidence"], 0)
+
+    def test_normal_card_has_parse_warning_false(self):
+        payload = {"surface": "alert", "claimed_results": "10 results", "page": 1, "divider_index": None, "has_next": False, "saved_count": None,
+                   "cards": [{"id": "4461234569", "text": "Senior SRE\n\nGlobal Tech\n\nStockholm (Remote)\n\n$80/hr - $120/hr\n\nBe an early applicant"}]}
+        o = json.loads(run(payload, "alert").stdout)
+        card = o["cards"][0]
+        self.assertFalse(card["parse_warning"]); self.assertEqual(o["low_confidence"], 0)
+
 if __name__ == "__main__":
     unittest.main()

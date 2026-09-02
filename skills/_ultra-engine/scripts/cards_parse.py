@@ -6,9 +6,10 @@ Exit 3: extractor_mismatch (page claims results, zero cards parsed). Exit 1: bad
 import argparse, json, re, sys
 
 ID_RE = re.compile(r"^\d{6,}$")
-SAL_RE = re.compile(r"(\$|€|£|\bEUR\b|\bUSD\b|\bGBP\b|\bCHF\b|\bPLN\b).*(/hr|/hour|/day|/month|/yr|/year)|(/hr|/day|/month)\b", re.I)
+SAL_RE = re.compile(r"(\$|€|£|\bEUR\b|\bUSD\b|\bGBP\b|\bCHF\b|\bPLN\b).*(/hr|/hour|/day|/month|/yr|/year|per\s+(year|annum|month|day|hour)|p\.?a\.?)|\d+k\b.*(\$|€|£|\bEUR\b|\bUSD\b|\bGBP\b|\bCHF\b|\bPLN\b)|(/hr|/day|/month)\b", re.I)
 POSTED_RE = re.compile(r"^Posted\s+(.+)$", re.I)
 AGO_RE = re.compile(r"^\d+\s+(second|minute|hour|day|week|month)s?\s+ago$", re.I)
+LOC_RE = re.compile(r"\((Remote|Hybrid|On-site)\)\s*$", re.I)
 FLAGS = {"viewed": "Viewed", "promoted": "Promoted", "easy_apply": "Easy Apply",
          "early_applicant": "Be an early applicant", "reviewing": "Actively reviewing applicants"}
 NOISE = {"·", "Verified job"}
@@ -28,7 +29,7 @@ def parse_text(text):
     rest = lines[1:]
     if rest and re.sub(r"\s*\(Verified job\)\s*$", "", rest[0]).strip() == title: rest = rest[1:]  # aria twin
     rec = {"title": title, "company": None, "location": None, "workplace": "unknown", "salary_text": None,
-           "posted_ago": None, "viewed": False, "promoted": False, "easy_apply": False, "early_applicant": False}
+           "posted_ago": None, "viewed": False, "promoted": False, "easy_apply": False, "early_applicant": False, "parse_warning": False}
     body = []
     for l in rest:
         hit = False
@@ -44,8 +45,26 @@ def parse_text(text):
             continue
         if SAL_RE.search(l) and rec["salary_text"] is None: rec["salary_text"] = l; continue
         body.append(l)
-    if body: rec["company"] = body[0]
-    if len(body) > 1: rec["location"] = body[1]
+    # Pattern-first location detection: find line ending with (Remote|Hybrid|On-site)
+    location_by_pattern = None
+    body_without_location = []
+    for l in body:
+        if LOC_RE.search(l):
+            location_by_pattern = l
+        else:
+            body_without_location.append(l)
+    if location_by_pattern:
+        rec["location"] = location_by_pattern
+        if body_without_location:
+            rec["company"] = body_without_location[0]
+    else:
+        # Fall back to positional rule
+        if body_without_location:
+            rec["company"] = body_without_location[0]
+        if len(body_without_location) > 1:
+            rec["location"] = body_without_location[1]
+    if rec["company"] is None or rec["location"] is None:
+        rec["parse_warning"] = True
     rec["workplace"] = workplace(rec["location"])
     return rec
 
@@ -74,9 +93,10 @@ def main():
     if a.surface == "saved" and not out and (dump.get("saved_count") == 0): note = "saved_empty"
     if not out and claimed_n > 0:
         print(f"extractor_mismatch: page claims {claimed_n} results, parsed 0 cards ({dump.get('url','')})", file=sys.stderr); sys.exit(3)
+    low_conf = sum(1 for r in out if r.get("parse_warning", False))
     print(json.dumps({"surface": a.surface, "page": dump.get("page", 1), "claimed_results": claimed, "cards": out,
                       "divider_seen": divider_seen, "cards_before_divider": sum(1 for r in out if r["before_divider"]),
-                      "has_next": bool(dump.get("has_next")), "note": note, "dropped_bad_id": bad}, ensure_ascii=False))
+                      "has_next": bool(dump.get("has_next")), "note": note, "dropped_bad_id": bad, "low_confidence": low_conf}, ensure_ascii=False))
 
 if __name__ == "__main__":
     main()
