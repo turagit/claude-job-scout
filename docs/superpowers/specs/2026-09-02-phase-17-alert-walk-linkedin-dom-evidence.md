@@ -42,10 +42,11 @@ Old-style Ember markup. 24–31 cards on page 1, pagination `Page 1..4` via `but
 
 - **Stable anchors:** `li[data-occludable-job-id]` (outer) / `div[data-job-id]` (inner); title link `a.job-card-container__link[href^="/jobs/view/<id>/"]` with `aria-label="<title>"`; company in `.artdeco-entity-lockup__subtitle`; location in `.job-card-container__metadata-wrapper li`; footer `job-card-container__footer-item` (`Viewed`, `Promoted`, `Easy Apply`, posted-ago).
 - Cards are occludable (lazy): the list must be scrolled to the bottom before reading, and re-read until the count stops growing.
+- **Pagination active page:** `button[aria-label="Page N"][aria-current="page"]` (carries `aria-current="page"`, not `"true"`); the button class includes `jobs-search-pagination__indicator`.
 
 ## 4. Saved jobs — `https://www.linkedin.com/my-items/saved-jobs/`
 
-**Redirects to `https://www.linkedin.com/jobs-tracker/`** ("Job tracker") with tabs `Saved · N`, `In Progress · N`, `Applied · N`, `Interview · N`, `Archived`. The Saved tab was empty for this account (`Saved · 0`, "No jobs here"); markup for a populated Saved tab is **unverified** and the extractor must treat a zero-card read on this page as "unverified, nothing to do" (disclosed), not as failure, when the tab header says `Saved · 0`.
+**Redirects to `https://www.linkedin.com/jobs-tracker/`** ("Job tracker") with a tab group. **Stable anchors:** `div[role="radio"][aria-checked="true"]` on the active tab; sibling radios carry `aria-checked="false"`. The Saved tab contains a `<label>` child with text matching `/^Saved\s*·\s*\d+$/` (e.g. `Saved · 0`); parse the count from that text. Other tabs: `In Progress · 4`, `Applied · 35`, `Interview · 0`, `Archived`. **Verified live 2026-09-02:** page requires ~2.5 seconds for tabs to render after load; tab click requires ~1.5 seconds more for card content to render. The Saved tab was empty for this account (`Saved · 0`, "No jobs here"). **Card selectors:** `[componentkey^="job-card-component-ref-"]` (new-style), `li[data-occludable-job-id]` (Ember-style), or `[data-job-id]` fallback.
 
 ## 5. Measured miss rate (the before-number)
 

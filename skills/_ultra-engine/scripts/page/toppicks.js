@@ -12,7 +12,7 @@ const cards = [...document.querySelectorAll('li[data-occludable-job-id]')].map(l
   const inner = li.querySelector('[data-job-id]');
   return { id: li.getAttribute('data-occludable-job-id') || (inner && inner.getAttribute('data-job-id')) || '', text: li.innerText };
 });
-const active = document.querySelector('button[aria-label^="Page"][aria-current="true"]');
+const active = [...document.querySelectorAll('button[aria-label^="Page"]')].find(b => { const v = b.getAttribute('aria-current'); return v === 'page' || v === 'true'; });
 const page = active ? parseInt(active.innerText.trim(), 10) || 1 : 1;
 const hasNext = [...document.querySelectorAll('button[aria-label^="Page"]')].some(b => parseInt(b.innerText.trim(), 10) > page);
 const out = { surface: 'toppicks', url: location.href, claimed_results: null, page, cards, divider_index: null, has_next: hasNext, saved_count: null };

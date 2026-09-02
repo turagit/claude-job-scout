@@ -16,8 +16,11 @@ req results.js 'pagination-controls-next-button-visible'
 req results.js 'aria-current'
 req toppicks.js 'data-occludable-job-id'
 req toppicks.js 'data-job-id'
+req toppicks.js 'aria-current'
 req saved.js 'jobs-tracker'
 req saved.js 'Saved'
+req saved.js 'aria-checked'
+req saved.js 'role="radio"'
 if command -v node >/dev/null 2>&1; then
   for f in notifications.js results.js toppicks.js saved.js; do
     node -e "new Function('return (async()=>{' + require('fs').readFileSync('$P/$f','utf8') + '})()')" 2>/dev/null
