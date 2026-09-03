@@ -62,7 +62,7 @@ def main():
         print(json.dumps(out)); return
     for c in cards:
         if title_matches(c.get("title"), ts): out["matched_ids"].append(c["id"])
-    if out["matched_ids"]:
+    if out["matched_ids"] or not cards:  # an empty page has nothing to judge — never a model check
         print(json.dumps(out)); return
     if a.model_says_match == "true":
         print(json.dumps(out)); return
