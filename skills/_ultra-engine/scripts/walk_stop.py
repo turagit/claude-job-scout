@@ -5,9 +5,22 @@ Order: divider -> valve -> no_next -> drift. Never mid-page."""
 import argparse, json, re, sys
 
 STOP = {"and", "or", "not", "the", "contract", "remote", "hybrid", "onsite", "on-site", "freelance", "job", "jobs"}
+# Generic role nouns: they never decide relevance on their own (a page of "Mechanical Engineer"
+# must not keep a "platform engineer" walk alive). They only count when the alert has no strong term.
+WEAK = {"engineer", "engineers", "engineering", "developer", "developers", "architect", "administrator", "admin",
+        "specialist", "consultant", "lead", "senior", "junior", "manager", "analyst", "expert", "head", "principal", "staff"}
 
 def terms(keywords):
     return [t for t in re.findall(r"[a-z0-9][a-z0-9+#.-]{2,}", keywords.lower()) if t not in STOP]
+
+def title_terms(keywords):
+    """Terms a card title must share: strong (non-generic) terms when the alert has any, else the weak ones."""
+    ts = terms(keywords); strong = [t for t in ts if t not in WEAK]
+    return strong if strong else ts
+
+def title_matches(title, ts):
+    t = (title or "").lower()
+    return any(re.search(r"\b" + re.escape(x), t) for x in ts)
 
 def validate(alert, page):
     if not isinstance(alert, dict): raise ValueError("alert must be a dict")
@@ -39,17 +52,17 @@ def main():
     if a.page_no >= a.valve: done("valve")
     if not page.get("has_next"): done("no_next")
     quals = set(alert.get("qualifiers") or [])
+    ts = title_terms(alert.get("keywords", ""))
     if quals:
-        out["matched_ids"] = [c["id"] for c in cards if c.get("workplace") in quals]
+        # A page stays relevant only if some card carries the alert's workplace qualifier AND (when the
+        # alert names any title term) shares a title term — remote spam pages must not keep a walk alive.
+        out["matched_ids"] = [c["id"] for c in cards
+                              if c.get("workplace") in quals and (not ts or title_matches(c.get("title"), ts))]
         if not out["matched_ids"]: done("drift")
         print(json.dumps(out)); return
-    ts = terms(alert.get("keywords", ""))
     for c in cards:
-        title = (c.get("title") or "").lower()
-        if any(re.search(r"\b" + re.escape(t), title) for t in ts): out["matched_ids"].append(c["id"])
+        if title_matches(c.get("title"), ts): out["matched_ids"].append(c["id"])
     if out["matched_ids"]:
-        print(json.dumps(out)); return
-    if not cards:
         print(json.dumps(out)); return
     if a.model_says_match == "true":
         print(json.dumps(out)); return

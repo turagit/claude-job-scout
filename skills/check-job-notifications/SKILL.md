@@ -74,7 +74,7 @@ For each `{alert_key, resume_page}` (extract that alert's record from `$rd/alert
 Order: queue drain (done), then alert cards in `$rd/new-cards.json` order, then Top Picks, then Saved. For each card while `used < BUDGET`:
 
 1. Navigate to `https://www.linkedin.com/jobs/search-results/?currentJobId=<id>` (alerts) or `https://www.linkedin.com/jobs/view/<id>/` (Top Picks / Saved / Similar); read page text; take everything from `About the job` to the end of the description block. If the text has an expander (`…more` / `Show more`), `find` it, click it, re-read.
-2. Page didn't load, or no `About the job` block found: re-push `{id, title, company, location, url, board, alert_key}` onto the queue now (`bash $SCRIPTS/jd_queue.sh push $WS/cache/jd-queue.json <one-entry-array-file> notifications`), disclose `{"stage":"jd-read","message":"JD read failed, re-queued: <id>"}`, and move to the next card — this card does not count against `used` and gets no delta this run.
+2. Page didn't load, or no `About the job` block found: set `attempts` = (entry's `attempts` or 0) + 1. If `attempts < 3`, re-push `{id, title, company, location, url, board, alert_key, attempts}` onto the queue now (`bash $SCRIPTS/jd_queue.sh push $WS/cache/jd-queue.json <one-entry-array-file> notifications`) and disclose `{"stage":"jd-read","message":"JD read failed (attempt <attempts>), re-queued: <id>"}`; if `attempts` reaches 3, do NOT re-push — append the entry to `$rd/dead-links.json` and disclose `{"stage":"jd-read","message":"dropped after 3 failed reads (listing gone): <id>"}`. Either way move to the next card — this card does not count against `used` and gets no delta this run.
 3. `mkdir -p $WS/jds; printf '%s\n' "<text>" > $WS/jds/<id>.txt.tmp && mv $WS/jds/<id>.txt.tmp $WS/jds/<id>.txt`. `used += 1`.
 4. Emit the delta (Step 5 shape) with `jd_path: "jds/<id>.txt"`.
 
@@ -165,6 +165,7 @@ A `no_scrape` run performs only this step (no tracker writes) and still writes t
 | Profile missing or incomplete | STOP `no_scrape`; digest + report say why |
 | No browser surface / login wall | STOP `no_scrape`; no tracker writes |
 | `extractor_mismatch` on a page | Alert stays `partial`; disclosed; next alert |
+| JD read fails 3 times (expired listing) | Dropped from the queue; listed in `$rd/dead-links.json`; disclosed |
 | Card's `workplace` is explicit and outside `ALLOWED_WT` | Dropped before the JD read; counted `--dropped`; `unknown` never dropped |
 | Yesterday's queue has more than `DRAIN_CAP` entries | Only `DRAIN_CAP` popped this run; disclosed; the rest wait for tomorrow |
 | Zero cards parsed on an alert page (`zero_cards: true`) | Alert stays `partial`; disclosed; next alert — never run `walk_stop.py` |

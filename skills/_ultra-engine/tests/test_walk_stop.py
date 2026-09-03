@@ -35,10 +35,25 @@ class T(unittest.TestCase):
     def test_no_next(self):
         pg = parsed("p17-results-page2.json"); pg["has_next"] = False
         r = stop(REMOTE, pg, 2); self.assertEqual((r["stop"], r["reason"]), (True, "no_next"))
-    def test_no_qualifier_term_overlap_continues(self):
+    def test_no_qualifier_strong_term_required(self):
         alert = {"alert_key": "k3", "keywords": "devops engineer", "qualifiers": []}
-        r = stop(alert, parsed("p17-results-page2.json"), 2)  # "Infrastructure Engineer" matches 'engineer'
-        self.assertFalse(r["stop"]); self.assertFalse(r["needs_model_check"]); self.assertIn("4461569949", r["matched_ids"])
+        r = stop(alert, parsed("p17-results-page2.json"), 2)  # 'engineer' alone no longer counts; no title has 'devops'
+        self.assertFalse(r["stop"]); self.assertTrue(r["needs_model_check"])
+        alert = {"alert_key": "k4", "keywords": "linux engineer", "qualifiers": []}
+        r = stop(alert, parsed("p17-results-page2.json"), 2)  # "Linux Expert" matches the strong term
+        self.assertFalse(r["stop"]); self.assertFalse(r["needs_model_check"]); self.assertIn("4460622080", r["matched_ids"])
+    def test_qualifier_page_of_remote_spam_is_drift(self):
+        alert = {"alert_key": "k5", "keywords": "lead platform engineer Contract Remote", "qualifiers": ["remote"]}
+        page = {"cards": [{"id": "1", "title": "Senior Backend Engineer (Remote)", "workplace": "remote", "before_divider": True},
+                          {"id": "2", "title": "Mechanical Engineer (Remote)", "workplace": "remote", "before_divider": True}],
+                "divider_seen": False, "has_next": True}
+        r = stop(alert, page, 2); self.assertEqual((r["stop"], r["reason"]), (True, "drift"))
+        page["cards"].append({"id": "3", "title": "Cloud Native Platform Engineer", "workplace": "remote", "before_divider": True})
+        r = stop(alert, page, 2); self.assertFalse(r["stop"]); self.assertEqual(r["matched_ids"], ["3"])
+    def test_qualifier_only_alert_keeps_workplace_rule(self):
+        alert = {"alert_key": "k6", "keywords": "Remote", "qualifiers": ["remote"]}
+        page = {"cards": [{"id": "1", "title": "Anything (Remote)", "workplace": "remote", "before_divider": True}], "divider_seen": False, "has_next": True}
+        self.assertFalse(stop(alert, page, 1)["stop"])
     def test_no_qualifier_no_overlap_asks_model(self):
         r = stop(NOQUAL, parsed("p17-results-drift.json"), 3)
         self.assertFalse(r["stop"]); self.assertTrue(r["needs_model_check"]); self.assertEqual(len(r["undecided_ids"]), 3)

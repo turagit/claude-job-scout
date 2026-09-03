@@ -4,6 +4,12 @@ All notable changes to the LinkedIn Job Hunter plugin are documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.3] — 2026-09-03
+
+### Changed
+- **Drift rule tightened.** On alerts that name a workplace (e.g. `Remote`), a page now counts as relevant only if some card carries that workplace *and* shares a strong keyword with the alert; generic role nouns (engineer, developer, architect, …) no longer keep a walk alive on their own, so a page of remote posting-farm spam stops the walk as drift.
+- **Dead listings stop cycling.** A queued description that fails to load three times is dropped from the queue, listed in the run's `dead-links.json`, and disclosed, instead of being re-queued every night.
+
 ## [0.17.2] — 2026-09-02
 
 ### Fixed
